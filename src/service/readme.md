@@ -6,9 +6,9 @@ Service component provides with Dependency Injection feature. `emitDecoratorMeta
 
 - Different behaviours: 
   - `Singleton` - stores single instance or a service.
-  - `Scope` - instance belong to context. e.g. HTTP Request 
+  - `Scoped` - instance belong to context. e.g. HTTP Request 
   - `Prototype` - provide new instance every time.
-  - `Inherit` - inherits behaviour from own dependencies. If service depends on `Scope`, it inherits the same time. Otherwise `Singleton` is applied.
+  - `Inherit` - inherits behaviour from own dependencies. If service depends on `Scoped`, it inherits the same time. Otherwise `Singleton` is applied.
 - Few decorators:
   - `@Service()` - class decorator. Marks class as service. 
   - `@Provide(ServiceKey)` - parameter decorator. Substitutes instance in parameters.
