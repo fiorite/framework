@@ -20,7 +20,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   private _scope?: ServiceScope;
 
-  private _createFrom?: ServiceProvider;
+  private _createdFrom?: ServiceProvider;
 
   static findIn(object: object): ServiceProvider {
     const descriptor = Object.getOwnPropertyDescriptor(object, ServiceProvider.symbol);
@@ -40,7 +40,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       validateBehaviourDependency(this._data);
     } else {
       this._data = data;
-      this._createFrom = createdFrom;
+      this._createdFrom = createdFrom;
     }
   }
 
