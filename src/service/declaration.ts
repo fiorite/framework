@@ -68,7 +68,7 @@ export class ServiceDeclaration<T = unknown> {
     readonly serviceType: Type<T>;
     readonly behaviour?: ServiceBehaviour;
   }): ServiceDeclaration<T> {
-    const classResolver = new ServiceClassResolver(serviceType);
+    const classResolver = ServiceClassResolver.useLightweight(serviceType);
     return new ServiceDeclaration({
       serviceKey: serviceKey || serviceType,
       serviceFactory: classResolver,

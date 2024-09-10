@@ -16,6 +16,64 @@ Service component provides with Dependency Injection feature. `emitDecoratorMeta
 - Class which constructor does not have arguments, does not need a decorator, including `@Service()`
 - Decorated constructor argument makes class decorated. No need to use `@Service()` decorator. 
 
+## Getting started
+
+```typescript
+import { makeServiceProvider } from 'fiorite';
+
+// 0. Add classes to create depdendency.
+
+class Flower {
+  constructor(readonly color: string) {
+  }
+}
+
+class Garden {
+  constructor(
+    @Provide()
+    readonly flower: Flower
+  ) {
+  }
+}
+
+// 1. Initiate ServiceProvider
+
+const provider = makeServiceProvider([
+  new Flower('black'),
+  Garden,
+]);
+
+// 2. ServiceProvider is FunctionClass<ServiceProvideFunction> and can be invoked.
+
+provider(Garden, garden => { // Garden
+  console.log(garden.flower.color); // 'black'
+});
+
+// 4. Introduce 1st class outside ServiceProvider and create its instance.
+
+class GardenKeeper {
+  constructor(@Provide() readonly garden: Garden) { }
+}
+
+provider.instantiateType(GardenKeeper, gardenKeeper => {
+  console.log(gardenKeeper.garden.flower.color); // still 'black'
+});
+
+// 5. Add another outer class and call its object method
+
+class ColorBrowser {
+  getColorOf(@Provide() flower: Flower): string {
+    return flower.color;
+  }
+}
+
+const colorBrowser = new ColorBrowser();
+provider.callObjectMethod(colorBrowser, 'getColorOf', color => {
+  console.log(color); // 'black'
+});
+
+```
+
 ### Class decorator `Service()`
 
 Mark class as `Service` (and start using component features to auto-wire or redefine arguments). e.g.
@@ -28,7 +86,7 @@ class Garden {
 }
 ```
 
-### Parameter decorator `Provide(ServiceKey[, MapCallback])`
+### Parameter decorator `Provide([ServiceKey[, MapCallback]])`
 
 Decorator designed for service substitution in constructor or method parameters.
 

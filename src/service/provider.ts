@@ -1,4 +1,4 @@
-import { FunctionClass, propertyNotFound, ValueCallback } from '../core';
+import { FunctionClass, propertyNotFound, Type, ValueCallback } from '../core';
 import { ServiceKey } from './key';
 import { ServiceDeclaration } from './declaration';
 import { ServiceBehaviour } from './behaviour';
@@ -6,6 +6,12 @@ import { ServiceNotFound } from './error';
 import { ServiceScope } from './scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
 import { ServiceProvideFunction } from './function-type';
+import { ServiceClassResolver, ServiceMethodResolver } from 'fiorite/service/_resolver';
+import { AnyFunction } from 'fiorite/core/function';
+
+export interface ServiceProvider {
+  <T>(key: ServiceKey<T>, callback: ValueCallback<T>): void;
+}
 
 export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
   static readonly symbol = Symbol('ServiceProvider');
@@ -45,10 +51,10 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
         throw new Error('Scope is not defined. Use #createScope()');
       }
 
-      return this._scope.provide(serviceKey, callback, callback2 => service.serviceFactory(this as ServiceProvideFunction, callback2));
+      return this._scope.provide(serviceKey, callback, callback2 => service.serviceFactory(this, callback2));
     }
 
-    return service.serviceFactory(this as ServiceProvideFunction, callback);
+    return service.serviceFactory(this, callback);
   }
 
   includes(serviceKey: ServiceKey): boolean {
@@ -59,6 +65,20 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
     Object.defineProperty(object, ServiceProvider.symbol, {value: this});
   }
 
+  instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
+    if (this.includes(type)) {
+      return this.provide(type, callback);
+    }
+
+    const classResolver = ServiceClassResolver.useLightweight(type);
+    classResolver(this, callback);
+  }
+
+  callObjectMethod<T extends object, K extends keyof T>(object: T, propertyKey: K, callback: ValueCallback<T[K] extends AnyFunction ? ReturnType<T[K]> : never>): void {
+    const methodResolver = ServiceMethodResolver.useLightweight(object.constructor as Type, propertyKey as string | symbol);
+    methodResolver(object, this, callback as any);
+  }
+
   createScope(configure: (provide: ServiceProvideFunction) => void): ServiceProvider {
     if (this._scope) {
       throw new Error('Sub-scope is not supported');
@@ -66,7 +86,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
 
     const scopeProvider = new ServiceProvider(this._data);
     scopeProvider._scope = new ServiceScope();
-    configure(scopeProvider as ServiceProvideFunction);
+    configure(scopeProvider);
     return scopeProvider;
   }
 

@@ -44,7 +44,9 @@ function defineSubstitution(type: Type, propertyKey?: string | symbol): ParamSub
 
   const result = DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
     const substitution = result[decoration.path[2]] as any;
-    substitution.serviceKey = decoration.payload.referTo;
+    if (decoration.payload.referTo) {
+      substitution.serviceKey = decoration.payload.referTo;
+    }
     substitution.callback = decoration.payload.callback;
     return result;
   }, parameters);
@@ -54,13 +56,25 @@ function defineSubstitution(type: Type, propertyKey?: string | symbol): ParamSub
 }
 
 export class ServiceClassResolver<T> extends FunctionClass<ServiceFactoryFunction<T>> {
+  private static readonly _lightweight = new Map<Type, ServiceClassResolver<unknown>>();
+
   private readonly _dependencies: ServiceKey[] = [];
 
   get dependencies(): readonly ServiceKey[] {
     return this._dependencies;
   }
 
-  constructor(readonly classType: Type<T>) {
+  static useLightweight<T>(classType: Type<T>): ServiceClassResolver<T> {
+    if (this._lightweight.has(classType)) {
+      return this._lightweight.get(classType) as ServiceClassResolver<T>;
+    }
+
+    const classResolver = new ServiceClassResolver(classType);
+    this._lightweight.set(classType, classResolver);
+    return classResolver;
+  }
+
+  private constructor(readonly classType: Type<T>) {
     let parametersProvider: ServiceFactoryFunction<unknown[]>;
     let factoryFn: ServiceFactoryFunction<T>;
     let dependencies: ServiceKey[] = [];
@@ -106,13 +120,26 @@ export class ServiceClassResolver<T> extends FunctionClass<ServiceFactoryFunctio
 type ServiceMethodResolveFunction<T, R> = (instance: T, provide: ServiceProvideFunction, callback: ValueCallback<R>) => void;
 
 export class ServiceMethodResolver<T, R> extends FunctionClass<ServiceMethodResolveFunction<T, R>> {
+  private static readonly _lightweight = new MapWithKeyComparer<[Type, string | symbol], ServiceMethodResolver<unknown, unknown>>(arraySequenceEqual);
+
   private readonly _dependencies: ServiceKey[] = [];
 
   get dependencies(): readonly ServiceKey[] {
     return this._dependencies;
   }
 
-  constructor(readonly classType: Type, readonly propertyKey: string | symbol) {
+  static useLightweight<T, R>(classType: Type<T>, propertyKey: string | symbol): ServiceMethodResolver<T, R> {
+    const combinedKey = [classType, propertyKey] as [Type, string | symbol];
+    if (this._lightweight.has(combinedKey)) {
+      return this._lightweight.get(combinedKey) as ServiceMethodResolver<T, R>;
+    }
+
+    const methodResolver = new ServiceMethodResolver(classType, propertyKey);
+    this._lightweight.set(combinedKey, methodResolver);
+    return methodResolver as ServiceMethodResolver<T, R>;
+  }
+
+  private constructor(readonly classType: Type, readonly propertyKey: string | symbol) {
     let parametersProvider: ServiceFactoryFunction<unknown[]>;
     let factoryFn: ServiceMethodResolveFunction<T, R>;
     let dependencies: ServiceKey[] = [];

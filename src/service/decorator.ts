@@ -38,9 +38,9 @@ export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecorator
 }
 
 export class ProvidePayload<T, R = unknown> {
-  private readonly _referTo: ServiceKey<T>;
+  private readonly _referTo?: ServiceKey<T>;
 
-  get referTo(): ServiceKey<T> {
+  get referTo(): ServiceKey<T> | undefined {
     return this._referTo;
   }
 
@@ -50,13 +50,13 @@ export class ProvidePayload<T, R = unknown> {
     return this._callback;
   }
 
-  constructor(serviceKey: ServiceKey<T>, callback?: MapCallback<T, MaybePromise<R>>) {
+  constructor(serviceKey?: ServiceKey<T>, callback?: MapCallback<T, MaybePromise<R>>) {
     this._referTo = serviceKey;
     this._callback = callback || ((x: T) => x) as unknown as MapCallback<T, MaybePromise<R>>;
   }
 }
 
-export function Provide<T, R = unknown>(serviceKey: ServiceKey<T>, callback?: MapCallback<T, MaybePromise<R>>): ParameterDecoratorWithPayload<ProvidePayload<T, R>> {
+export function Provide<T, R = unknown>(serviceKey?: ServiceKey<T>, callback?: MapCallback<T, MaybePromise<R>>): ParameterDecoratorWithPayload<ProvidePayload<T, R>> {
   const payload = new ProvidePayload(serviceKey, callback);
   return makeParameterDecorator(Provide, payload);
 }

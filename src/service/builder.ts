@@ -150,8 +150,31 @@ export class ServiceCollection {
   }
 }
 
-export function makeServiceProvider(callback: ValueCallback<ServiceCollection>): ServiceProvider {
+export function makeServiceProvider(
+  configure: (Type | ServiceDeclaration | object)[] | ValueCallback<ServiceCollection>,
+  includeAllDecorated = false,
+): ServiceProvider {
   const builder = new ServiceCollection();
-  callback(builder);
+
+  if (includeAllDecorated) {
+    builder.includeDependencies().includeAllDecorated();
+  }
+
+  if (Array.isArray(configure)) {
+    configure.forEach(typeOrDeclaration => {
+      if (typeOrDeclaration instanceof ServiceDeclaration) {
+        builder.addDeclaration(typeOrDeclaration);
+      } else {
+        if (isType(typeOrDeclaration)) {
+          builder.addType(typeOrDeclaration);
+        } else {
+          builder.addInstance(typeOrDeclaration);
+        }
+      }
+    });
+  } else {
+    configure(builder);
+  }
+
   return builder.createProvider();
 }
