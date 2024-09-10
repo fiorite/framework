@@ -7,19 +7,24 @@ import { DecoratorRecorder, isType, Type, ValueCallback } from '../core';
 import { ServiceLinearFactoryFunction } from './function-type';
 
 export class ServiceCollection {
-  private _includeAllDecorated = false; // include all classes marked with @Service()
-  private _includeDependencies = false; // include all dep
+  /**
+   * Decides whether all classes decorated with {@link Service} go into {@link ServiceProvider}.
+   * @private
+   */
+  private _includeAllDecorated = false;
+
+  /**
+   * Decides whether service dependencies should be included upon {@link ServiceProvider} creation.
+   * @private
+   */
+  private _includeDependencies = true;
 
   private _data = new Map<ServiceKey, ServiceDeclaration>();
+
   private _metadata = DecoratorRecorder.classSearch(Service);
 
   includeAllDecorated(): this {
     this._includeAllDecorated = true;
-    return this;
-  }
-
-  includeDependencies(): this {
-    this._includeDependencies = true;
     return this;
   }
 
@@ -172,7 +177,7 @@ export function makeServiceProvider(
   const builder = new ServiceCollection();
 
   if (includeAllDecorated) {
-    builder.includeDependencies().includeAllDecorated();
+    builder.includeAllDecorated();
   }
 
   if (Array.isArray(configure)) {
