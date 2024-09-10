@@ -5,20 +5,22 @@ import { ServiceBehaviour } from './behaviour';
 import { ServiceNotFound } from './error';
 import { ServiceScope } from './scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
-import { ServiceProvideFunction } from './function-type';
-import { ServiceClassResolver, ServiceMethodResolver } from 'fiorite/service/_resolver';
+import { ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
+import { ServiceClassResolver, ServiceMethodResolveFunction, ServiceMethodResolver } from 'fiorite/service/_resolver';
 import { AnyFunction } from 'fiorite/core/function';
 
 export interface ServiceProvider {
   <T>(key: ServiceKey<T>, callback: ValueCallback<T>): void;
 }
 
-export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
+export class ServiceProvider extends FunctionClass<ServiceProvideFunction> implements Iterable<ServiceDeclaration> {
   static readonly symbol = Symbol('ServiceProvider');
 
   private readonly _data: readonly ServiceDeclaration[];
 
   private _scope?: ServiceScope;
+
+  private _createFrom?: ServiceProvider;
 
   static findIn(object: object): ServiceProvider {
     const descriptor = Object.getOwnPropertyDescriptor(object, ServiceProvider.symbol);
@@ -30,11 +32,16 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
     return descriptor.value as ServiceProvider;
   }
 
-  constructor(collection: readonly ServiceDeclaration[]) {
+  constructor(data: readonly ServiceDeclaration[], createdFrom?: ServiceProvider) {
     super((key, callback) => this.provide(key, callback));
-    this._data = remapBehaviourInheritance(collection);
-    validateCircularDependency(this._data);
-    validateBehaviourDependency(this._data);
+    if (!createdFrom) {
+      this._data = remapBehaviourInheritance(data);
+      validateCircularDependency(this._data);
+      validateBehaviourDependency(this._data);
+    } else {
+      this._data = data;
+      this._createFrom = createdFrom;
+    }
   }
 
   provide<T>(serviceKey: ServiceKey<T>, callback: ValueCallback<T>): void {
@@ -46,7 +53,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
 
     const service = this._data[index] as ServiceDeclaration<T>;
 
-    if (ServiceBehaviour.Scope === service.behaviour) {
+    if (ServiceBehaviour.Scoped === service.behaviour) {
       if (!this._scope) {
         throw new Error('Scope is not defined. Use #createScope()');
       }
@@ -65,26 +72,48 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
     Object.defineProperty(object, ServiceProvider.symbol, {value: this});
   }
 
-  instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
+  prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
     if (this.includes(type)) {
-      return this.provide(type, callback);
+      return (provide, callback) => provide(type, callback);
     }
 
-    const classResolver = ServiceClassResolver.useLightweight(type);
-    classResolver(this, callback);
+    return ServiceClassResolver.useLightweight(type);
   }
 
-  callObjectMethod<T extends object, K extends keyof T>(object: T, propertyKey: K, callback: ValueCallback<T[K] extends AnyFunction ? ReturnType<T[K]> : never>): void {
-    const methodResolver = ServiceMethodResolver.useLightweight(object.constructor as Type, propertyKey as string | symbol);
-    methodResolver(object, this, callback as any);
+  instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
+    return this.prepareTypeFactory(type)(this, callback);
   }
 
-  createScope(configure: (provide: ServiceProvideFunction) => void): ServiceProvider {
+  validateDependencies<T extends object, K extends keyof T>(type: Type<T>, propertyKey: K): void {
+    const methodResolver = ServiceMethodResolver.useLightweight(type, propertyKey as string | symbol);
+    methodResolver.dependencies.forEach((dep, index) => { // validate dependencies
+      if (!this.includes(dep)) {
+        throw new Error(`Unknown param source at ${type.name}#${String(propertyKey)}(...[${index}]: ${ServiceKey.toString(dep)})`);
+      }
+    });
+  }
+
+  prepareMethodFactory<T extends object, K extends keyof T>(
+    type: Type<T>,
+    propertyKey: K
+  ): ServiceMethodResolveFunction<T, T[K] extends AnyFunction ? ReturnType<T[K]> : never> {
+    return ServiceMethodResolver.useLightweight(type, propertyKey as string | symbol);
+  }
+
+  callObjectMethod<T extends object, K extends keyof T>(
+    object: T,
+    propertyKey: K,
+    callback: ValueCallback<T[K] extends AnyFunction ? ReturnType<T[K]> : never>
+  ): void {
+    this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this, callback as any);
+  }
+
+  createScope(configure: (provide: ServiceProvideFunction) => void = () => void 0): ServiceProvider {
     if (this._scope) {
       throw new Error('Sub-scope is not supported');
     }
 
-    const scopeProvider = new ServiceProvider(this._data);
+    const scopeProvider = new ServiceProvider(this._data, this);
     scopeProvider._scope = new ServiceScope();
     configure(scopeProvider);
     return scopeProvider;
@@ -97,5 +126,9 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> {
 
     this._scope.destroyScope();
     delete this._scope;
+  }
+
+  [Symbol.iterator](): Iterator<ServiceDeclaration> {
+    return this._data[Symbol.iterator]();
   }
 }

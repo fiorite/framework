@@ -1,6 +1,6 @@
 export enum ServiceBehaviour {
   /**
-   * Inherits {@link ServiceBehaviour.Scope} if service depends on it,
+   * Inherits {@link ServiceBehaviour.Scoped} if service depends on it,
    * otherwise {@link ServiceBehaviour.Singleton} is being used.
    */
   Inherit,
@@ -18,5 +18,5 @@ export enum ServiceBehaviour {
   /**
    * Caches instances per provided scope (could be HTTP Request, WebSocket or other kind of session).
    */
-  Scope,
+  Scoped,
 }

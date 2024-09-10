@@ -31,8 +31,8 @@ export function remapBehaviourInheritance(source: readonly ServiceDeclaration[])
 
       queue.unshift(...inheritedDeps, entry);  // requeue
     } else {
-      const inheritScopeBehaviour = dependencies.some(entry2 => ServiceBehaviour.Scope === entry2[0].behaviour);
-      result[entry[1]] = entry[0].inheritBehaviour(inheritScopeBehaviour ? ServiceBehaviour.Scope : ServiceBehaviour.Singleton);
+      const inheritScopeBehaviour = dependencies.some(entry2 => ServiceBehaviour.Scoped === entry2[0].behaviour);
+      result[entry[1]] = entry[0].inheritBehaviour(inheritScopeBehaviour ? ServiceBehaviour.Scoped : ServiceBehaviour.Singleton);
     }
   }
 
@@ -80,7 +80,7 @@ export function validateBehaviourDependency(source: readonly ServiceDeclaration[
     }
 
     if (ServiceBehaviour.Singleton === declaration.behaviour) {
-      const index2 = dependencies.findIndex(x => ServiceBehaviour.Scope === x.behaviour);
+      const index2 = dependencies.findIndex(x => ServiceBehaviour.Scoped === x.behaviour);
       if (index2 > -1) {
         const dependency2 = dependencies[index2];
         throw new Error(`Faulty behaviour dependency. Singleton (${ServiceKey.toString(declaration.serviceKey)}) cannot depend on Scope (${ServiceKey.toString(dependency2.serviceKey)}) behaviour.`);

@@ -19,9 +19,9 @@ Service component provides with Dependency Injection feature. `emitDecoratorMeta
 ## Getting started
 
 ```typescript
-import { makeServiceProvider } from 'fiorite';
+import { makeServiceProvider, OnScopeDestroy } from 'fiorite';
 
-// 0. Add classes to create depdendency.
+// 0. Add classes to create dependency
 
 class Flower {
   constructor(readonly color: string) {
@@ -52,7 +52,8 @@ provider(Garden, garden => { // Garden
 // 4. Introduce 1st class outside ServiceProvider and create its instance.
 
 class GardenKeeper {
-  constructor(@Provide() readonly garden: Garden) { }
+  constructor(@Provide() readonly garden: Garden) {
+  }
 }
 
 provider.instantiateType(GardenKeeper, gardenKeeper => {
@@ -61,17 +62,55 @@ provider.instantiateType(GardenKeeper, gardenKeeper => {
 
 // 5. Add another outer class and call its object method
 
-class ColorBrowser {
-  getColorOf(@Provide() flower: Flower): string {
+class ColorPicker {
+  pickColor(@Provide() flower: Flower): string {
     return flower.color;
   }
 }
 
-const colorBrowser = new ColorBrowser();
-provider.callObjectMethod(colorBrowser, 'getColorOf', color => {
+const colorPicker = new ColorPicker();
+provider.callObjectMethod(colorPicker, 'pickColor', color => {
   console.log(color); // 'black'
 });
 
+// 6. Add Scope experiment: new class is going to
+
+class GardenVisitor implements OnScopeDestroy  {
+  readonly visitHour = Math.floor(Math.random() * 23);
+
+  onScopeDestroy() {
+    console.log(`Goodbye at ${this.visitHour}!`);
+  }
+}
+
+class GardenGuide {
+  static readonly available: readonly string[] = ['John', 'Mike'];
+
+  constructor(readonly name: string) {
+  }
+}
+
+const provider2 = makeServiceProvider(configure => { // create another ServiceProvider
+  const gardenFactory = (visitor: GardenVisitor): GardenGuide => {
+    return new GardenGuide(GardenGuide.available[visitor.visitHour % GardenGuide.available.length]);
+  };
+
+  configure.addAnything(provider)
+    .addScoped(GardenVisitor)
+    .addFactory(GardenGuide, gardenFactory, [GardenVisitor]);
+});
+
+// ... handle 1st visit
+
+const visit1 = provider2.createScope();
+visit1(GardenGuide, guide => console.log(guide.name)); // Hour = 3, Guide = John
+visit1.destroyScope(); // Visitor logs 'Goodbye at 3!'
+
+// ... handle 2nd visit
+
+const visit2 = provider2.createScope();
+visit2(GardenGuide, guide => console.log(guide.name)); // Hour = 6, Guide = Mike
+visit2.destroyScope(); // Visitor logs 'Goodbye at 6!'
 ```
 
 ### Class decorator `Service()`

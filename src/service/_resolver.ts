@@ -117,7 +117,7 @@ export class ServiceClassResolver<T> extends FunctionClass<ServiceFactoryFunctio
   }
 }
 
-type ServiceMethodResolveFunction<T, R> = (instance: T, provide: ServiceProvideFunction, callback: ValueCallback<R>) => void;
+export type ServiceMethodResolveFunction<T, R> = (instance: T, provide: ServiceProvideFunction, callback: ValueCallback<R>) => void;
 
 export class ServiceMethodResolver<T, R> extends FunctionClass<ServiceMethodResolveFunction<T, R>> {
   private static readonly _lightweight = new MapWithKeyComparer<[Type, string | symbol], ServiceMethodResolver<unknown, unknown>>(arraySequenceEqual);

@@ -92,7 +92,7 @@ export class ServiceDeclaration<T = unknown> {
       new ServiceSingletonFactory(serviceFactory) : serviceFactory;
   }
 
-  inheritBehaviour(behaviour: ServiceBehaviour.Scope | ServiceBehaviour.Singleton): ServiceDeclaration<T> {
+  inheritBehaviour(behaviour: ServiceBehaviour.Scoped | ServiceBehaviour.Singleton): ServiceDeclaration<T> {
     if (ServiceBehaviour.Inherit !== this.behaviour) {
       throw new Error('Current behaviour does not allow behaviour inheritance');
     }

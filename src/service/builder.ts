@@ -23,6 +23,21 @@ export class ServiceCollection {
     return this;
   }
 
+  addAnything(heap: Iterable<Type | ServiceDeclaration | object>): this {
+    Array.from(heap).forEach(item => {
+      if (item instanceof ServiceDeclaration) {
+        this.addDeclaration(item);
+      } else {
+        if (isType(item)) {
+          this.addType(item);
+        } else {
+          this.addInstance(item);
+        }
+      }
+    });
+    return this;
+  }
+
   addDeclaration(declaration: ServiceDeclaration): this {
     this._data.set(declaration.serviceKey, declaration);
     return this;
@@ -98,16 +113,16 @@ export class ServiceCollection {
     return this.addFactory(serviceKey, serviceFactory, dependencies, ServiceBehaviour.Singleton);
   }
 
-  addScope<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>): this {
-    return this.addType(serviceType, serviceKey, ServiceBehaviour.Scope);
+  addScoped<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>): this {
+    return this.addType(serviceType, serviceKey, ServiceBehaviour.Scoped);
   }
 
-  addScopeFactory<T>(
+  addScopedFactory<T>(
     serviceKey: ServiceKey<T>,
     serviceFactory: ServiceLinearFactoryFunction<T>,
     dependencies: ServiceKey<T>[] = [],
   ): this {
-    return this.addFactory(serviceKey, serviceFactory, dependencies, ServiceBehaviour.Scope);
+    return this.addFactory(serviceKey, serviceFactory, dependencies, ServiceBehaviour.Scoped);
   }
 
   addPrototype<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>): this {
@@ -161,17 +176,7 @@ export function makeServiceProvider(
   }
 
   if (Array.isArray(configure)) {
-    configure.forEach(typeOrDeclaration => {
-      if (typeOrDeclaration instanceof ServiceDeclaration) {
-        builder.addDeclaration(typeOrDeclaration);
-      } else {
-        if (isType(typeOrDeclaration)) {
-          builder.addType(typeOrDeclaration);
-        } else {
-          builder.addInstance(typeOrDeclaration);
-        }
-      }
-    });
+    builder.addAnything(configure);
   } else {
     configure(builder);
   }
