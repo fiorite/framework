@@ -1,18 +1,18 @@
 import { Provide, Service } from '../service';
 import { IncomingMessage } from 'http';
 import {
-  ClassDecoratorWithData,
+  ClassDecoratorWithPayload,
   makeClassDecorator,
   makeMethodDecorator,
   MapCallback,
   MaybePromise,
-  MethodDecoratorWithData
+  MethodDecoratorWithPayload
 } from '../core';
 import { HttpMethod } from '../http';
 
 export function Controller(options: {
   readonly routePrefix?: string;
-} = {}): ClassDecoratorWithData<typeof options> {
+} = {}): ClassDecoratorWithPayload<typeof options> {
   return makeClassDecorator(Controller, options, [Service()]);
 }
 
@@ -20,7 +20,7 @@ export function RoutePrefix(path: string): ClassDecorator {
   return Controller({routePrefix: path});
 }
 
-export function Route(path?: string, httpMethod?: HttpMethod | string): MethodDecoratorWithData<{
+export function Route(path?: string, httpMethod?: HttpMethod | string): MethodDecoratorWithPayload<{
   path?: string;
   httpMethod?: HttpMethod | string;
 }> {

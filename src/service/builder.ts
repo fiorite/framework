@@ -35,12 +35,12 @@ export class ServiceCollection {
 
   private _addType<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>, behaviour?: ServiceBehaviour): ServiceDeclaration {
     if (!behaviour || !serviceKey) {
-      const result = this._metadata.filter(x => x.path[0] === serviceType).reverse().reduce((result, {data}) => {
-        if (data.serviceKey) {
-          result.serviceKey = data.serviceKey;
+      const result = this._metadata.filter(x => x.path[0] === serviceType).reverse().reduce((result, {payload}) => {
+        if (payload.serviceKey) {
+          result.serviceKey = payload.serviceKey;
         }
-        if (data.behaviour) {
-          result.behaviour = data.behaviour;
+        if (payload.behaviour) {
+          result.behaviour = payload.behaviour;
         }
         return result;
       }, {} as { serviceKey?: ServiceKey, behaviour?: ServiceBehaviour });
@@ -126,9 +126,9 @@ export class ServiceCollection {
     if (this._includeAllDecorated) { // include @Service() decorated classes
       this._metadata.forEach(decorator => {
         const serviceType = decorator.path[0] as Type;
-        const serviceKey = decorator.data.serviceKey || serviceType;
+        const serviceKey = decorator.payload.serviceKey || serviceType;
         if (!this._data.has(serviceKey)) {
-          this.addType(serviceType, serviceKey, decorator.data.behaviour);
+          this.addType(serviceType, serviceKey, decorator.payload.behaviour);
         }
       });
     }

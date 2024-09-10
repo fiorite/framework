@@ -1,18 +1,18 @@
 import { DecoratorFunction, DecoratorOuterFunction } from './function-type';
 import { arraySequenceEqual } from '../array';
 import { Type } from '../type';
-import type { ParameterDecoratorWithData } from './parameter';
-import type { MethodDecoratorWithData } from './method';
-import type { PropertyDecoratorWithData } from './property';
-import type { ClassDecoratorWithData } from './class';
+import type { ParameterDecoratorWithPayload } from './parameter';
+import type { MethodDecoratorWithPayload } from './method';
+import type { PropertyDecoratorWithPayload } from './property';
+import type { ClassDecoratorWithPayload } from './class';
 
 export interface DecoratorRecord<
-  TData = unknown,
+  TPayload = unknown,
   TDecorator extends DecoratorFunction = DecoratorFunction,
   TPath extends unknown[] = unknown[]
 > {
   readonly decorator: DecoratorOuterFunction<TDecorator>;
-  readonly data: TData;
+  readonly payload: TPayload;
   readonly path: TPath;
 }
 
@@ -21,8 +21,8 @@ export class DecoratorRecorder {
 
   private _data: DecoratorRecord[] = [];
 
-  static addRecord<TData = unknown, TDecorator extends DecoratorFunction = DecoratorFunction, TPath extends unknown[] = unknown[]>(
-    record: DecoratorRecord<TData, TDecorator, TPath>
+  static addRecord<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(
+    record: DecoratorRecord<TPayload, TDecorator, TPath>
   ): void {
     return this.instance.addRecord(record as any);
   }
@@ -31,7 +31,7 @@ export class DecoratorRecorder {
     decorator: TDecorator,
     classType?: Type
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<ClassDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<ClassDecoratorWithPayload<infer P>> ? P : unknown,
     ClassDecorator, [Function]
   >[] {
     return this.instance.classSearch(decorator, classType);
@@ -42,7 +42,7 @@ export class DecoratorRecorder {
     classType: Type,
     propertyKey?: string | symbol
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<PropertyDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<PropertyDecoratorWithPayload<infer P>> ? P : unknown,
     PropertyDecorator,
     [Object, string | symbol]
   >[] {
@@ -54,7 +54,7 @@ export class DecoratorRecorder {
     classType: Type,
     propertyKey?: string | symbol
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
     MethodDecorator, [Object, string | symbol, PropertyDescriptor]
   >[] {
     return this.instance.methodSearch(decorator, classType, propertyKey);
@@ -66,7 +66,7 @@ export class DecoratorRecorder {
     propertyKey: string | symbol | undefined,
     parameterIndex?: number,
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<ParameterDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<ParameterDecoratorWithPayload<infer P>> ? P : unknown,
     ParameterDecorator, [Object | Function, string | symbol | undefined, number]
   >[] {
     return this.instance.parameterSearch(decorator, classType, propertyKey, parameterIndex);
@@ -75,8 +75,8 @@ export class DecoratorRecorder {
   private constructor() {
   }
 
-  addRecord<TData = unknown, TDecorator extends DecoratorFunction = DecoratorFunction, TPath extends unknown[] = unknown[]>(
-    record: DecoratorRecord<TData, TDecorator, TPath>
+  addRecord<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(
+    record: DecoratorRecord<TPayload, TDecorator, TPath>
   ): void {
     this._data.push(record as any);
   }
@@ -85,7 +85,7 @@ export class DecoratorRecorder {
     decorator: TDecorator,
     classType?: Type
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<ClassDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<ClassDecoratorWithPayload<infer P>> ? P : unknown,
     ClassDecorator, [Function]
   >[] {
     const callback = classType ? (
@@ -102,7 +102,7 @@ export class DecoratorRecorder {
     classType: Type,
     propertyKey?: string | symbol
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<PropertyDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<PropertyDecoratorWithPayload<infer P>> ? P : unknown,
     PropertyDecorator,
     [Object, string | symbol]
   >[] {
@@ -120,7 +120,7 @@ export class DecoratorRecorder {
     classType: Type,
     propertyKey?: string | symbol
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
     MethodDecorator, [Object, string | symbol, PropertyDescriptor]
   >[] {
     const callback = propertyKey ? (
@@ -139,7 +139,7 @@ export class DecoratorRecorder {
     propertyKey: string | symbol | undefined,
     parameterIndex?: number,
   ): readonly DecoratorRecord<
-    TDecorator extends DecoratorOuterFunction<ParameterDecoratorWithData<infer P>> ? P : unknown,
+    TDecorator extends DecoratorOuterFunction<ParameterDecoratorWithPayload<infer P>> ? P : unknown,
     ParameterDecorator, [Object | Function, string | symbol | undefined, number]
   >[] {
     const target = propertyKey ? classType.prototype : classType;

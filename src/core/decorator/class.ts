@@ -1,17 +1,17 @@
 import { DecoratorOuterFunction } from './function-type';
-import { DecoratorWithData } from './with-data';
+import { DecoratorWithPayload } from './with-payload';
 
-export interface ClassDecoratorWithData<TData> extends DecoratorWithData<TData, ClassDecorator> {
+export interface ClassDecoratorWithPayload<TData> extends DecoratorWithPayload<TData, ClassDecorator> {
   (target: Function): void;
 }
 
-export class ClassDecoratorWithData<TData> extends DecoratorWithData<TData, ClassDecorator> {
+export class ClassDecoratorWithPayload<TData> extends DecoratorWithPayload<TData, ClassDecorator> {
 }
 
-export function makeClassDecorator<TData>(
+export function makeClassDecorator<TPayload>(
   decorator: DecoratorOuterFunction<ClassDecorator>,
-  data: TData,
+  payload: TPayload,
   include: readonly ClassDecorator[] = [],
-): ClassDecoratorWithData<TData> {
-  return new ClassDecoratorWithData(decorator, data, include);
+): ClassDecoratorWithPayload<TPayload> {
+  return new ClassDecoratorWithPayload(decorator, payload, include);
 }

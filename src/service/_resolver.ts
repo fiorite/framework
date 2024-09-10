@@ -44,8 +44,8 @@ function defineSubstitution(type: Type, propertyKey?: string | symbol): ParamSub
 
   const result = DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
     const substitution = result[decoration.path[2]] as any;
-    substitution.serviceKey = decoration.data.referTo;
-    substitution.callback = decoration.data.callback;
+    substitution.serviceKey = decoration.payload.referTo;
+    substitution.callback = decoration.payload.callback;
     return result;
   }, parameters);
 

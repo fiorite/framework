@@ -1,7 +1,7 @@
 export { DecoratorFunction, DecoratorOuterFunction } from './function-type';
 export { DecoratorRecorder } from './recorder';
-export { makeClassDecorator, ClassDecoratorWithData } from './class';
-export { makePropertyDecorator, PropertyDecoratorWithData } from './property';
-export { makeMethodDecorator, MethodDecoratorWithData } from './method';
-export { makeParameterDecorator, ParameterDecoratorWithData } from './parameter';
-export { DecoratorWithData } from './with-data';
+export { makeClassDecorator, ClassDecoratorWithPayload } from './class';
+export { makePropertyDecorator, PropertyDecoratorWithPayload } from './property';
+export { makeMethodDecorator, MethodDecoratorWithPayload } from './method';
+export { makeParameterDecorator, ParameterDecoratorWithPayload } from './parameter';
+export { DecoratorWithPayload } from './with-payload';

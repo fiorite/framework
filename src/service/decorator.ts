@@ -1,11 +1,11 @@
 import { ServiceBehaviour } from './behaviour';
 import { ServiceKey } from './key';
 import {
-  ClassDecoratorWithData,
+  ClassDecoratorWithPayload,
   makeClassDecorator,
   makeParameterDecorator,
   MapCallback, MaybePromise,
-  ParameterDecoratorWithData
+  ParameterDecoratorWithPayload
 } from '../core';
 
 export interface ServiceOptions<T> {
@@ -32,7 +32,7 @@ export class ServicePayload<T> {
   }
 }
 
-export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecoratorWithData<ServicePayload<T>> {
+export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecoratorWithPayload<ServicePayload<T>> {
   const data = new ServicePayload(options);
   return makeClassDecorator(Service, data);
 }
@@ -56,7 +56,7 @@ export class ProvidePayload<T, R = unknown> {
   }
 }
 
-export function Provide<T, R = unknown>(serviceKey: ServiceKey<T>, callback?: MapCallback<T, MaybePromise<R>>): ParameterDecoratorWithData<ProvidePayload<T, R>> {
+export function Provide<T, R = unknown>(serviceKey: ServiceKey<T>, callback?: MapCallback<T, MaybePromise<R>>): ParameterDecoratorWithPayload<ProvidePayload<T, R>> {
   const data = new ProvidePayload(serviceKey, callback);
   return makeParameterDecorator(Provide, data);
 }
