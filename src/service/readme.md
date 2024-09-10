@@ -102,7 +102,7 @@ In case you make your own decorator using `Provide`, result include data bound t
 import { ColorOf } from './color-of';
 import { Flower, RedFlower } from './flower';
 
-const {referTo, callback} = ColorOf(RedFlower).data; // { referTo: RedFlower, callback: MapCallback<Flower, string> }
+const {referTo, callback} = ColorOf(RedFlower).payload; // { referTo: RedFlower, callback: MapCallback<Flower, string> }
 assert(referTo === RedFlower); // true
 
 const flower = {color: 'white'} as Flower;
