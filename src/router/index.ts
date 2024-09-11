@@ -15,3 +15,6 @@ export {
   HttpPost,
   HttpPut
 } from './decorator';
+export {
+  makeControllerRouter,
+} from './route';
