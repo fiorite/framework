@@ -19,7 +19,7 @@ Service component provides with Dependency Injection feature. `emitDecoratorMeta
 ## Getting started
 
 ```typescript
-import { makeServiceProvider, OnScopeDestroy } from 'fiorite';
+import { makeServiceProvider, OnScopeDestroy, Provide } from 'fiorite';
 
 // 0. Add classes to create dependency
 
@@ -95,7 +95,7 @@ const provider2 = makeServiceProvider(configure => { // create another ServicePr
     return new GardenGuide(GardenGuide.available[visitor.visitHour % GardenGuide.available.length]);
   };
 
-  configure.addAnything(provider)
+  configure.addFrom(provider)
     .addScoped(GardenVisitor)
     .addFactory(GardenGuide, gardenFactory, [GardenVisitor]);
 });

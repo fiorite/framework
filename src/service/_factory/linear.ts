@@ -3,10 +3,10 @@ import { ServiceFactoryFunction, ServiceLinearFactoryFunction } from '../functio
 import { ServiceKey } from '../key';
 
 export class ServiceLinearFactory<T> extends FunctionClass<ServiceFactoryFunction<T>> {
-  private readonly _serviceFactory: ServiceLinearFactoryFunction<T>;
+  private readonly _linearFactory: ServiceLinearFactoryFunction<T>;
 
-  get serviceFactory(): ServiceLinearFactoryFunction<T> {
-    return this._serviceFactory;
+  get linearFactory(): ServiceLinearFactoryFunction<T> {
+    return this._linearFactory;
   }
 
   private readonly _dependencies: readonly ServiceKey[] = [];
@@ -15,13 +15,13 @@ export class ServiceLinearFactory<T> extends FunctionClass<ServiceFactoryFunctio
     return this._dependencies;
   }
 
-  constructor(serviceFactory: ServiceLinearFactoryFunction<T>, dependencies: readonly ServiceKey[] = []) {
+  constructor(linearFactory: ServiceLinearFactoryFunction<T>, dependencies: readonly ServiceKey[] = []) {
     super((provide, callback) => {
-      ServiceFactoryFunction.combine(dependencies || [])(provide, args => {
-        MaybePromise.then(() => serviceFactory(...args), callback);
+      ServiceFactoryFunction.from(dependencies || [])(provide, args => {
+        MaybePromise.then(() => linearFactory(...args), callback);
       });
     });
-    this._serviceFactory = serviceFactory;
+    this._linearFactory = linearFactory;
     this._dependencies = dependencies;
   }
 }

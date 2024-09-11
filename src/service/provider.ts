@@ -2,12 +2,11 @@ import { FunctionClass, propertyNotFound, Type, ValueCallback } from '../core';
 import { ServiceKey } from './key';
 import { ServiceDeclaration } from './declaration';
 import { ServiceBehaviour } from './behaviour';
-import { ServiceNotFound } from './error';
 import { ServiceScope } from './scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
 import { ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
-import { ServiceClassResolver, ServiceMethodResolveFunction, ServiceMethodResolver } from 'fiorite/service/_resolver';
-import { AnyFunction } from 'fiorite/core/function';
+import { ServiceClassResolver, ServiceMethodResolveFunction, ServiceMethodResolver } from './_resolver';
+import { AnyFunction } from '../core/function';
 
 export interface ServiceProvider {
   <T>(key: ServiceKey<T>, callback: ValueCallback<T>): void;
@@ -19,6 +18,10 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   private readonly _data: readonly ServiceDeclaration[];
 
   private _scope?: ServiceScope;
+
+  get scopeDefined(): boolean {
+    return !!this._scope;
+  }
 
   private _createdFrom?: ServiceProvider;
 
@@ -48,7 +51,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     const index = this._data.findIndex(def => def.serviceKey === serviceKey);
 
     if (index < 0) {
-      throw new ServiceNotFound(serviceKey);
+      throw new Error('Service is not found: ' + ServiceKey.toString(serviceKey));
     }
 
     const service = this._data[index] as ServiceDeclaration<T>;
@@ -64,11 +67,16 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     return service.serviceFactory(this, callback);
   }
 
+  provideAll(array: ServiceKey[], callback: ValueCallback<unknown[]>): void {
+    return ServiceFactoryFunction.from(array)(this, callback);
+  }
+
+
   includes(serviceKey: ServiceKey): boolean {
     return this._data.findIndex(x => x.serviceKey === serviceKey) > -1;
   }
 
-  bindSelfTo(object: object): void {
+  bindTo(object: object): void {
     Object.defineProperty(object, ServiceProvider.symbol, {value: this});
   }
 

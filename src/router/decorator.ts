@@ -10,21 +10,45 @@ import {
 } from '../core';
 import { HttpMethod } from '../http';
 
-export function Controller(options: {
-  readonly routePrefix?: string;
-} = {}): ClassDecoratorWithPayload<typeof options> {
-  return makeClassDecorator(Controller, options, [Service()]);
+export class ControllerPayload {
+  private readonly _routePrefix?: string;
+
+  get routePrefix(): string | undefined {
+    return this._routePrefix;
+  }
+
+  constructor(routePrefix?: string) {
+    this._routePrefix = routePrefix;
+  }
 }
 
-export function RoutePrefix(path: string): ClassDecorator {
-  return Controller({routePrefix: path});
+export function Controller(routePrefix?: string): ClassDecoratorWithPayload<ControllerPayload> {
+  return makeClassDecorator(Controller, new ControllerPayload(routePrefix), [Service()]);
 }
 
-export function Route(path?: string, httpMethod?: HttpMethod | string): MethodDecoratorWithPayload<{
-  path?: string;
-  httpMethod?: HttpMethod | string;
-}> {
-  return makeMethodDecorator(Route, {path, httpMethod});
+export const RoutePrefix = (path: string) => Controller(path);
+
+export class RoutePayload {
+  private readonly _path?: string;
+
+  get path(): string | undefined {
+    return this._path;
+  }
+
+  private readonly _httpMethod?: HttpMethod | string;
+
+  get httpMethod(): HttpMethod | string | undefined {
+    return this._httpMethod;
+  }
+
+  constructor(path?: string, httpMethod?: HttpMethod | string) {
+    this._path = path;
+    this._httpMethod = httpMethod;
+  }
+}
+
+export function Route(path?: string, httpMethod?: HttpMethod | string): MethodDecoratorWithPayload<RoutePayload> {
+  return makeMethodDecorator(Route, new RoutePayload(path, httpMethod));
 }
 
 export const HttpGet = (path?: string) => Route(path, HttpMethod.Get);

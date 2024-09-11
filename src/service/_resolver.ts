@@ -90,7 +90,7 @@ export class ServiceClassResolver<T> extends FunctionClass<ServiceFactoryFunctio
       }
 
       parametersProvider = (provide, callback) => {
-        ServiceFactoryFunction.combine(substitution.map(x => x.serviceKey))(provide, args => {
+        ServiceFactoryFunction.from(substitution.map(x => x.serviceKey))(provide, args => {
           MaybePromise.all(() => args.map((x, index) => substitution[index].callback(x)), args2 => {
             args2.forEach((arg, index) => { // todo: refactor in a cool way
               if (!(arg instanceof substitution[index].paramType) && (arg as any).constructor !== substitution[index].paramType) {
@@ -165,7 +165,7 @@ export class ServiceMethodResolver<T, R> extends FunctionClass<ServiceMethodReso
       }
 
       parametersProvider = (provide, callback) => {
-        ServiceFactoryFunction.combine(substitution.map(x => x.serviceKey))(provide, args => {
+        ServiceFactoryFunction.from(substitution.map(x => x.serviceKey))(provide, args => {
           MaybePromise.all(() => args.map((x, index) => substitution[index].callback(x)), args2 => {
             args2.forEach((arg, index) => { // todo: refactor in a cool way
               if (!(arg instanceof substitution[index].paramType) && (arg as any).constructor !== substitution[index].paramType) {

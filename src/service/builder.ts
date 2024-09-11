@@ -28,8 +28,8 @@ export class ServiceCollection {
     return this;
   }
 
-  addAnything(heap: Iterable<Type | ServiceDeclaration | object>): this {
-    Array.from(heap).forEach(item => {
+  addFrom(iterable: Iterable<Type | ServiceDeclaration | object>): this {
+    Array.from(iterable).forEach(item => {
       if (item instanceof ServiceDeclaration) {
         this.addDeclaration(item);
       } else {
@@ -57,16 +57,16 @@ export class ServiceCollection {
     if (!behaviour || !serviceKey) {
       const result = this._metadata.filter(x => x.path[0] === serviceType).reverse().reduce((result, {payload}) => {
         if (payload.serviceKey) {
-          result.serviceKey = payload.serviceKey;
+          result.key = payload.serviceKey;
         }
         if (payload.behaviour) {
           result.behaviour = payload.behaviour;
         }
         return result;
-      }, {} as { serviceKey?: ServiceKey, behaviour?: ServiceBehaviour });
+      }, {} as { key?: ServiceKey, behaviour?: ServiceBehaviour });
 
-      if (!serviceKey && result.serviceKey) { // todo: throw warning that service decorator is different
-        serviceKey = result.serviceKey as ServiceKey<T>;
+      if (!serviceKey && result.key) { // todo: throw warning that service decorator is different
+        serviceKey = result.key as ServiceKey<T>;
       }
 
       if (!behaviour && result.behaviour) {
@@ -75,9 +75,7 @@ export class ServiceCollection {
     }
 
     const declaration = ServiceDeclaration.fromType({
-      serviceType,
-      serviceKey,
-      behaviour,
+      serviceType, serviceKey, behaviour,
     });
 
     this.addDeclaration(declaration);
@@ -86,23 +84,23 @@ export class ServiceCollection {
 
   addFactory<T>(
     serviceKey: ServiceKey<T>,
-    serviceFactory: ServiceLinearFactoryFunction<T>,
+    linearFactory: ServiceLinearFactoryFunction<T>,
     dependencies: ServiceKey[] = [],
     behaviour?: ServiceBehaviour,
   ): this {
     return this.addDeclaration(
       ServiceDeclaration.fromFactory({
-        serviceKey,
-        serviceFactory,
-        dependencies,
-        behaviour,
+        serviceKey, linearFactory,
+        dependencies, behaviour,
       })
     );
   }
 
   addInstance<T extends object>(serviceInstance: T, serviceKey?: ServiceKey<T>): this {
     return this.addDeclaration(
-      ServiceDeclaration.fromInstance({serviceInstance, serviceKey})
+      ServiceDeclaration.fromInstance({
+        serviceInstance, serviceKey,
+      })
     );
   }
 
@@ -181,7 +179,7 @@ export function makeServiceProvider(
   }
 
   if (Array.isArray(configure)) {
-    builder.addAnything(configure);
+    builder.addFrom(configure);
   } else {
     configure(builder);
   }
