@@ -57,7 +57,7 @@ export class ServiceDeclaration<T = unknown> {
     const linearFactory = new ServiceLinearFactory(options.linearFactory, options.dependencies || []);
     return new ServiceDeclaration({
       serviceKey: options.serviceKey,
-      serviceFactory: options.linearFactory,
+      serviceFactory: linearFactory,
       dependencies: linearFactory.dependencies,
       behaviour: options.behaviour,
     });

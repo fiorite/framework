@@ -42,7 +42,7 @@ export function provide<T>(key: ServiceKey<T>, callback?: ValueCallback<T>): unk
   if (done) {
     return value as T;
   }
-  throw new Error(`Service(${ServiceKey.toString(key)}) is not synchronous. Add callback() handler.`);
+  throw new Error(`Service(${ServiceKey.toString(key)}) is not synchronous. Add callback() to provide(..., callback) instead.`);
 }
 
 let callers = 0;
