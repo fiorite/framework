@@ -1,5 +1,5 @@
 import { Provide, Service } from '../service';
-import { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'http';
 import {
   ClassDecoratorWithPayload,
   makeClassDecorator,
@@ -8,7 +8,7 @@ import {
   MaybePromise,
   MethodDecoratorWithPayload
 } from '../core';
-import { HttpMethod } from '../http';
+import { HttpContext, HttpMethod } from '../http';
 
 export class ControllerPayload {
   private readonly _routePrefix?: string;
@@ -69,7 +69,9 @@ export const HttpTrace = (path?: string) => Route(path, HttpMethod.Trace);
 
 export const HttpPatch = (path?: string) => Route(path, HttpMethod.Patch);
 
-export const FromRequest = <R>(callback: MapCallback<IncomingMessage, MaybePromise<R>>) => Provide(IncomingMessage, callback);
+export const FromRequest = <R, TRequest extends IncomingMessage>(callback: MapCallback<TRequest, MaybePromise<R>>) => {
+  return Provide(HttpContext, context => callback(context.request));
+};
 
 export const FromParam = <R = unknown>(paramName: string, callback?: MapCallback<string | undefined, MaybePromise<R>>) => {
   if (!callback) {

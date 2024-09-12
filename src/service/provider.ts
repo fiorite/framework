@@ -38,11 +38,17 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   constructor(data: readonly ServiceDeclaration[], createdFrom?: ServiceProvider) {
     super((key, callback) => this.provide(key, callback));
     if (!createdFrom) {
-      this._data = remapBehaviourInheritance(data);
+      this._data = [ServiceDeclaration.fromInstance({
+        serviceInstance: this,
+        serviceKey: ServiceProvider,
+      }), ...remapBehaviourInheritance(data)];
       validateCircularDependency(this._data);
       validateBehaviourDependency(this._data);
     } else {
-      this._data = data;
+      this._data = [ServiceDeclaration.fromInstance({
+        serviceInstance: this,
+        serviceKey: ServiceProvider,
+      }), ...data];
       this._createdFrom = createdFrom;
     }
   }

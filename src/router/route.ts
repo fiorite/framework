@@ -11,7 +11,7 @@ export interface RouteDeclaration {
   readonly routeCaller: ServiceFactoryFunction<unknown>;
 }
 
-export function makeControllerRouter(controllerType: Type, contextProvider: ServiceProvider): readonly RouteDeclaration[] {
+export function makeControllerRouter(controllerType: Type, initialProvider: ServiceProvider): readonly RouteDeclaration[] {
   const routePrefix = DecoratorRecorder.classSearch(Controller, controllerType)
     .map(x => x.payload.routePrefix)
     .filter(x => !!x && x.trim().length)
@@ -19,12 +19,12 @@ export function makeControllerRouter(controllerType: Type, contextProvider: Serv
     .join('/');
 
   return DecoratorRecorder.methodSearch(Route, controllerType).map(methodRecord => {
-    contextProvider.validateDependencies(controllerType, methodRecord.path[1]);
-    const methodServiceFactory = contextProvider.prepareMethodFactory(controllerType, methodRecord.path[1]);
+    initialProvider.validateDependencies(controllerType, methodRecord.path[1]);
+    const methodServiceFactory = initialProvider.prepareMethodFactory(controllerType, methodRecord.path[1]);
 
     const {path, httpMethod} = methodRecord.payload;
     const routePath = '/' + ([routePrefix, path].filter(x => !!x && x.length).join('/'));
-    const controllerServiceFactory = contextProvider.prepareTypeFactory(controllerType);
+    const controllerServiceFactory = initialProvider.prepareTypeFactory(controllerType);
 
     return {
       controllerType,
@@ -32,14 +32,9 @@ export function makeControllerRouter(controllerType: Type, contextProvider: Serv
       routePath,
       httpMethod,
       routeCaller: (routeProvider, callback) => {
-        providerInContext(contextProvider, completeContext => {
-          controllerServiceFactory(routeProvider, controllerInstance => {
-            methodServiceFactory(controllerInstance, routeProvider, resultMaybePromise => {
-              MaybePromise.then(() => resultMaybePromise, result => {
-                completeContext();
-                callback(result);
-              });
-            });
+        controllerServiceFactory(routeProvider, controllerInstance => {
+          methodServiceFactory(controllerInstance, routeProvider, resultMaybePromise => {
+            MaybePromise.then(() => resultMaybePromise, callback);
           });
         });
       },

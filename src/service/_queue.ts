@@ -15,6 +15,7 @@ export class ServiceCallbackQueue {
       this._data.push([
         [...token], [callback as ValueCallback<unknown>] as ValueCallback<unknown>[]
       ]);
+
       resolve(value => {
         const index = this._data.findIndex(x => arraySequenceEqual(token, x[0]));
         if (index > -1) {
@@ -25,5 +26,3 @@ export class ServiceCallbackQueue {
     }
   }
 }
-
-export const serviceCallbackQueue = new ServiceCallbackQueue();

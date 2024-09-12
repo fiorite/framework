@@ -1,4 +1,4 @@
-import { ValueCallback } from 'fiorite/core/callback';
+import { ValueCallback } from './callback';
 
 export type MaybePromise<T> = PromiseLike<T> | T;
 

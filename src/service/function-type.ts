@@ -1,7 +1,7 @@
 import { MaybePromise, ValueCallback } from '../core';
 import { ServiceKey } from './key';
 
-export type ServiceProvideFunction = <T>(key: ServiceKey<T>, callback: ValueCallback<T>) => void;
+export type ServiceProvideFunction = <T>(serviceKey: ServiceKey<T>, callback: ValueCallback<T>) => void;
 
 export type ServiceFactoryFunction<T = unknown> = (provide: ServiceProvideFunction, callback: ValueCallback<T>) => void;
 
@@ -20,7 +20,7 @@ export namespace ServiceFactoryFunction {
         provide(key, result => {
           args[index] = result;
           resolved++;
-          if (resolved === args.length) {
+          if (resolved >= args.length) {
             callback(args);
           }
         });

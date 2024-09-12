@@ -1,6 +1,8 @@
 import { FunctionClass } from '../../core';
 import { ServiceFactoryFunction } from '../function-type';
-import { serviceCallbackQueue } from '../_queue';
+import { ServiceCallbackQueue } from '../_queue';
+
+const callbackQueue = new ServiceCallbackQueue();
 
 export class ServiceSingletonFactory<T> extends FunctionClass<ServiceFactoryFunction<T>> {
   private _serviceInstance?: T;
@@ -15,7 +17,7 @@ export class ServiceSingletonFactory<T> extends FunctionClass<ServiceFactoryFunc
         return callback(this._serviceInstance);
       }
 
-      serviceCallbackQueue.add([this, 'singletonFactory'], callback2 => {
+      callbackQueue.add([this, 'singletonFactory'], callback2 => {
         serviceFactory(provide, value => {
           this._serviceInstance = value;
           callback2(value);

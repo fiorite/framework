@@ -111,7 +111,7 @@ export class ServiceCollection {
   addSingletonFactory<T>(
     serviceKey: ServiceKey<T>,
     serviceFactory: ServiceLinearFactoryFunction<T>,
-    dependencies: ServiceKey<T>[] = [],
+    dependencies: ServiceKey[] = [],
   ): this {
     return this.addFactory(serviceKey, serviceFactory, dependencies, ServiceBehaviour.Singleton);
   }
@@ -155,7 +155,7 @@ export class ServiceCollection {
       const queue = Array.from(this._data).map(x => x[1]);
       while (queue.length) { // todo: probably get factual class and behaviour from decorator.
         const declaration = queue.shift()!;
-        declaration.dependencies.filter(dependency => !this._data.has(dependency))
+        declaration.dependencies.filter(dependency => !this._data.has(dependency) && dependency !== ServiceProvider)
           .filter(isType)
           .forEach(dependency => {
             const definition = this._addType(dependency);

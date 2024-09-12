@@ -12,10 +12,9 @@
  * - Test cases will become more complex, use on your consideration.
  * There a chance, in the future, to get a better understanding on improvements.
  */
-import { ServiceKey } from './key';
-import { ValueCallback } from '../core';
 import { ServiceProvideFunction } from './function-type';
 import type { ServiceProvider } from './provider';
+import { InlineServiceProvideFunction, InlineServiceProvider } from './inline-provider';
 
 const defaultImplementation: ServiceProvideFunction = () => {
   throw new Error('provide() implementation not defined in this context.');
@@ -23,27 +22,9 @@ const defaultImplementation: ServiceProvideFunction = () => {
 
 let provideImplementation: ServiceProvideFunction = defaultImplementation;
 
-/**
- * @throws ServiceNotSynchronous if service is not synchronous
- */
-export function provide<T>(key: ServiceKey<T>): T;
-export function provide<T>(key: ServiceKey<T>, callback: ValueCallback<T>): void;
-export function provide<T>(key: ServiceKey<T>, callback?: ValueCallback<T>): unknown {
-  if (callback) {
-    return provideImplementation(key, callback);
-  }
-
-  let done = false;
-  let value: T | undefined = undefined;
-  provideImplementation(key, (value2) => {
-    done = true;
-    value = value2;
-  });
-  if (done) {
-    return value as T;
-  }
-  throw new Error(`Service(${ServiceKey.toString(key)}) is not synchronous. Add callback() to provide(..., callback) instead.`);
-}
+export const provide: InlineServiceProvideFunction = new InlineServiceProvider((provide, callback) => {
+  provideImplementation(provide, callback);
+});
 
 let callers = 0;
 
