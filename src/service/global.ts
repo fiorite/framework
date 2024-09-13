@@ -28,6 +28,7 @@ export const provide: InlineServiceProvideFunction = new InlineServiceProvider((
 
 let callers = 0;
 
+/** @deprecated problems with vite rn */
 export function providerInContext(provider: ServiceProvider, callback: (complete: () => void) => void) {
   const complete = () => {
     callers--;

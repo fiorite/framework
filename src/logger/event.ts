@@ -7,7 +7,7 @@ export class LogEvent {
     return this._message;
   }
 
-  readonly _level: LogLevel;
+  private readonly _level: LogLevel;
 
   get level(): LogLevel {
     return this._level;

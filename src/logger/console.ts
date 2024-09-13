@@ -1,6 +1,7 @@
 import { LogLevel } from './level';
 import { Logger } from './logger';
 import { ServiceCollection } from '../service';
+import { LevelFilter } from './level-filter';
 
 // Reset = "\x1b[0m"
 // Bright = "\x1b[1m"
@@ -83,6 +84,12 @@ export class ConsoleLogger extends Logger {
   }
 }
 
-export function addConsoleLog(configure: ServiceCollection): void {
-  configure.addSingleton(ConsoleLogger, Logger);
+export function addConsoleLog(configure: ServiceCollection, level?: LogLevel): void {
+  if (level) {
+    configure.addSingletonFactory(Logger, () => {
+      return new LevelFilter(new ConsoleLogger(), level!);
+    });
+  } else {
+    configure.addSingleton(ConsoleLogger, Logger);
+  }
 }

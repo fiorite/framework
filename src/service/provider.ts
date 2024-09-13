@@ -53,6 +53,23 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     }
   }
 
+  /**
+   * @deprecated refactor at some point
+   * @param serviceKey
+   */
+  provideSync<T>(serviceKey: ServiceKey<T>): T {
+    let done = false;
+    let value: T | undefined = undefined;
+    this.provide(serviceKey, (value2) => {
+      done = true;
+      value = value2;
+    });
+    if (done) {
+      return value as T;
+    }
+    throw new Error(`Service(${ServiceKey.toString(serviceKey)}) is not synchronous. Add callback() to provide(..., callback) instead.`);
+  }
+
   provide<T>(serviceKey: ServiceKey<T>, callback: ValueCallback<T>): void {
     const index = this._data.findIndex(def => def.serviceKey === serviceKey);
 
