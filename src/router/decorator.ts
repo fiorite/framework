@@ -1,4 +1,4 @@
-import { Provide, Service } from '../service';
+import { Inherited, Provide } from '../service';
 import type { IncomingMessage } from 'http';
 import {
   ClassDecoratorWithPayload,
@@ -23,7 +23,7 @@ export class ControllerPayload {
 }
 
 export function Controller<T>(routePrefix?: string): ClassDecoratorWithPayload<ControllerPayload, T> {
-  return makeClassDecorator(Controller, new ControllerPayload(routePrefix), [Service().calledBy(Controller)]);
+  return makeClassDecorator(Controller, new ControllerPayload(routePrefix), [Inherited().calledBy(Controller)]);
 }
 
 export const RoutePrefix = (path: string) => Controller(path).calledBy(RoutePrefix);

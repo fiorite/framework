@@ -4,7 +4,8 @@ import {
   ClassDecoratorWithPayload,
   makeClassDecorator,
   makeParameterDecorator,
-  MapCallback, MaybePromise,
+  MapCallback,
+  MaybePromise,
   ParameterDecoratorWithPayload
 } from '../core';
 import { ServiceLinearFactoryFunction } from './function-type';
@@ -52,6 +53,22 @@ export function Service(...args: unknown[]): ClassDecoratorWithPayload<ServicePa
 
   return makeClassDecorator(Service, payload);
 }
+
+export const Singleton = (of?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Singleton, serviceKey: of }).calledBy(Singleton);
+};
+
+export const Scoped = (of?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Scoped, serviceKey: of, }).calledBy(Scoped);
+};
+
+export const Inherited = (of?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Inherited, serviceKey: of }).calledBy(Inherited);
+};
+
+export const Prototype = (of?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Prototype, serviceKey: of }).calledBy(Prototype);
+};
 
 export class ProvidePayload<T, R = unknown> {
   private readonly _referTo?: ServiceType<T>;
