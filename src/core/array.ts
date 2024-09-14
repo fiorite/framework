@@ -1,4 +1,4 @@
-export function arraySequenceEqual(x: unknown[], y: unknown[]): boolean {
+export function arraySequenceEqual(x: readonly unknown[], y: readonly unknown[]): boolean {
   if (x.length !== y.length) {
     return false;
   }

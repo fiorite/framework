@@ -1,12 +1,11 @@
 import { DecoratorFunction, DecoratorOuterFunction } from './function-type';
-import { arraySequenceEqual } from '../array';
-import { Type } from '../type';
+import { isType, Type } from '../type';
 import type { ParameterDecoratorWithPayload } from './parameter';
 import type { MethodDecoratorWithPayload } from './method';
 import type { PropertyDecoratorWithPayload } from './property';
 import type { ClassDecoratorWithPayload } from './class';
 
-export interface DecoratorRecord<
+export interface _DecoratorEvent<
   TPayload = unknown,
   TDecorator extends DecoratorFunction = DecoratorFunction,
   TPath extends unknown[] = unknown[]
@@ -16,48 +15,48 @@ export interface DecoratorRecord<
   readonly path: TPath;
 }
 
-export class DecoratorRecorder {
-  private static readonly instance = new DecoratorRecorder();
+export class _DecoratorRecorder {
+  private static readonly _instance = new _DecoratorRecorder();
 
-  private _data: DecoratorRecord[] = [];
+  private _data: _DecoratorEvent[] = [];
 
-  static addRecord<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(
-    record: DecoratorRecord<TPayload, TDecorator, TPath>
+  static addEvent<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(
+    event: _DecoratorEvent<TPayload, TDecorator, TPath>
   ): void {
-    return this.instance.addRecord(record as any);
+    return _DecoratorRecorder._instance.addEvent(event);
   }
 
   static classSearch<TDecorator extends DecoratorOuterFunction<ClassDecorator>>(
     decorator: TDecorator,
     classType?: Type
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<ClassDecoratorWithPayload<infer P>> ? P : unknown,
     ClassDecorator, [Function]
   >[] {
-    return this.instance.classSearch(decorator, classType);
+    return _DecoratorRecorder._instance.classSearch(decorator, classType);
   }
 
   static propertySearch<TDecorator extends DecoratorOuterFunction<PropertyDecorator>>(
     decorator: TDecorator,
     classType: Type,
     propertyKey?: string | symbol
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<PropertyDecoratorWithPayload<infer P>> ? P : unknown,
     PropertyDecorator,
     [Object, string | symbol]
   >[] {
-    return this.instance.propertySearch(decorator, classType, propertyKey);
+    return _DecoratorRecorder._instance.propertySearch(decorator, classType, propertyKey);
   }
 
   static methodSearch<TDecorator extends DecoratorOuterFunction<MethodDecorator>>(
     decorator: TDecorator,
-    classType: Type,
+    classType?: Type,
     propertyKey?: string | symbol
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
     MethodDecorator, [Object, string | symbol, PropertyDescriptor]
   >[] {
-    return this.instance.methodSearch(decorator, classType, propertyKey);
+    return _DecoratorRecorder._instance.methodSearch(decorator, classType, propertyKey);
   }
 
   static parameterSearch<TDecorator extends DecoratorOuterFunction<ParameterDecorator>>(
@@ -65,34 +64,37 @@ export class DecoratorRecorder {
     classType: Type,
     propertyKey: string | symbol | undefined,
     parameterIndex?: number,
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<ParameterDecoratorWithPayload<infer P>> ? P : unknown,
     ParameterDecorator, [Object | Function, string | symbol | undefined, number]
   >[] {
-    return this.instance.parameterSearch(decorator, classType, propertyKey, parameterIndex);
+    return _DecoratorRecorder._instance.parameterSearch(decorator, classType, propertyKey, parameterIndex);
   }
 
-  private constructor() {
-  }
-
-  addRecord<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(
-    record: DecoratorRecord<TPayload, TDecorator, TPath>
+  addEvent<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(
+    event: _DecoratorEvent<TPayload, TDecorator, TPath>
   ): void {
-    this._data.push(record as any);
+    if (!isType(event.path[0])) { // if Object provided, get its constructor.
+      event.path[0] = (event.path[0] as Object).constructor;
+    }
+
+    this._data.push(event);
   }
 
   classSearch<TDecorator extends DecoratorOuterFunction<ClassDecorator>>(
     decorator: TDecorator,
     classType?: Type
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<ClassDecoratorWithPayload<infer P>> ? P : unknown,
     ClassDecorator, [Function]
   >[] {
     const callback = classType ? (
-      (record: DecoratorRecord) => {
-        return arraySequenceEqual([classType], record.path) && record.decorator === decorator;
+      (event: _DecoratorEvent) => {
+        return event.decorator === decorator &&
+          event.path.length === 1 &&
+          event.path[0] === classType;
       }
-    ) : (record: DecoratorRecord) => record.decorator === decorator;
+    ) : (event: _DecoratorEvent) => event.decorator === decorator && event.path.length === 1;
 
     return this._data.filter(callback) as any;
   }
@@ -101,34 +103,53 @@ export class DecoratorRecorder {
     decorator: TDecorator,
     classType: Type,
     propertyKey?: string | symbol
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<PropertyDecoratorWithPayload<infer P>> ? P : unknown,
     PropertyDecorator,
     [Object, string | symbol]
   >[] {
     const callback = propertyKey ? (
-      (record: DecoratorRecord) => {
-        return arraySequenceEqual([classType.prototype, propertyKey], record.path) && record.decorator === decorator;
+      (event: _DecoratorEvent) => {
+        return event.decorator === decorator &&
+          event.path.length === 2 &&
+          event.path[0] === classType &&
+          event.path[1] === propertyKey;
       }
-    ) : (record: DecoratorRecord) => record.path[0] === classType.prototype && record.decorator === decorator;
+    ) : (event: _DecoratorEvent) => {
+      return event.decorator === decorator &&
+        event.path.length === 2 &&
+        event.path[0] === classType;
+    };
 
     return this._data.filter(callback) as any;
   }
 
   methodSearch<TDecorator extends DecoratorOuterFunction<MethodDecorator>>(
     decorator: TDecorator,
-    classType: Type,
+    classType?: Type,
     propertyKey?: string | symbol
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
     MethodDecorator, [Object, string | symbol, PropertyDescriptor]
   >[] {
-    const callback = propertyKey ? (
-      (record: DecoratorRecord) => {
-        return arraySequenceEqual([classType.prototype, propertyKey], record.path.slice(0, 2)) &&
-          record.decorator === decorator;
+    const callback = classType ? (
+      propertyKey ? (
+        (event: _DecoratorEvent) => {
+          return event.decorator === decorator &&
+            event.path.length === 3 &&
+            event.path[0] === classType &&
+            event.path[1] === propertyKey &&
+            typeof event.path[2] !== 'number';
+        }
+      ) : (event: _DecoratorEvent) => {
+        return event.decorator === decorator &&
+          event.path.length === 3 &&
+          event.path[0] === classType &&
+          typeof event.path[2] !== 'number';
       }
-    ) : (record: DecoratorRecord) => record.path[0] === classType.prototype && record.decorator === decorator;
+    ) : (event: _DecoratorEvent) => {
+      return event.decorator === decorator && event.path.length === 3 && typeof event.path[2] !== 'number';
+    };
 
     return this._data.filter(callback) as any;
   }
@@ -138,20 +159,24 @@ export class DecoratorRecorder {
     classType: Type,
     propertyKey: string | symbol | undefined,
     parameterIndex?: number,
-  ): readonly DecoratorRecord<
+  ): readonly _DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<ParameterDecoratorWithPayload<infer P>> ? P : unknown,
     ParameterDecorator, [Object | Function, string | symbol | undefined, number]
   >[] {
-    const target = propertyKey ? classType.prototype : classType;
-
     const callback = typeof parameterIndex === 'number' ? (
-      (record: DecoratorRecord) => {
-        return record.decorator === decorator &&
-          arraySequenceEqual([target, propertyKey, parameterIndex], record.path);
+      (event: _DecoratorEvent) => {
+        return event.decorator === decorator &&
+          event.path.length === 3 &&
+          event.path[0] === classType &&
+          event.path[1] === propertyKey &&
+          event.path[2] === parameterIndex;
       }
-    ) : (record: DecoratorRecord) => {
-      return record.decorator === decorator &&
-        arraySequenceEqual([target, propertyKey], record.path.slice(0, 2));
+    ) : (event: _DecoratorEvent) => {
+      return event.decorator === decorator &&
+        event.path.length === 3 &&
+        event.path[0] === classType &&
+        event.path[1] === propertyKey &&
+        typeof event.path[2] === 'number';
     };
 
     return this._data.filter(callback) as any;

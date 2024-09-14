@@ -16,7 +16,7 @@ export interface InlineServiceProvideFunction extends ServiceProvideFunction {
 
 export interface InlineServiceProvider extends InlineServiceProvideFunction { }
 
-export class InlineServiceProvider extends FunctionClass<InlineServiceProvideFunction> implements InlineServiceProvideFunction {
+export class InlineServiceProvider extends FunctionClass<ServiceProvideFunction | (<T>(type: ServiceKey<T>) => T)> implements InlineServiceProvideFunction {
   private readonly _provide: ServiceProvideFunction;
 
   constructor(provide: ServiceProvideFunction) {

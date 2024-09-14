@@ -3,10 +3,11 @@ import { ServiceDeclaration } from './declaration';
 import { ServiceKey } from './key';
 import { Service } from './decorator';
 import { ServiceBehaviour } from './behaviour';
-import { DecoratorRecorder, isType, Type, ValueCallback } from '../core';
+import { _DecoratorRecorder, isType, Type, ValueCallback } from '../core';
 import { ServiceLinearFactoryFunction } from './function-type';
 
-export class ServiceCollection {
+/** todo: improve method signatures to make it much easier to use */
+export class ServiceConfigurator {
   /**
    * Decides whether all classes decorated with {@link Service} go into {@link ServiceProvider}.
    * @private
@@ -21,7 +22,7 @@ export class ServiceCollection {
 
   private _data = new Map<ServiceKey, ServiceDeclaration>();
 
-  private _metadata = DecoratorRecorder.classSearch(Service);
+  private _metadata = _DecoratorRecorder.classSearch(Service);
 
   includeAllDecorated(): this {
     this._includeAllDecorated = true;
@@ -36,7 +37,7 @@ export class ServiceCollection {
         if (isType(item)) {
           this.addType(item);
         } else {
-          this.addInstance(item);
+          this.instance(item);
         }
       }
     });
@@ -96,10 +97,14 @@ export class ServiceCollection {
     );
   }
 
-  addInstance<T extends object>(serviceInstance: T, serviceKey?: ServiceKey<T>): this {
+  instance(object: object): this;
+  instance<T extends object>(type: ServiceKey<T>, object: T): this;
+  instance(...args: unknown[]): this {
     return this.addDeclaration(
-      ServiceDeclaration.fromInstance({
-        serviceInstance, serviceKey,
+      args.length === 1 ? ServiceDeclaration.fromInstance({
+        serviceInstance: args[0] as object,
+      }) : ServiceDeclaration.fromInstance({
+        serviceInstance: args[1] as object, serviceKey: args[0] as ServiceKey<object>,
       })
     );
   }
@@ -169,10 +174,10 @@ export class ServiceCollection {
 }
 
 export function makeServiceProvider(
-  configure: (Type | ServiceDeclaration | object)[] | ValueCallback<ServiceCollection>,
+  configure: (Type | ServiceDeclaration | object)[] | ValueCallback<ServiceConfigurator>,
   includeAllDecorated = false,
 ): ServiceProvider {
-  const builder = new ServiceCollection();
+  const builder = new ServiceConfigurator();
 
   if (includeAllDecorated) {
     builder.includeAllDecorated();

@@ -14,6 +14,10 @@ export interface Logger extends LogFunction {
 }
 
 export abstract class Logger extends FunctionClass<LogFunction> {
+ protected constructor(writer: LogFunction) {
+   super(writer);
+ }
+
   debug(message: string): void {
     const event = new LogEvent({message, level: LogLevel.Debug});
     return this(event);

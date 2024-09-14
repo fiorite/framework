@@ -9,7 +9,7 @@ export interface AbstractType<T = unknown> extends Function {
  * Constructable type.
  */
 export interface Type<T = any> extends AbstractType<T> {
-  new (...args: any[]): T;
+  new(...args: any[]): T;
 }
 
 /**

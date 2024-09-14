@@ -1,8 +1,8 @@
 import { createServer, Server } from 'http';
 import { HttpContext, HttpContextHost } from './context';
-import { ServiceCollection, ServiceProvider } from '../service';
+import { ServiceConfigurator, ServiceProvider } from '../service';
 
-export function addHttpServer(configure: ServiceCollection): void {
+export function addHttpServer(configure: ServiceConfigurator): void {
   configure
     .addSingletonFactory(Server, (initialProvider: ServiceProvider) => {
       return createServer((request, response) => {

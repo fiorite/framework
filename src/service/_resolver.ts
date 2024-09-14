@@ -1,7 +1,7 @@
 import {
   AbstractType,
   arraySequenceEqual,
-  DecoratorRecorder,
+  _DecoratorRecorder,
   FunctionClass,
   MapCallback,
   MapWithKeyComparer,
@@ -42,7 +42,7 @@ function defineSubstitution(type: Type, propertyKey?: string | symbol): ParamSub
     paramType,
   }));
 
-  const result = DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
+  const result = _DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
     const substitution = result[decoration.path[2]] as any;
     if (decoration.payload.referTo) {
       substitution.serviceKey = decoration.payload.referTo;
