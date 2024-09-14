@@ -8,7 +8,7 @@ Service component provides with Dependency Injection feature. `emitDecoratorMeta
   - `Singleton` - stores single instance or a service.
   - `Scoped` - instance belong to context. e.g. HTTP Request 
   - `Prototype` - provide new instance every time.
-  - `Inherit` - inherits behaviour from own dependencies. If service depends on `Scoped`, it inherits the same time. Otherwise `Singleton` is applied.
+  - `Inherited` - inherits behaviour from own dependencies. If service depends on `Scoped`, it inherits the same time. Otherwise `Singleton` is applied.
 - Few decorators:
   - `@Service()` - class decorator. Marks class as service. 
   - `@Provide(ServiceKey)` - parameter decorator. Substitutes instance in parameters.
@@ -93,9 +93,9 @@ const provider2 = makeServiceProvider(configure => { // create another ServicePr
     return new GardenGuide(GardenGuide.available[visitor.visitHour % GardenGuide.available.length]);
   };
 
-  configure.addFrom(provider)
-    .addScoped(GardenVisitor)
-    .addFactory(GardenGuide, gardenFactory, [GardenVisitor]);
+  configure.addAll(provider)
+    .scoped(GardenVisitor)
+    .factory(GardenGuide, gardenFactory, [GardenVisitor]);
 });
 
 // ... handle 1st visit

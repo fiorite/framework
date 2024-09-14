@@ -40,7 +40,7 @@ export class HttpContextHost<
     return this._context;
   }
 
-  useContext(context: HttpContext<TRequest, TResponse>): void {
+  bindContext(context: HttpContext<TRequest, TResponse>): void {
     if (this._context) {
       throw new Error('Http context already set.');
     }

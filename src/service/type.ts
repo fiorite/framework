@@ -4,13 +4,13 @@ export type ServiceType<T = unknown> = Type<T> | AbstractType<T> | Symbol | stri
 
 export namespace ServiceType {
   export function toString(key: ServiceType): string {
-    const typeofKey = typeof key;
+    const typeOf = typeof key;
 
-    if ('string' === typeofKey) {
+    if ('string' === typeOf) {
       return key as string;
     }
 
-    if ('symbol' === typeofKey) {
+    if ('symbol' === typeOf) {
       return (key as symbol).toString();
     }
 
