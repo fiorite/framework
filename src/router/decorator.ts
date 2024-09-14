@@ -22,11 +22,11 @@ export class ControllerPayload {
   }
 }
 
-export function Controller(routePrefix?: string): ClassDecoratorWithPayload<ControllerPayload> {
-  return makeClassDecorator(Controller, new ControllerPayload(routePrefix), [Service()]);
+export function Controller<T>(routePrefix?: string): ClassDecoratorWithPayload<ControllerPayload, T> {
+  return makeClassDecorator(Controller, new ControllerPayload(routePrefix), [Service().calledBy(Controller)]);
 }
 
-export const RoutePrefix = (path: string) => Controller(path);
+export const RoutePrefix = (path: string) => Controller(path).calledBy(RoutePrefix);
 
 export class RoutePayload {
   private readonly _path?: string;
@@ -51,26 +51,46 @@ export function Route(path?: string, httpMethod?: HttpMethod | string): MethodDe
   return makeMethodDecorator(Route, new RoutePayload(path, httpMethod));
 }
 
-export const HttpGet = (path?: string) => Route(path, HttpMethod.Get);
+export const HttpGet = (path?: string) => {
+  return Route(path, HttpMethod.Get).calledBy(HttpGet);
+};
 
-export const HttpHead = (path?: string) => Route(path, HttpMethod.Head);
+export const HttpHead = (path?: string) => {
+  return Route(path, HttpMethod.Head).calledBy(HttpHead);
+};
 
-export const HttpPost = (path?: string) => Route(path, HttpMethod.Post);
+export const HttpPost = (path?: string) => {
+  return Route(path, HttpMethod.Post).calledBy(HttpPost);
+};
 
-export const HttpPut = (path?: string) => Route(path, HttpMethod.Put);
+export const HttpPut = (path?: string) => {
+  return Route(path, HttpMethod.Put).calledBy(HttpPut);
+};
 
-export const HttpDelete = (path?: string) => Route(path, HttpMethod.Delete);
+export const HttpDelete = (path?: string) => {
+  return Route(path, HttpMethod.Delete).calledBy(HttpDelete);
+};
 
-export const HttpConnect = (path?: string) => Route(path, HttpMethod.Connect);
+export const HttpConnect = (path?: string) => {
+  return Route(path, HttpMethod.Connect).calledBy(HttpConnect);
+};
 
-export const HttpOptions = (path?: string) => Route(path, HttpMethod.Options);
+export const HttpOptions = (path?: string) => {
+  return Route(path, HttpMethod.Options).calledBy(HttpOptions);
+};
 
-export const HttpTrace = (path?: string) => Route(path, HttpMethod.Trace);
+export const HttpTrace = (path?: string) => {
+  return Route(path, HttpMethod.Trace).calledBy(HttpTrace);
+};
 
-export const HttpPatch = (path?: string) => Route(path, HttpMethod.Patch);
+export const HttpPatch = (path?: string) => {
+  return Route(path, HttpMethod.Patch).calledBy(HttpPatch);
+};
 
 export const FromRequest = <R, TRequest extends IncomingMessage>(callback: MapCallback<TRequest, MaybePromise<R>>) => {
-  return Provide(HttpContext, context => callback(context.request));
+  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
+  const d = Provide(HttpContext, context => callback(context.request)).calledBy(FromRequest);
+  return d;
 };
 
 export const FromParam = <R = unknown>(paramName: string, callback?: MapCallback<string | undefined, MaybePromise<R>>) => {
@@ -78,10 +98,12 @@ export const FromParam = <R = unknown>(paramName: string, callback?: MapCallback
     callback = (x => x) as MapCallback<string | undefined, MaybePromise<R>>;
   }
 
-  return FromRequest(request => {
+  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
+  const d = FromRequest(request => {
     const queryValue = (request as any).params[paramName] as string | undefined;
     return callback!(queryValue);
-  });
+  }).calledBy(FromParam);
+  return d;
 };
 
 export const FromQuery = <R = unknown>(queryKey: string, callback?: MapCallback<string | undefined, MaybePromise<R>>) => {
@@ -89,10 +111,12 @@ export const FromQuery = <R = unknown>(queryKey: string, callback?: MapCallback<
     callback = (x => x) as MapCallback<string | undefined, MaybePromise<R>>;
   }
 
-  return FromRequest(request => {
+  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
+  const d = FromRequest(request => {
     const queryValue = (request as any).query[queryKey] as string | undefined;
     return callback!(queryValue);
-  });
+  }).calledBy(FromQuery);
+  return d;
 };
 
 export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T, MaybePromise<R>>) => {
@@ -100,5 +124,7 @@ export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T, May
     callback = ((x: T) => x) as unknown as MapCallback<T, MaybePromise<R>>;
   }
 
-  return FromRequest(request => callback!((request as any).body as T));
+  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
+  const d = FromRequest(request => callback!((request as any).body as T));
+  return d;
 };

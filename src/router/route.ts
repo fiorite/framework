@@ -1,4 +1,4 @@
-import { _DecoratorRecorder, MaybePromise, Type } from '../core';
+import { DecoratorRecorder, MaybePromise, Type } from '../core';
 import { Controller, Route } from './decorator';
 import { ServiceFactoryFunction, ServiceProvider } from '../service';
 import { HttpMethod } from '../http';
@@ -12,13 +12,13 @@ export interface RouteDeclaration {
 }
 
 export function makeControllerRouter(controllerType: Type, initialProvider: ServiceProvider): readonly RouteDeclaration[] {
-  const routePrefix = _DecoratorRecorder.classSearch(Controller, controllerType)
+  const routePrefix = DecoratorRecorder.classSearch(Controller, controllerType)
     .map(x => x.payload.routePrefix)
     .filter(x => !!x && x.trim().length)
     .reverse()
     .join('/');
 
-  return _DecoratorRecorder.methodSearch(Route, controllerType).map(methodRecord => {
+  return DecoratorRecorder.methodSearch(Route, controllerType).map(methodRecord => {
     initialProvider.validateDependencies(controllerType, methodRecord.path[1]);
     const methodServiceFactory = initialProvider.prepareMethodFactory(controllerType, methodRecord.path[1]);
 

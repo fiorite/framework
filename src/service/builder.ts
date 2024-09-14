@@ -3,7 +3,7 @@ import { ServiceDeclaration } from './declaration';
 import { ServiceType } from './type';
 import { Service } from './decorator';
 import { ServiceBehaviour } from './behaviour';
-import { _DecoratorRecorder, isType, Type, ValueCallback } from '../core';
+import { DecoratorRecorder, isType, Type, ValueCallback } from '../core';
 import { ServiceLinearFactoryFunction } from './function-type';
 
 /** todo: improve method signatures to make it much easier to use */
@@ -22,7 +22,7 @@ export class ServiceConfigurator {
 
   private _data = new Map<ServiceType, ServiceDeclaration>();
 
-  private _metadata = _DecoratorRecorder.classSearch(Service);
+  private _metadata = DecoratorRecorder.classSearch(Service);
 
   includeAllDecorated(): this {
     this._includeAllDecorated = true;

@@ -1,5 +1,5 @@
 import {
-  _DecoratorRecorder,
+  DecoratorRecorder,
   AbstractType,
   arraySequenceEqual,
   FunctionClass,
@@ -47,7 +47,7 @@ function substituteParameters(type: Type, propertyKey?: string | symbol): Substi
     throw new Error(`Decorator metadata has not been emitted: ` + type.name);
   }
 
-  const substitution = _DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
+  const substitution = DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
     const substitution = result[decoration.path[2]] as any;
     if (decoration.payload.referTo) {
       substitution.serviceKey = decoration.payload.referTo;

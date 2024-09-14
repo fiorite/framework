@@ -1,5 +1,5 @@
 export { DecoratorFunction, DecoratorOuterFunction } from './function-type';
-export { _DecoratorRecorder } from './recorder';
+export { DecoratorRecorder } from './recorder';
 export { makeClassDecorator, ClassDecoratorWithPayload } from './class';
 export { makePropertyDecorator, PropertyDecoratorWithPayload } from './property';
 export { makeMethodDecorator, MethodDecoratorWithPayload } from './method';

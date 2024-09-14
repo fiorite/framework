@@ -7,6 +7,7 @@ import {
   MapCallback, MaybePromise,
   ParameterDecoratorWithPayload
 } from '../core';
+import { ServiceLinearFactoryFunction } from './function-type';
 
 export interface ServiceOptions<T> {
   readonly serviceKey: ServiceType<T>;
@@ -32,8 +33,23 @@ export class ServicePayload<T> {
   }
 }
 
-export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecoratorWithPayload<ServicePayload<T>> {
-  const payload = new ServicePayload(options);
+export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecoratorWithPayload<ServicePayload<T>, T>
+/**
+ * @deprecated not implemented, experimental overload
+ * @param factory
+ * @param dependencies
+ * @constructor
+ */
+export function Service<T>(factory: ServiceLinearFactoryFunction<T>, dependencies?: ServiceType[]): ClassDecoratorWithPayload<ServicePayload<T>, T>;
+export function Service(...args: unknown[]): ClassDecoratorWithPayload<ServicePayload<unknown>, any> {
+  let payload: ServicePayload<unknown>;
+
+  if (!args.length || (args.length === 1 && typeof args === 'object')) {
+    payload = new ServicePayload(args[0] || {});
+  } else {
+    throw new Error('not implemented, experimental overload'); // factory
+  }
+
   return makeClassDecorator(Service, payload);
 }
 
@@ -56,7 +72,7 @@ export class ProvidePayload<T, R = unknown> {
   }
 }
 
-export function Provide<T, R = unknown>(serviceKey?: ServiceType<T>, callback?: MapCallback<T, MaybePromise<R>>): ParameterDecoratorWithPayload<ProvidePayload<T, R>> {
-  const payload = new ProvidePayload(serviceKey, callback);
+export function Provide<T, R = unknown>(type?: ServiceType<T>, callback?: MapCallback<T, MaybePromise<R>>): ParameterDecoratorWithPayload<ProvidePayload<T, R>> {
+  const payload = new ProvidePayload(type, callback);
   return makeParameterDecorator(Provide, payload);
 }

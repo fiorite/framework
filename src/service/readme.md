@@ -38,16 +38,14 @@ class Garden {
 
 // 1. Initiate ServiceProvider
 
-const provider = makeServiceProvider([
+const provide = makeServiceProvider([
   new Flower('black'),
   Garden,
 ]);
 
 // 2. ServiceProvider is FunctionClass<ServiceProvideFunction> and can be invoked.
 
-provider(Garden, garden => { // Garden
-  console.log(garden.flower.color); // 'black'
-});
+console.log(provide(Garden).flower.color); // 'black'
 
 // 4. Introduce 1st class outside ServiceProvider and create its instance.
 
@@ -56,8 +54,8 @@ class GardenKeeper {
   }
 }
 
-provider.instantiateType(GardenKeeper, gardenKeeper => {
-  console.log(gardenKeeper.garden.flower.color); // still 'black'
+provide.instantiateType(GardenKeeper, keeper => {
+  console.log(keeper.garden.flower.color); // still 'black'
 });
 
 // 5. Add another outer class and call its object method
@@ -175,13 +173,13 @@ class Garden {
 ```typescript
 // ./color-of.ts
 import { Provide, Type } from 'fiorite';
-import { Flower } from './flower';
-
-export const ColorOf = (type: Type<Flower>) => Provide(type, (flower: Flower) => flower.color);
-
+import { Flower, RedFlower } from './flower';
 // ./garden.ts
 import { GetColor } from './color-of.ts';
-import { RedFlower } from './flower';
+
+export const ColorOf = (type: Type<Flower>) => {
+  return Provide(type, (flower: Flower) => flower.color).calledBy(ColorOf); // calledBy used to track callers (better debug)
+};
 
 class Garden {
   constructor(@GetColor(RedFlower) color: string) {

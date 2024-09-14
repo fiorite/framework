@@ -7,7 +7,7 @@ export interface ServiceProvideFunction {
 
 export interface MaybeSyncProvideFunction extends ServiceProvideFunction {
   /**
-   * @throws Error if service is asynchronous (promise like)
+   * @throws {@link Error} if service is asynchronous (promise like)
    */
   <T>(type: ServiceType<T>): T;
 }

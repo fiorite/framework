@@ -1,6 +1,6 @@
 import { DecoratorFunction, DecoratorOuterFunction } from './function-type';
 import { AnyFunction, FunctionClass } from '../function';
-import { _DecoratorRecorder } from './recorder';
+import { DecoratorRecorder } from './recorder';
 
 export abstract class DecoratorWithPayload<TPayload, TDecorator extends DecoratorFunction> extends FunctionClass<TDecorator> {
   private readonly _decorator: DecoratorOuterFunction<TDecorator>;
@@ -15,12 +15,25 @@ export abstract class DecoratorWithPayload<TPayload, TDecorator extends Decorato
     return this._payload;
   }
 
+  private _callers: DecoratorOuterFunction<TDecorator>[] = [];
+
+  get callers(): readonly DecoratorOuterFunction<TDecorator>[] {
+    return this._callers;
+  }
+
   constructor(decorator: DecoratorOuterFunction<TDecorator>, payload: TPayload, include: readonly TDecorator[] = []) {
-    super((...args: any[]): any => {
-      _DecoratorRecorder.addEvent<TPayload, TDecorator, any[]>({path: args, decorator, payload: payload});
-      include.forEach((otherDecorator: AnyFunction) => otherDecorator(...args));
-    });
+    super((
+      (...args: any[]): any => {
+        DecoratorRecorder.addEvent<TPayload, TDecorator, any[]>({path: args, decorator, payload: payload});
+        include.forEach((otherDecorator: AnyFunction) => otherDecorator(...args));
+      }
+    ) as TDecorator);
     this._decorator = decorator;
     this._payload = payload;
+  }
+
+  calledBy(decorator: DecoratorOuterFunction<TDecorator>): this {
+    this._callers.push(decorator);
+    return this;
   }
 }

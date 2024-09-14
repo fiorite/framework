@@ -7,5 +7,4 @@ class ProvideContextLogger extends Logger {
   }
 }
 
-/** @deprecated problems with vite rn */
 export const log = new ProvideContextLogger();

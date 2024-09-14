@@ -27,8 +27,7 @@ export const provide = ((provide, callback) => {
 
 let callers = 0;
 
-/** @deprecated problems with vite rn */
-export function providerInContext(provider: ServiceProvider, callback: (complete: () => void) => void) {
+export function runProviderContext(provider: ServiceProvider, callback: (complete: () => void) => void) {
   const complete = () => {
     callers--;
     if (callers <= 0) {
