@@ -1,18 +1,27 @@
 import { FunctionClass, propertyNotFound, Type, ValueCallback } from '../core';
-import { ServiceKey } from './key';
+import { ServiceType } from './type';
 import { ServiceDeclaration } from './declaration';
 import { ServiceBehaviour } from './behaviour';
 import { ServiceScope } from './scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
-import { ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
-import { ServiceClassResolver, ServiceMethodResolveFunction, ServiceMethodResolver } from './_resolver';
+import { MaybeSyncProvideFunction, ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
+import { _ServiceClassResolver, ServiceMethodResolveFunction, _ServiceMethodResolver } from './_resolver';
 import { AnyFunction } from '../core/function';
+import { MaybeSyncServiceProvider } from './maybe-sync';
 
-export interface ServiceProvider {
-  <T>(key: ServiceKey<T>, callback: ValueCallback<T>): void;
+export interface ServiceProvider extends MaybeSyncProvideFunction {
+  /**
+   * @throws Error if service is asynchronous (promise like)
+   */
+    <T>(type: ServiceType<T>): T;
+
+  /**
+   * Fallback to {@link ServiceProvideFunction}
+   */
+    <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
-export class ServiceProvider extends FunctionClass<ServiceProvideFunction> implements Iterable<ServiceDeclaration> {
+export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> implements Iterable<ServiceDeclaration> {
   static readonly symbol = Symbol('ServiceProvider');
 
   private readonly _data: readonly ServiceDeclaration[];
@@ -25,6 +34,12 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   private _createdFrom?: ServiceProvider;
 
+  private readonly _maybeSyncProvider: MaybeSyncServiceProvider;
+
+  get maybeSyncProvider(): MaybeSyncServiceProvider {
+    return this._maybeSyncProvider;
+  }
+
   static findIn(object: object): ServiceProvider {
     const descriptor = Object.getOwnPropertyDescriptor(object, ServiceProvider.symbol);
 
@@ -36,7 +51,9 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   }
 
   constructor(data: readonly ServiceDeclaration[], createdFrom?: ServiceProvider) {
-    super((key, callback) => this.provide(key, callback));
+    const maybeSyncProvider = new MaybeSyncServiceProvider((type, callback) => this.provide(type, callback));
+    super(maybeSyncProvider);
+    this._maybeSyncProvider = maybeSyncProvider;
     if (!createdFrom) {
       this._data = [ServiceDeclaration.fromInstance({
         serviceInstance: this,
@@ -54,27 +71,13 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   }
 
   /**
-   * @deprecated refactor at some point
-   * @param serviceKey
+   * Raw implementation or {@link ServiceProvideFunction}.
    */
-  provideSync<T>(serviceKey: ServiceKey<T>): T {
-    let done = false;
-    let value: T | undefined = undefined;
-    this.provide(serviceKey, (value2) => {
-      done = true;
-      value = value2;
-    });
-    if (done) {
-      return value as T;
-    }
-    throw new Error(`Service(${ServiceKey.toString(serviceKey)}) is not synchronous. Add callback() to provide(..., callback) instead.`);
-  }
-
-  provide<T>(serviceKey: ServiceKey<T>, callback: ValueCallback<T>): void {
-    const index = this._data.findIndex(def => def.serviceKey === serviceKey);
+  provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
+    const index = this._data.findIndex(def => def.serviceKey === type);
 
     if (index < 0) {
-      throw new Error('Service is not found: ' + ServiceKey.toString(serviceKey));
+      throw new Error('Service is not found: ' + ServiceType.toString(type));
     }
 
     const service = this._data[index] as ServiceDeclaration<T>;
@@ -84,42 +87,43 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
         throw new Error('Scope is not defined. Use #createScope()');
       }
 
-      return this._scope.provide(serviceKey, callback, callback2 => service.serviceFactory(this, callback2));
+      return this._scope.provide(type, callback, callback2 => {
+        service.serviceFactory(this.provide.bind(this), callback2);
+      });
     }
 
-    return service.serviceFactory(this, callback);
+    return service.serviceFactory(this.provide.bind(this), callback);
   }
 
-  provideAll(array: ServiceKey[], callback: ValueCallback<unknown[]>): void {
-    return ServiceFactoryFunction.from(array)(this, callback);
+  provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
+    return ServiceFactoryFunction.from(array)(this.provide.bind(this), callback);
   }
 
-
-  includes(serviceKey: ServiceKey): boolean {
-    return this._data.findIndex(x => x.serviceKey === serviceKey) > -1;
+  has(type: ServiceType): boolean {
+    return this._data.findIndex(x => x.serviceKey === type) > -1;
   }
 
-  bindTo(object: object): void {
+  setSelfToObject(object: object): void {
     Object.defineProperty(object, ServiceProvider.symbol, {value: this});
   }
 
   prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
-    if (this.includes(type)) {
+    if (this.has(type)) {
       return (provide, callback) => provide(type, callback);
     }
 
-    return ServiceClassResolver.useLightweight(type);
+    return _ServiceClassResolver.from(type);
   }
 
   instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
-    return this.prepareTypeFactory(type)(this, callback);
+    return this.prepareTypeFactory(type)(this.provide.bind(this), callback);
   }
 
   validateDependencies<T extends object, K extends keyof T>(type: Type<T>, propertyKey: K): void {
-    const methodResolver = ServiceMethodResolver.useLightweight(type, propertyKey as string | symbol);
+    const methodResolver = _ServiceMethodResolver.from(type, propertyKey as string | symbol);
     methodResolver.dependencies.forEach((dep, index) => { // validate dependencies
-      if (!this.includes(dep)) {
-        throw new Error(`Unknown param source at ${type.name}#${String(propertyKey)}(...[${index}]: ${ServiceKey.toString(dep)})`);
+      if (!this.has(dep)) {
+        throw new Error(`Unknown param source at ${type.name}#${String(propertyKey)}(...[${index}]: ${ServiceType.toString(dep)})`);
       }
     });
   }
@@ -128,7 +132,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     type: Type<T>,
     propertyKey: K
   ): ServiceMethodResolveFunction<T, T[K] extends AnyFunction ? ReturnType<T[K]> : never> {
-    return ServiceMethodResolver.useLightweight(type, propertyKey as string | symbol);
+    return _ServiceMethodResolver.from(type, propertyKey as string | symbol);
   }
 
   callObjectMethod<T extends object, K extends keyof T>(
@@ -136,17 +140,17 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     propertyKey: K,
     callback: ValueCallback<T[K] extends AnyFunction ? ReturnType<T[K]> : never>
   ): void {
-    this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this, callback as any);
+    this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this.provide.bind(this), callback as any);
   }
 
-  createScope(configure: (provide: ServiceProvideFunction) => void = () => void 0): ServiceProvider {
+  createScope(configure: (provide: MaybeSyncProvideFunction) => void = () => void 0): ServiceProvider {
     if (this._scope) {
       throw new Error('Sub-scope is not supported');
     }
 
     const scopeProvider = new ServiceProvider(this._data, this);
     scopeProvider._scope = new ServiceScope();
-    configure(scopeProvider);
+    configure(scopeProvider._maybeSyncProvider);
     return scopeProvider;
   }
 

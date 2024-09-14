@@ -1,14 +1,23 @@
 import { MaybePromise, ValueCallback } from '../core';
-import { ServiceKey } from './key';
+import { ServiceType } from './type';
 
-export type ServiceProvideFunction = <T>(serviceKey: ServiceKey<T>, callback: ValueCallback<T>) => void;
+export interface ServiceProvideFunction {
+  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+}
+
+export interface MaybeSyncProvideFunction extends ServiceProvideFunction {
+  /**
+   * @throws Error if service is asynchronous (promise like)
+   */
+  <T>(type: ServiceType<T>): T;
+}
 
 export type ServiceFactoryFunction<T = unknown> = (provide: ServiceProvideFunction, callback: ValueCallback<T>) => void;
 
 export type ServiceLinearFactoryFunction<T> = (...args: any[]) => MaybePromise<T>;
 
 export namespace ServiceFactoryFunction {
-  export function from(array: readonly ServiceKey[]): ServiceFactoryFunction<unknown[]> {
+  export function from(array: readonly ServiceType[]): ServiceFactoryFunction<unknown[]> {
     return (provide: ServiceProvideFunction, callback: ValueCallback<unknown[]>) => {
       if (!array.length) {
         return callback([]);

@@ -12,19 +12,18 @@
  * - Test cases will become more complex, use on your consideration.
  * There a chance, in the future, to get a better understanding on improvements.
  */
-import { ServiceProvideFunction } from './function-type';
+import type { MaybeSyncProvideFunction } from './function-type';
 import type { ServiceProvider } from './provider';
-import { InlineServiceProvideFunction, InlineServiceProvider } from './inline-provider';
 
-const defaultImplementation: ServiceProvideFunction = () => {
+const defaultImplementation: MaybeSyncProvideFunction = () => {
   throw new Error('provide() implementation not defined in this context.');
 };
 
-let provideImplementation: ServiceProvideFunction = defaultImplementation;
+let provideImplementation: MaybeSyncProvideFunction = defaultImplementation;
 
-export const provide: InlineServiceProvideFunction = new InlineServiceProvider((provide, callback) => {
-  provideImplementation(provide, callback);
-});
+export const provide = ((provide, callback) => {
+  return provideImplementation(provide, callback);
+}) as MaybeSyncProvideFunction;
 
 let callers = 0;
 
@@ -49,7 +48,7 @@ export function providerInContext(provider: ServiceProvider, callback: (complete
       throw new Error('Unable to use Scoped provider implementation. To avoid sharing context of particular client.');
     }
 
-    provideImplementation = provider;
+    provideImplementation = provider.maybeSyncProvider;
     callers++;
     callback(complete);
   }

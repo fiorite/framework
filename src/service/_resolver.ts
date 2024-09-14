@@ -1,7 +1,7 @@
 import {
+  _DecoratorRecorder,
   AbstractType,
   arraySequenceEqual,
-  _DecoratorRecorder,
   FunctionClass,
   MapCallback,
   MapWithKeyComparer,
@@ -10,24 +10,25 @@ import {
   Type,
   ValueCallback,
 } from '../core';
-import { ServiceKey } from './key';
+import { ServiceType } from './type';
 import { ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
 import { Provide } from './decorator';
 import 'reflect-metadata';
 
 interface ParamSubstitution {
-  readonly serviceKey: ServiceKey;
+  readonly serviceKey: ServiceType;
   readonly callback: MapCallback<unknown, unknown>;
   readonly paramType: AbstractType;
 }
 
-const reflectLightweight = new MapWithKeyComparer<[type: Type, propertyKey?: string | symbol], ParamSubstitution[]>(arraySequenceEqual);
+type SubstituteResult = [paramFactory: ServiceFactoryFunction<unknown[]>, dependencies: ServiceType[]];
+const flyweight = new MapWithKeyComparer<[type: Type, propertyKey?: string | symbol], SubstituteResult>(arraySequenceEqual);
 
-function defineSubstitution(type: Type, propertyKey?: string | symbol): ParamSubstitution[] {
+function substituteParameters(type: Type, propertyKey?: string | symbol): SubstituteResult {
   const entryKey: [type: Type, propertyKey?: string | symbol] = [type, propertyKey];
 
-  if (reflectLightweight.has(entryKey)) {
-    return reflectLightweight.get(entryKey);
+  if (flyweight.has(entryKey)) {
+    return flyweight.get(entryKey);
   }
 
   const parameters: ParamSubstitution[] = (
@@ -42,7 +43,11 @@ function defineSubstitution(type: Type, propertyKey?: string | symbol): ParamSub
     paramType,
   }));
 
-  const result = _DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
+  if (!parameters.length) {
+    throw new Error(`Decorator metadata has not been emitted: ` + type.name);
+  }
+
+  const substitution = _DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
     const substitution = result[decoration.path[2]] as any;
     if (decoration.payload.referTo) {
       substitution.serviceKey = decoration.payload.referTo;
@@ -51,65 +56,60 @@ function defineSubstitution(type: Type, propertyKey?: string | symbol): ParamSub
     return result;
   }, parameters);
 
-  reflectLightweight.set(entryKey, result);
+  const factory: ServiceFactoryFunction = (provide, callback) => {
+    ServiceFactoryFunction.from(substitution.map(x => x.serviceKey))(provide, args => {
+      MaybePromise.all(() => args.map((x, index) => substitution[index].callback(x)), args2 => {
+        args2.forEach((arg, index) => { // todo: refactor in a cool way
+          if (!(arg instanceof substitution[index].paramType) && (arg as any).constructor !== substitution[index].paramType) {
+            console.warn(`Possibly type issue. ${type.name}#constructor([${index}]: ${substitution[index].paramType.name}). Actual: ${(arg as any).constructor.name}`);
+          }
+        });
+
+        callback(args2);
+      });
+    });
+  };
+
+  const result = [factory, substitution.map(x => x.serviceKey)] as SubstituteResult;
+  flyweight.set(entryKey, result);
   return result;
 }
 
-export class ServiceClassResolver<T> extends FunctionClass<ServiceFactoryFunction<T>> {
-  private static readonly _lightweight = new Map<Type, ServiceClassResolver<unknown>>();
+export class _ServiceClassResolver<T> extends FunctionClass<ServiceFactoryFunction<T>> {
+  private static readonly _flyweight = new Map<Type, _ServiceClassResolver<unknown>>();
 
-  private readonly _dependencies: ServiceKey[] = [];
+  private readonly _dependencies: ServiceType[] = [];
 
-  get dependencies(): readonly ServiceKey[] {
+  get dependencies(): readonly ServiceType[] {
     return this._dependencies;
   }
 
-  static useLightweight<T>(classType: Type<T>): ServiceClassResolver<T> {
-    if (this._lightweight.has(classType)) {
-      return this._lightweight.get(classType) as ServiceClassResolver<T>;
+  static from<T>(classType: Type<T>): _ServiceClassResolver<T> {
+    if (this._flyweight.has(classType)) {
+      return this._flyweight.get(classType) as _ServiceClassResolver<T>;
     }
 
-    const classResolver = new ServiceClassResolver(classType);
-    this._lightweight.set(classType, classResolver);
+    const classResolver = new _ServiceClassResolver(classType);
+    this._flyweight.set(classType, classResolver);
     return classResolver;
   }
 
   private constructor(readonly classType: Type<T>) {
-    let parametersProvider: ServiceFactoryFunction<unknown[]>;
     let factoryFn: ServiceFactoryFunction<T>;
-    let dependencies: ServiceKey[] = [];
+    let dependencies: ServiceType[] = [];
 
     if (!classType.length) {
       factoryFn = (_, callback) => callback(new classType());
-      parametersProvider = (_, callback) => callback([]);
     } else {
-      const substitution = defineSubstitution(classType);
-
-      if (!substitution.length) {
-        throw new Error(`Decorator metadata has not been emitted: ` + classType.name);
-      }
-
-      parametersProvider = (provide, callback) => {
-        ServiceFactoryFunction.from(substitution.map(x => x.serviceKey))(provide, args => {
-          MaybePromise.all(() => args.map((x, index) => substitution[index].callback(x)), args2 => {
-            args2.forEach((arg, index) => { // todo: refactor in a cool way
-              if (!(arg instanceof substitution[index].paramType) && (arg as any).constructor !== substitution[index].paramType) {
-                console.warn(`Possibly type issue. ${classType.name}#constructor([${index}]: ${substitution[index].paramType.name}). Actual: ${(arg as any).constructor.name}`);
-              }
-            });
-
-            callback(args2);
-          });
-        });
-      };
+      const [paramFactory, _dependencies] = substituteParameters(classType);
 
       factoryFn = (provide, callback) => {
-        parametersProvider(provide, args => {
+        paramFactory(provide, args => {
           callback(new classType(...args));
         });
       };
 
-      dependencies = substitution.map(x => x.serviceKey);
+      dependencies = _dependencies;
     }
 
     super(factoryFn);
@@ -119,30 +119,29 @@ export class ServiceClassResolver<T> extends FunctionClass<ServiceFactoryFunctio
 
 export type ServiceMethodResolveFunction<T, R> = (instance: T, provide: ServiceProvideFunction, callback: ValueCallback<R>) => void;
 
-export class ServiceMethodResolver<T, R> extends FunctionClass<ServiceMethodResolveFunction<T, R>> {
-  private static readonly _lightweight = new MapWithKeyComparer<[Type, string | symbol], ServiceMethodResolver<unknown, unknown>>(arraySequenceEqual);
+export class _ServiceMethodResolver<T, R> extends FunctionClass<ServiceMethodResolveFunction<T, R>> {
+  private static readonly _flyweight = new MapWithKeyComparer<[Type, string | symbol], _ServiceMethodResolver<unknown, unknown>>(arraySequenceEqual);
 
-  private readonly _dependencies: ServiceKey[] = [];
+  private readonly _dependencies: ServiceType[] = [];
 
-  get dependencies(): readonly ServiceKey[] {
+  get dependencies(): readonly ServiceType[] {
     return this._dependencies;
   }
 
-  static useLightweight<T, R>(classType: Type<T>, propertyKey: string | symbol): ServiceMethodResolver<T, R> {
+  static from<T, R>(classType: Type<T>, propertyKey: string | symbol): _ServiceMethodResolver<T, R> {
     const combinedKey = [classType, propertyKey] as [Type, string | symbol];
-    if (this._lightweight.has(combinedKey)) {
-      return this._lightweight.get(combinedKey) as ServiceMethodResolver<T, R>;
+    if (this._flyweight.has(combinedKey)) {
+      return this._flyweight.get(combinedKey) as _ServiceMethodResolver<T, R>;
     }
 
-    const methodResolver = new ServiceMethodResolver(classType, propertyKey);
-    this._lightweight.set(combinedKey, methodResolver);
-    return methodResolver as ServiceMethodResolver<T, R>;
+    const methodResolver = new _ServiceMethodResolver(classType, propertyKey);
+    this._flyweight.set(combinedKey, methodResolver);
+    return methodResolver as _ServiceMethodResolver<T, R>;
   }
 
   private constructor(readonly classType: Type, readonly propertyKey: string | symbol) {
-    let parametersProvider: ServiceFactoryFunction<unknown[]>;
     let factoryFn: ServiceMethodResolveFunction<T, R>;
-    let dependencies: ServiceKey[] = [];
+    let dependencies: ServiceType[] = [];
 
     let classMethod = Object.getOwnPropertyDescriptor(classType.prototype, propertyKey)!;
 
@@ -155,36 +154,18 @@ export class ServiceMethodResolver<T, R> extends FunctionClass<ServiceMethodReso
     }
 
     if (!classMethod.value.length) {
-      parametersProvider = (_, callback) => callback([]);
       factoryFn = (instance, _, callback) => callback(classMethod.value.apply(instance));
     } else {
-      const substitution = defineSubstitution(classType, propertyKey);
+      const [paramFactory, _dependencies] = substituteParameters(classType, propertyKey);
 
-      if (!substitution.length) {
-        throw new Error(`Decorator metadata has not been emitted`);
-      }
-
-      parametersProvider = (provide, callback) => {
-        ServiceFactoryFunction.from(substitution.map(x => x.serviceKey))(provide, args => {
-          MaybePromise.all(() => args.map((x, index) => substitution[index].callback(x)), args2 => {
-            args2.forEach((arg, index) => { // todo: refactor in a cool way
-              if (!(arg instanceof substitution[index].paramType) && (arg as any).constructor !== substitution[index].paramType) {
-                console.warn(`Possibly type issue. ${classType.name}#constructor([${index}]: ${substitution[index].paramType.name}). Actual: ${(arg as any).constructor.name}`);
-              }
-            });
-
-            callback(args2);
-          });
-        });
-      };
 
       factoryFn = (object, provide, callback) => {
-        parametersProvider(provide, args => {
+        paramFactory(provide, args => {
           callback(classMethod.value.apply(object, args));
         });
       };
 
-      dependencies = substitution.map(x => x.serviceKey);
+      dependencies = _dependencies;
     }
 
     super(factoryFn);

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { InlineServiceProvideFunction, InlineServiceProvider, ServiceProvideFunction } from '../service';
+import { MaybeSyncProvideFunction, MaybeSyncServiceProvider, ServiceProvideFunction } from '../service';
 
 export class HttpContext<
   TRequest extends IncomingMessage = IncomingMessage,
@@ -17,16 +17,16 @@ export class HttpContext<
     return this._response;
   }
 
-  private readonly _provide: InlineServiceProvideFunction;
+  private readonly _provide: MaybeSyncProvideFunction;
 
-  get provide(): InlineServiceProvideFunction {
+  get provide(): MaybeSyncProvideFunction {
     return this._provide;
   }
 
-  constructor(request: TRequest, response: TResponse, provide: ServiceProvideFunction) {
+  constructor(request: TRequest, response: TResponse, provide: MaybeSyncProvideFunction) {
     this._request = request;
     this._response = response;
-    this._provide = new InlineServiceProvider(provide);
+    this._provide = provide;
   }
 }
 

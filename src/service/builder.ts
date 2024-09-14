@@ -1,6 +1,6 @@
 import { ServiceProvider } from './provider';
 import { ServiceDeclaration } from './declaration';
-import { ServiceKey } from './key';
+import { ServiceType } from './type';
 import { Service } from './decorator';
 import { ServiceBehaviour } from './behaviour';
 import { _DecoratorRecorder, isType, Type, ValueCallback } from '../core';
@@ -20,7 +20,7 @@ export class ServiceConfigurator {
    */
   private _includeDependencies = true;
 
-  private _data = new Map<ServiceKey, ServiceDeclaration>();
+  private _data = new Map<ServiceType, ServiceDeclaration>();
 
   private _metadata = _DecoratorRecorder.classSearch(Service);
 
@@ -49,12 +49,12 @@ export class ServiceConfigurator {
     return this;
   }
 
-  addType<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>, behaviour?: ServiceBehaviour): this {
+  addType<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>, behaviour?: ServiceBehaviour): this {
     this._addType(serviceType, serviceKey, behaviour);
     return this;
   }
 
-  private _addType<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>, behaviour?: ServiceBehaviour): ServiceDeclaration {
+  private _addType<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>, behaviour?: ServiceBehaviour): ServiceDeclaration {
     if (!behaviour || !serviceKey) {
       const result = this._metadata.filter(x => x.path[0] === serviceType).reverse().reduce((result, {payload}) => {
         if (payload.serviceKey) {
@@ -64,10 +64,10 @@ export class ServiceConfigurator {
           result.behaviour = payload.behaviour;
         }
         return result;
-      }, {} as { key?: ServiceKey, behaviour?: ServiceBehaviour });
+      }, {} as { key?: ServiceType, behaviour?: ServiceBehaviour });
 
       if (!serviceKey && result.key) { // todo: throw warning that service decorator is different
-        serviceKey = result.key as ServiceKey<T>;
+        serviceKey = result.key as ServiceType<T>;
       }
 
       if (!behaviour && result.behaviour) {
@@ -84,9 +84,9 @@ export class ServiceConfigurator {
   }
 
   addFactory<T>(
-    serviceKey: ServiceKey<T>,
+    serviceKey: ServiceType<T>,
     linearFactory: ServiceLinearFactoryFunction<T>,
-    dependencies: ServiceKey[] = [],
+    dependencies: ServiceType[] = [],
     behaviour?: ServiceBehaviour,
   ): this {
     return this.addDeclaration(
@@ -98,49 +98,49 @@ export class ServiceConfigurator {
   }
 
   instance(object: object): this;
-  instance<T extends object>(type: ServiceKey<T>, object: T): this;
+  instance<T extends object>(type: ServiceType<T>, object: T): this;
   instance(...args: unknown[]): this {
     return this.addDeclaration(
       args.length === 1 ? ServiceDeclaration.fromInstance({
         serviceInstance: args[0] as object,
       }) : ServiceDeclaration.fromInstance({
-        serviceInstance: args[1] as object, serviceKey: args[0] as ServiceKey<object>,
+        serviceInstance: args[1] as object, serviceKey: args[0] as ServiceType<object>,
       })
     );
   }
 
-  addSingleton<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>): this {
+  addSingleton<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>): this {
     return this.addType(serviceType, serviceKey, ServiceBehaviour.Singleton);
   }
 
   addSingletonFactory<T>(
-    serviceKey: ServiceKey<T>,
+    serviceKey: ServiceType<T>,
     serviceFactory: ServiceLinearFactoryFunction<T>,
-    dependencies: ServiceKey[] = [],
+    dependencies: ServiceType[] = [],
   ): this {
     return this.addFactory(serviceKey, serviceFactory, dependencies, ServiceBehaviour.Singleton);
   }
 
-  addScoped<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>): this {
+  addScoped<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>): this {
     return this.addType(serviceType, serviceKey, ServiceBehaviour.Scoped);
   }
 
   addScopedFactory<T>(
-    serviceKey: ServiceKey<T>,
+    serviceKey: ServiceType<T>,
     serviceFactory: ServiceLinearFactoryFunction<T>,
-    dependencies: ServiceKey<T>[] = [],
+    dependencies: ServiceType<T>[] = [],
   ): this {
     return this.addFactory(serviceKey, serviceFactory, dependencies, ServiceBehaviour.Scoped);
   }
 
-  addPrototype<T>(serviceType: Type<T>, serviceKey?: ServiceKey<T>): this {
+  addPrototype<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>): this {
     return this.addType(serviceType, serviceKey, ServiceBehaviour.Prototype);
   }
 
   addPrototypeFactory<T>(
-    serviceKey: ServiceKey<T>,
+    serviceKey: ServiceType<T>,
     serviceFactory: ServiceLinearFactoryFunction<T>,
-    dependencies: ServiceKey<T>[] = [],
+    dependencies: ServiceType<T>[] = [],
   ): this {
     return this.addFactory(serviceKey, serviceFactory, dependencies, ServiceBehaviour.Prototype);
   }

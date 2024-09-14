@@ -11,7 +11,7 @@ export function addHttpServer(configure: ServiceConfigurator): void {
           const context = new HttpContext(request, response, scopeProvider);
           host.useContext(context);
         });
-        scopeProvider.bindTo(request);
+        scopeProvider.setSelfToObject(request);
         response.once('close', () => scopeProvider.destroyScope());
       });
     }, [ServiceProvider])

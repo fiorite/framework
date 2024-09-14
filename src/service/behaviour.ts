@@ -3,7 +3,7 @@ export enum ServiceBehaviour {
    * Inherits {@link ServiceBehaviour.Scoped} if service depends on it,
    * otherwise {@link ServiceBehaviour.Singleton} is being used.
    */
-  Inherit,
+  Inherited,
 
   /**
    * Returns single, reusable instance on exec.

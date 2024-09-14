@@ -1,14 +1,14 @@
-import { ServiceKey } from './key';
+import { ServiceType } from './type';
 import { ServiceFactoryFunction, ServiceLinearFactoryFunction } from './function-type';
 import { ServiceBehaviour } from './behaviour';
 import { Type } from '../core';
-import { ServiceClassResolver } from './_resolver';
+import { _ServiceClassResolver } from './_resolver';
 import { ServiceInstanceFactory, ServiceLinearFactory, ServiceSingletonFactory } from './_factory';
 
 export class ServiceDeclaration<T = unknown> {
-  private readonly _serviceKey: ServiceKey<T>;
+  private readonly _serviceKey: ServiceType<T>;
 
-  get serviceKey(): ServiceKey<T> {
+  get serviceKey(): ServiceType<T> {
     return this._serviceKey;
   }
 
@@ -18,9 +18,9 @@ export class ServiceDeclaration<T = unknown> {
     return this._serviceFactory;
   }
 
-  private readonly _dependencies: readonly ServiceKey[] = [];
+  private readonly _dependencies: readonly ServiceType[] = [];
 
-  get dependencies(): readonly ServiceKey[] {
+  get dependencies(): readonly ServiceType[] {
     return this._dependencies;
   }
 
@@ -37,7 +37,7 @@ export class ServiceDeclaration<T = unknown> {
   }
 
   static fromInstance<T extends object>(options: {
-    readonly serviceKey?: ServiceKey<T>;
+    readonly serviceKey?: ServiceType<T>;
     readonly serviceInstance: T;
   }): ServiceDeclaration<T> {
     return new ServiceDeclaration({
@@ -49,9 +49,9 @@ export class ServiceDeclaration<T = unknown> {
   }
 
   static fromFactory<T>(options: {
-    readonly serviceKey: ServiceKey<T>;
+    readonly serviceKey: ServiceType<T>;
     readonly linearFactory: ServiceLinearFactoryFunction<T>,
-    readonly dependencies?: readonly ServiceKey[],
+    readonly dependencies?: readonly ServiceType[],
     readonly behaviour?: ServiceBehaviour;
   }): ServiceDeclaration<T> {
     const linearFactory = new ServiceLinearFactory(options.linearFactory, options.dependencies || []);
@@ -64,11 +64,11 @@ export class ServiceDeclaration<T = unknown> {
   }
 
   static fromType<T>(options: {
-    readonly serviceKey?: ServiceKey<T>;
+    readonly serviceKey?: ServiceType<T>;
     readonly serviceType: Type<T>;
     readonly behaviour?: ServiceBehaviour;
   }): ServiceDeclaration<T> {
-    const classResolver = ServiceClassResolver.useLightweight(options.serviceType);
+    const classResolver = _ServiceClassResolver.from(options.serviceType);
     return new ServiceDeclaration({
       serviceKey: options.serviceKey || options.serviceType,
       serviceFactory: classResolver,
@@ -78,22 +78,22 @@ export class ServiceDeclaration<T = unknown> {
   }
 
   private constructor(options: {
-    readonly serviceKey: ServiceKey<T>;
+    readonly serviceKey: ServiceType<T>;
     readonly serviceFactory: ServiceFactoryFunction<T>;
-    readonly dependencies: readonly ServiceKey[];
+    readonly dependencies: readonly ServiceType[];
     readonly behaviour?: ServiceBehaviour;
     readonly inheritedFrom?: ServiceDeclaration<T>;
   }) {
     this._serviceKey = options.serviceKey;
     this._dependencies = options.dependencies;
-    this._behaviour = options.behaviour || ServiceBehaviour.Inherit;
+    this._behaviour = options.behaviour || ServiceBehaviour.Inherited;
     this._inheritedFrom = options.inheritedFrom;
     this._serviceFactory = ServiceBehaviour.Singleton === options.behaviour ?
       new ServiceSingletonFactory(options.serviceFactory) : options.serviceFactory;
   }
 
   inheritBehaviour(behaviour: ServiceBehaviour.Scoped | ServiceBehaviour.Singleton): ServiceDeclaration<T> {
-    if (ServiceBehaviour.Inherit !== this.behaviour) {
+    if (ServiceBehaviour.Inherited !== this.behaviour) {
       throw new Error('Current behaviour does not allow behaviour inheritance');
     }
 

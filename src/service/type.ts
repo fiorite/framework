@@ -1,9 +1,9 @@
 import { AbstractType, Type } from '../core';
 
-export type ServiceKey<T = unknown> = Type<T> | AbstractType<T> | Symbol | string;
+export type ServiceType<T = unknown> = Type<T> | AbstractType<T> | Symbol | string;
 
-export namespace ServiceKey {
-  export function toString(key: ServiceKey): string {
+export namespace ServiceType {
+  export function toString(key: ServiceType): string {
     const typeofKey = typeof key;
 
     if ('string' === typeofKey) {

@@ -1,6 +1,6 @@
 import { FunctionClass, MaybePromise } from '../../core';
 import { ServiceFactoryFunction, ServiceLinearFactoryFunction } from '../function-type';
-import { ServiceKey } from '../key';
+import { ServiceType } from '../type';
 
 export class ServiceLinearFactory<T> extends FunctionClass<ServiceFactoryFunction<T>> {
   private readonly _linearFactory: ServiceLinearFactoryFunction<T>;
@@ -9,13 +9,13 @@ export class ServiceLinearFactory<T> extends FunctionClass<ServiceFactoryFunctio
     return this._linearFactory;
   }
 
-  private readonly _dependencies: readonly ServiceKey[] = [];
+  private readonly _dependencies: readonly ServiceType[] = [];
 
-  get dependencies(): readonly ServiceKey[] {
+  get dependencies(): readonly ServiceType[] {
     return this._dependencies;
   }
 
-  constructor(linearFactory: ServiceLinearFactoryFunction<T>, dependencies: readonly ServiceKey[] = []) {
+  constructor(linearFactory: ServiceLinearFactoryFunction<T>, dependencies: readonly ServiceType[] = []) {
     super((provide, callback) => {
       ServiceFactoryFunction.from(dependencies || [])(provide, args => {
         MaybePromise.then(() => linearFactory(...args), callback);
