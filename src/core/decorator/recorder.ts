@@ -16,14 +16,18 @@ export interface DecoratorEvent<
 }
 
 export class DecoratorRecorder {
-  private static readonly _instance = new DecoratorRecorder();
+  static #_instance = new DecoratorRecorder();
+
+  static get instance(): DecoratorRecorder {
+    return this.#_instance;
+  }
 
   private _data: DecoratorEvent[] = [];
 
   static addEvent<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(
     event: DecoratorEvent<TPayload, TDecorator, TPath>
   ): void {
-    return DecoratorRecorder._instance.addEvent(event);
+    return DecoratorRecorder.instance.addEvent(event);
   }
 
   static classSearch<TDecorator extends DecoratorOuterFunction<ClassDecorator>>(
@@ -33,7 +37,7 @@ export class DecoratorRecorder {
     TDecorator extends DecoratorOuterFunction<ClassDecoratorWithPayload<infer P, any>> ? P : unknown,
     ClassDecorator, [Function]
   >[] {
-    return DecoratorRecorder._instance.classSearch(decorator, classType);
+    return DecoratorRecorder.instance.classSearch(decorator, classType);
   }
 
   static propertySearch<TDecorator extends DecoratorOuterFunction<PropertyDecorator>>(
@@ -45,7 +49,7 @@ export class DecoratorRecorder {
     PropertyDecorator,
     [Object, string | symbol]
   >[] {
-    return DecoratorRecorder._instance.propertySearch(decorator, classType, propertyKey);
+    return DecoratorRecorder.instance.propertySearch(decorator, classType, propertyKey);
   }
 
   static methodSearch<TDecorator extends DecoratorOuterFunction<MethodDecorator>>(
@@ -56,7 +60,7 @@ export class DecoratorRecorder {
     TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
     MethodDecorator, [Object, string | symbol, PropertyDescriptor]
   >[] {
-    return DecoratorRecorder._instance.methodSearch(decorator, classType, propertyKey);
+    return DecoratorRecorder.instance.methodSearch(decorator, classType, propertyKey);
   }
 
   static parameterSearch<TDecorator extends DecoratorOuterFunction<ParameterDecorator>>(
@@ -68,7 +72,7 @@ export class DecoratorRecorder {
     TDecorator extends DecoratorOuterFunction<ParameterDecoratorWithPayload<infer P>> ? P : unknown,
     ParameterDecorator, [Object | Function, string | symbol | undefined, number]
   >[] {
-    return DecoratorRecorder._instance.parameterSearch(decorator, classType, propertyKey, parameterIndex);
+    return DecoratorRecorder.instance.parameterSearch(decorator, classType, propertyKey, parameterIndex);
   }
 
   addEvent<TPayload, TDecorator extends DecoratorFunction, TPath extends unknown[]>(

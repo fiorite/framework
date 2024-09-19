@@ -11,15 +11,15 @@ import {
 import { ServiceLinearFactoryFunction } from './function-type';
 
 export interface ServiceOptions<T> {
-  readonly serviceKey: ServiceType<T>;
+  readonly type: ServiceType<T>;
   readonly behaviour: ServiceBehaviour;
 }
 
 export class ServicePayload<T> {
-  private readonly _serviceKey?: ServiceType<T>;
+  private readonly _type?: ServiceType<T>;
 
-  get serviceKey(): ServiceType<T> | undefined {
-    return this._serviceKey;
+  get type(): ServiceType<T> | undefined {
+    return this._type;
   }
 
   private readonly _behaviour?: ServiceBehaviour;
@@ -29,7 +29,7 @@ export class ServicePayload<T> {
   }
 
   constructor(options: Partial<ServiceOptions<T>> = {}) {
-    this._serviceKey = options.serviceKey;
+    this._type = options.type;
     this._behaviour = options.behaviour;
   }
 }
@@ -54,20 +54,20 @@ export function Service(...args: unknown[]): ClassDecoratorWithPayload<ServicePa
   return makeClassDecorator(Service, payload);
 }
 
-export const Singleton = (of?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Singleton, serviceKey: of }).calledBy(Singleton);
+export const Singleton = (serviceType?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Singleton, type: serviceType }).calledBy(Singleton);
 };
 
-export const Scoped = (of?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Scoped, serviceKey: of, }).calledBy(Scoped);
+export const Scoped = (serviceType?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Scoped, type: serviceType, }).calledBy(Scoped);
 };
 
-export const Inherited = (of?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Inherited, serviceKey: of }).calledBy(Inherited);
+export const Inherited = (serviceType?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Inherited, type: serviceType }).calledBy(Inherited);
 };
 
-export const Prototype = (of?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Prototype, serviceKey: of }).calledBy(Prototype);
+export const Prototype = (serviceType?: ServiceType) => {
+  return Service({ behaviour: ServiceBehaviour.Prototype, type: serviceType }).calledBy(Prototype);
 };
 
 export class ProvidePayload<T, R = unknown> {

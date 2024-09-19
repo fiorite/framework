@@ -54,7 +54,12 @@ export class ServiceDeclaration<T = unknown> {
     readonly dependencies?: readonly ServiceType[],
     readonly behaviour?: ServiceBehaviour;
   }): ServiceDeclaration<T> {
-    const linearFactory = new ServiceLinearFactory(options.linearFactory, options.dependencies || []);
+    const dependencies = options.dependencies || [];
+    if (dependencies.length < options.linearFactory.length) {
+      throw new Error('Factory dependencies missing. Deps ['+dependencies.map(ServiceType.toString).join(', ')+']. Function: '+options.linearFactory.toString());
+    }
+
+    const linearFactory = new ServiceLinearFactory(options.linearFactory, dependencies);
     return new ServiceDeclaration({
       serviceKey: options.serviceKey,
       serviceFactory: linearFactory,

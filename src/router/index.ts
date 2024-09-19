@@ -4,6 +4,8 @@ export {
   Route,
   FromQuery,
   FromParam,
+  FromHeader,
+  FromRequest,
   Controller,
   HttpGet,
   HttpHead,
@@ -18,3 +20,4 @@ export {
 export {
   makeControllerRouter,
 } from './route';
+export { makeRouter } from './matcher';

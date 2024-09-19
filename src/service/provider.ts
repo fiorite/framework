@@ -103,7 +103,7 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
     return this._data.findIndex(x => x.serviceKey === type) > -1;
   }
 
-  setSelfToObject(object: object): void {
+  setSelfTo(object: object): void {
     Object.defineProperty(object, ServiceProvider.symbol, {value: this});
   }
 

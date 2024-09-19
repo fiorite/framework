@@ -1,5 +1,4 @@
 import { Inherited, Provide } from '../service';
-import type { IncomingMessage } from 'http';
 import {
   ClassDecoratorWithPayload,
   makeClassDecorator,
@@ -8,7 +7,7 @@ import {
   MaybePromise,
   MethodDecoratorWithPayload
 } from '../core';
-import { HttpContext, HttpMethod } from '../http';
+import { HttpContext, HttpMethod, HttpRequest } from '../http';
 
 export class ControllerPayload {
   private readonly _routePrefix?: string;
@@ -87,36 +86,32 @@ export const HttpPatch = (path?: string) => {
   return Route(path, HttpMethod.Patch).calledBy(HttpPatch);
 };
 
-export const FromRequest = <R, TRequest extends IncomingMessage>(callback: MapCallback<TRequest, MaybePromise<R>>) => {
-  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
-  const d = Provide(HttpContext, context => callback(context.request)).calledBy(FromRequest);
-  return d;
+export const FromRequest = (callback: MapCallback<HttpRequest, MaybePromise<unknown>>) => {
+  return Provide(HttpContext, context => callback(context.request)).calledBy(FromRequest);
 };
 
-export const FromParam = <R = unknown>(paramName: string, callback?: MapCallback<string | undefined, MaybePromise<R>>) => {
+export const FromParam = (paramName: string, callback?: MapCallback<string | number | boolean | undefined, MaybePromise<unknown>>) => {
   if (!callback) {
-    callback = (x => x) as MapCallback<string | undefined, MaybePromise<R>>;
+    callback = (x => x) as MapCallback<string | number | boolean | undefined, MaybePromise<unknown>>;
   }
 
-  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
-  const d = FromRequest(request => {
-    const queryValue = (request as any).params[paramName] as string | undefined;
-    return callback!(queryValue);
-  }).calledBy(FromParam);
-  return d;
+  return FromRequest(request => callback!(request.params.get(paramName))).calledBy(FromParam);
 };
 
-export const FromQuery = <R = unknown>(queryKey: string, callback?: MapCallback<string | undefined, MaybePromise<R>>) => {
+export const FromQuery = (queryKey: string, callback?: MapCallback<string | undefined, MaybePromise<unknown>>) => {
   if (!callback) {
-    callback = (x => x) as MapCallback<string | undefined, MaybePromise<R>>;
+    callback = (x => x) as MapCallback<string | string[] | undefined, MaybePromise<unknown>>;
   }
 
-  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
-  const d = FromRequest(request => {
-    const queryValue = (request as any).query[queryKey] as string | undefined;
-    return callback!(queryValue);
-  }).calledBy(FromQuery);
-  return d;
+  return FromRequest(request => callback!(request.query.get(queryKey))).calledBy(FromQuery);
+};
+
+export const FromHeader = (headerName: string, callback?: MapCallback<string | string[] | number | undefined, MaybePromise<unknown>>) => {
+  if (!callback) {
+    callback = (x => x) as MapCallback<string | string[] | number | undefined, MaybePromise<unknown>>;
+  }
+
+  return FromRequest(request => callback!(request.headers.get(headerName))).calledBy(FromQuery);
 };
 
 export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T, MaybePromise<R>>) => {
@@ -124,7 +119,5 @@ export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T, May
     callback = ((x: T) => x) as unknown as MapCallback<T, MaybePromise<R>>;
   }
 
-  // noinspection UnnecessaryLocalVariableJS for some reason it throws error in IDE on regular return. todo: revise
-  const d = FromRequest(request => callback!((request as any).body as T));
-  return d;
+  return FromRequest(request => callback!((request as any).body as T));
 };

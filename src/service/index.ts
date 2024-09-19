@@ -1,5 +1,5 @@
 export { ServiceBehaviour } from './behaviour';
-export { configureProvider, ServiceConfigurator } from './configurator';
+export { makeServiceProvider, ServiceCollection } from './collection';
 export { runProviderContext, provide } from './global';
 export { ServiceDeclaration } from './declaration';
 export {

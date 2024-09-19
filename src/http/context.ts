@@ -1,19 +1,17 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
-import { MaybeSyncProvideFunction, MaybeSyncServiceProvider, ServiceProvideFunction } from '../service';
+import { MaybeSyncProvideFunction } from '../service';
+import { HttpRequest } from './request';
+import { HttpResponse } from './response';
 
-export class HttpContext<
-  TRequest extends IncomingMessage = IncomingMessage,
-  TResponse extends ServerResponse = ServerResponse,
-> {
-  private readonly _request: TRequest;
+export class HttpContext {
+  private readonly _request: HttpRequest;
 
-  get request(): TRequest {
+  get request(): HttpRequest {
     return this._request;
   }
 
-  private readonly _response: TResponse;
+  private readonly _response: HttpResponse;
 
-  get response(): TResponse {
+  get response(): HttpResponse {
     return this._response;
   }
 
@@ -23,26 +21,23 @@ export class HttpContext<
     return this._provide;
   }
 
-  constructor(request: TRequest, response: TResponse, provide: MaybeSyncProvideFunction) {
+  constructor(request: HttpRequest, response: HttpResponse, provide: MaybeSyncProvideFunction) {
     this._request = request;
     this._response = response;
     this._provide = provide;
   }
 }
 
-export class HttpContextHost<
-  TRequest extends IncomingMessage = IncomingMessage,
-  TResponse extends ServerResponse = ServerResponse,
-> {
-  private _context?: HttpContext<TRequest, TResponse>;
+export class HttpContextHost {
+  private _context?: HttpContext;
 
-  get context(): HttpContext<TRequest, TResponse> | unknown {
+  get context(): HttpContext | undefined {
     return this._context;
   }
 
-  bindContext(context: HttpContext<TRequest, TResponse>): void {
+  bindContext(context: HttpContext): void {
     if (this._context) {
-      throw new Error('Http context already set.');
+      throw new Error('#context: HttpContext already set.');
     }
     this._context = context;
   }
