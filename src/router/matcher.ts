@@ -8,7 +8,7 @@ import {
 import { RadixMap } from './radix';
 import { HttpCallback, HttpContext, HttpMethod, HttpRequest } from '../http';
 import { MaybePromise } from '../core';
-import { RouteDeclaration } from './declaration';
+import { RouteDeclaration } from './route-declaration';
 
 interface RouteMatchResult {
   readonly params: Record<string, unknown>;

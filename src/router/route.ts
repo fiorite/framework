@@ -1,8 +1,40 @@
-import { DecoratorRecorder, MaybePromise, Type, ValueCallback } from '../core';
+import { DecoratorRecorder, FunctionClass, MaybePromise, Type, ValueCallback } from '../core';
 import { Controller, Route } from './decorator';
-import { ServiceProvider } from '../di';
-import { RouteDeclaration } from './declaration';
-import { HttpContext } from '../http';
+import { ServiceFactoryFunction, ServiceProvider } from '../di';
+import { RouteDeclaration } from './route-declaration';
+import { HttpCallback, HttpContext } from '../http';
+import { ServiceMethodResolveFunction } from '../di/_resolver';
+
+export class ControllerRouteCallback extends FunctionClass<HttpCallback> {
+  readonly controllerType: Type;
+  readonly resolveType: ServiceFactoryFunction;
+  readonly propertyKey: string | symbol;
+  readonly resolveMethod: ServiceMethodResolveFunction<unknown, unknown>;
+  readonly resultCallback: (context: HttpContext, err?: unknown, result?: unknown) => void;
+
+  constructor(object: {
+    readonly controllerType: Type;
+    readonly resolveType: ServiceFactoryFunction;
+    readonly propertyKey: string | symbol;
+    readonly resolveMethod: ServiceMethodResolveFunction<unknown, unknown>;
+    readonly resultCallback: (context: HttpContext, err?: unknown, result?: unknown) => void;
+  }) {
+    super(context => {
+      object.resolveType(context.provide, controllerObject => {
+        object.resolveMethod(controllerObject, context.provide, resultMaybePromise => {
+          MaybePromise.then(() => resultMaybePromise, result => {
+            object.resultCallback(context, undefined, result);
+          }, err => object.resultCallback(context, err));
+        });
+      });
+    });
+    this.controllerType = object.controllerType;
+    this.resolveType = object.resolveType;
+    this.propertyKey = object.propertyKey;
+    this.resolveMethod = object.resolveMethod;
+    this.resultCallback = object.resultCallback;
+  }
+}
 
 export function makeControllerRouter(
   controllerType: Type,
@@ -23,18 +55,14 @@ export function makeControllerRouter(
     const routePath = '/' + ([routePrefix, path].filter(x => !!x && x.length).join('/'));
     const controllerServiceFactory = provider.prepareTypeFactory(controllerType);
 
-    return new RouteDeclaration({
-      path: routePath,
-      method: httpMethod,
-      callback: context => {
-        controllerServiceFactory(context.provide, controllerInstance => {
-          methodServiceFactory(controllerInstance, context.provide, resultMaybePromise => {
-            MaybePromise.then(() => resultMaybePromise, result => {
-              resultCallback(context, undefined, result);
-            }, err => resultCallback(context, err));
-          });
-        });
-      }
+    const callback = new ControllerRouteCallback({
+      controllerType,
+      resolveType: controllerServiceFactory,
+      propertyKey: methodRecord.path[1],
+      resolveMethod: methodServiceFactory,
+      resultCallback,
     });
+
+    return new RouteDeclaration({ path: routePath, method: httpMethod, callback });
   });
 }

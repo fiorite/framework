@@ -20,6 +20,8 @@ export {
 export { RoutingMiddleware } from './middlware';
 export {
   makeControllerRouter,
+  ControllerRouteCallback,
 } from './route';
+export { RouteDeclaration } from './route-declaration';
 export { makeRouter } from './matcher';
 export { RouteSet } from './route-set';

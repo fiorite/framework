@@ -1,5 +1,5 @@
 import { CustomSet } from '../core';
-import { RouteDeclaration } from './declaration';
+import { RouteDeclaration } from './route-declaration';
 import { HttpCallback, HttpMethod } from '../http';
 
 export class RouteSet extends CustomSet<RouteDeclaration, string> {
