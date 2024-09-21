@@ -12,7 +12,7 @@
  * - Test cases will become more complex, use on your consideration.
  * There a chance, in the future, to get a better understanding on improvements.
  */
-import type { MaybeSyncProvideFunction } from './function-type';
+import type { MaybeSyncProvideFunction } from './function';
 import type { ServiceProvider } from './provider';
 
 const defaultImplementation: MaybeSyncProvideFunction = () => {

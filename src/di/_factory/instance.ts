@@ -1,5 +1,5 @@
 import { FunctionClass } from '../../core';
-import { ServiceFactoryFunction } from '../function-type';
+import { ServiceFactoryFunction } from '../function';
 
 export class ServiceInstanceFactory<T> extends FunctionClass<ServiceFactoryFunction<T>> {
   private readonly _serviceInstance: T;

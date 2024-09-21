@@ -1,5 +1,5 @@
-import { ServiceType } from './type';
-import { ServiceFactoryFunction, ServiceLinearFactoryFunction } from './function-type';
+import { ServiceType } from './service-type';
+import { ServiceFactoryFunction, ServiceLinearFactoryFunction } from './function';
 import { ServiceBehaviour } from './behaviour';
 import { Type } from '../core';
 import { _ServiceClassResolver } from './_resolver';

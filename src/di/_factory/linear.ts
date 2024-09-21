@@ -1,6 +1,6 @@
 import { FunctionClass, MaybePromise } from '../../core';
-import { ServiceFactoryFunction, ServiceLinearFactoryFunction } from '../function-type';
-import { ServiceType } from '../type';
+import { ServiceFactoryFunction, ServiceLinearFactoryFunction } from '../function';
+import { ServiceType } from '../service-type';
 
 export class ServiceLinearFactory<T> extends FunctionClass<ServiceFactoryFunction<T>> {
   private readonly _linearFactory: ServiceLinearFactoryFunction<T>;

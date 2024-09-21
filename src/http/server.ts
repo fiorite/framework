@@ -1,18 +1,18 @@
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { HttpContext, HttpContextHost } from './context';
-import { ServiceCollection, ServiceProvider } from '../di';
+import { ServiceProvider, ServiceSet } from '../di';
 import { NodeRequest, NodeResponse } from './node';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
 import { doNothing, FunctionClass, ValueCallback, VoidCallback } from '../core';
 import { HttpCallback } from './callback';
 
-export function addHttpServer(conf: ServiceCollection, factory: (provide: ServiceProvider) => HttpCallback): void {
+export function addHttpServer(set: ServiceSet, factory: (provide: ServiceProvider) => HttpCallback): void {
   const httpServerFactory = (provider: ServiceProvider) => {
     return new HttpServer({ callback: factory(provider), provider, });
   };
 
-  conf.addSingleton(HttpServer, httpServerFactory, [ServiceProvider])
+  set.addSingleton(HttpServer, httpServerFactory, [ServiceProvider])
     .addScoped(HttpContextHost)
     .addInherited(HttpContext, (host: HttpContextHost) => {
       if (!host.context) {

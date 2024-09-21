@@ -1,4 +1,4 @@
-import { ServiceType } from './type';
+import { ServiceType } from './service-type';
 import { ValueCallback } from '../core';
 import { ServiceCallbackQueue } from './_queue';
 
@@ -6,17 +6,17 @@ export class ServiceScope {
   private _data = new Map<ServiceType, unknown>();
   private _queue = new ServiceCallbackQueue();
 
-  provide<T>(serviceKey: ServiceType<T>, callback: ValueCallback<T>, instantiate: (callback: ValueCallback<T>) => void): void {
-    if (this._data.has(serviceKey)) {
-      return callback(this._data.get(serviceKey) as T);
+  provide<T>(type: ServiceType<T>, resolve: ValueCallback<T>, create: (callback: ValueCallback<T>) => void): void {
+    if (this._data.has(type)) {
+      return resolve(this._data.get(type) as T);
     }
 
-    this._queue.add([this, 'scopeFactory', serviceKey], callback2 => {
-      instantiate(instance => {
-        this._data.set(serviceKey, instance);
+    this._queue.add([this, 'scopeFactory', type], callback2 => {
+      create(instance => {
+        this._data.set(type, instance);
         callback2(instance);
       });
-    }, callback);
+    }, resolve);
   }
 
   destroy(): void {

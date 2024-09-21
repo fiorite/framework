@@ -1,10 +1,10 @@
 import { AnyCallback, FunctionClass, Type, ValueCallback } from '../core';
-import { ServiceType } from './type';
+import { ServiceType } from './service-type';
 import { ServiceDeclaration } from './declaration';
 import { ServiceBehaviour } from './behaviour';
-import { ServiceScope } from './scope';
+import { ServiceScope } from './service-scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
-import { MaybeSyncProvideFunction, ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
+import { MaybeSyncProvideFunction, ServiceFactoryFunction, ServiceProvideFunction } from './function';
 import { _ServiceClassResolver, _ServiceMethodResolver, ServiceMethodResolveFunction } from './_resolver';
 import { MaybeSyncServiceProvider } from './maybe-sync';
 

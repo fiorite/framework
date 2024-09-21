@@ -1,5 +1,5 @@
 import { MaybePromise, ValueCallback } from '../core';
-import { ServiceType } from './type';
+import { ServiceType } from './service-type';
 
 export interface ServiceProvideFunction {
   <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;

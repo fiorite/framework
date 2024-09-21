@@ -22,3 +22,4 @@ export {
   makeControllerRouter,
 } from './route';
 export { makeRouter } from './matcher';
+export { RouteSet } from './route-set';

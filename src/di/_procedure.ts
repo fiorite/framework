@@ -1,6 +1,6 @@
 import { ServiceDeclaration } from './declaration';
 import { ServiceBehaviour } from './behaviour';
-import { ServiceType } from './type';
+import { ServiceType } from './service-type';
 
 type IndexedValue<T> = [T, number];
 

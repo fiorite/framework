@@ -1,5 +1,5 @@
 import { ServiceBehaviour } from './behaviour';
-import { ServiceType } from './type';
+import { ServiceType } from './service-type';
 import {
   ClassDecoratorWithPayload,
   makeClassDecorator,
@@ -8,7 +8,7 @@ import {
   MaybePromise,
   ParameterDecoratorWithPayload
 } from '../core';
-import { ServiceLinearFactoryFunction } from './function-type';
+import { ServiceLinearFactoryFunction } from './function';
 
 export interface ServiceOptions<T> {
   readonly type: ServiceType<T>;

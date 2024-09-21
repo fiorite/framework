@@ -1,5 +1,5 @@
-import { ServiceType } from './type';
-import { MaybeSyncProvideFunction, ServiceProvideFunction } from './function-type';
+import { ServiceType } from './service-type';
+import { MaybeSyncProvideFunction, ServiceProvideFunction } from './function';
 import { FunctionClass, ValueCallback } from '../core';
 
 export interface MaybeSyncServiceProvider extends MaybeSyncProvideFunction {

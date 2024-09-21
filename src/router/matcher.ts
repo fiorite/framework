@@ -8,6 +8,7 @@ import {
 import { RadixMap } from './radix';
 import { HttpCallback, HttpContext, HttpMethod, HttpRequest } from '../http';
 import { MaybePromise } from '../core';
+import { RouteDeclaration } from './declaration';
 
 interface RouteMatchResult {
   readonly params: Record<string, unknown>;
@@ -206,49 +207,6 @@ class ComponentNode {
   }
 }
 
-// export class DecidedMatcher {
-//   constructor(paths: string[]) {
-//     const routes = paths.map(segmentRoutePath);
-//
-//     const flattened = routes.map(route => {
-//       return route.reduce((result, segment) => {
-//         const slash = new StaticPathComponent('/');
-//         const queue = [slash, ...segment];
-//         while (queue.length) {
-//           const component = queue.shift()!;
-//           if (
-//             component instanceof StaticPathComponent &&
-//             flattened.length &&
-//             flattened[flattened.length - 1] instanceof StaticPathComponent
-//           ) {
-//             const concat = new StaticPathComponent([result[result.length - 1].original, component.original].join(''));
-//             result.splice(result.length - 1, 1, concat);
-//           } else {
-//             result.push(component);
-//           }
-//         }
-//         return result;
-//       }, [] as RoutePathComponent[]);
-//     });
-//
-//     let statics = [];
-//     let other = [];
-//
-//     flattened.reduce(, {
-//
-//     } as {
-//       statics
-//     });
-//   }
-// }
-
-
-export interface RouteDeclaration {
-  readonly path: string;
-  readonly method?: HttpMethod | string;
-  readonly callback: (context: HttpContext) => unknown;
-}
-
 interface InnerRouteDeclaration {
   readonly original: string;
   readonly path: RoutePathComponent[];
@@ -256,8 +214,8 @@ interface InnerRouteDeclaration {
   readonly callback: (context: HttpContext) => unknown;
 }
 
-export function makeRouter(declarations: RouteDeclaration[]): RouteMatcher {
-  const routes: InnerRouteDeclaration[] = declarations.map(x => {
+export function makeRouter(declarations: Iterable<RouteDeclaration>): RouteMatcher {
+  const routes: InnerRouteDeclaration[] = Array.from(declarations).map(x => {
     const path = segmentRoutePath(x.path).reduce((result, segment) => {
       const slash = new StaticPathComponent('/');
       const queue = [slash, ...segment];

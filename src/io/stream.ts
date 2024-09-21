@@ -1,6 +1,6 @@
 import { ValueCallback, VoidCallback } from '../core';
 import { Closeable } from './close';
-import { ListenableFunction } from './event';
+import { ListenableFunction } from './listen';
 
 type ReadFunction<T> = ValueCallback<ValueCallback<T>>;
 

@@ -10,8 +10,8 @@ import {
   Type,
   ValueCallback,
 } from '../core';
-import { ServiceType } from './type';
-import { ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
+import { ServiceType } from './service-type';
+import { ServiceFactoryFunction, ServiceProvideFunction } from './function';
 import { Provide } from './decorator';
 import 'reflect-metadata';
 

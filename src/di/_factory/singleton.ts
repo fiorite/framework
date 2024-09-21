@@ -1,5 +1,5 @@
 import { FunctionClass } from '../../core';
-import { ServiceFactoryFunction } from '../function-type';
+import { ServiceFactoryFunction } from '../function';
 import { ServiceCallbackQueue } from '../_queue';
 
 const callbackQueue = new ServiceCallbackQueue();

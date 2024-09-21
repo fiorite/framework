@@ -1,17 +1,14 @@
-import { DecoratorRecorder, MaybePromise, Type } from '../core';
+import { DecoratorRecorder, MaybePromise, Type, ValueCallback } from '../core';
 import { Controller, Route } from './decorator';
-import { ServiceFactoryFunction, ServiceProvider } from '../service';
-import { HttpMethod } from '../http';
+import { ServiceProvider } from '../di';
+import { RouteDeclaration } from './declaration';
+import { HttpContext } from '../http';
 
-export interface RouteDeclaration {
-  readonly controllerType: Type;
-  readonly propertyKey: string | symbol;
-  readonly routePath: string;
-  readonly httpMethod?: HttpMethod | string;
-  readonly routeCaller: ServiceFactoryFunction<unknown>;
-}
-
-export function makeControllerRouter(controllerType: Type, initialProvider: ServiceProvider): readonly RouteDeclaration[] {
+export function makeControllerRouter(
+  controllerType: Type,
+  provider: ServiceProvider,
+  resultCallback: (context: HttpContext, err?: unknown, result?: unknown) => void
+): readonly RouteDeclaration[] {
   const routePrefix = DecoratorRecorder.classSearch(Controller, controllerType)
     .map(x => x.payload.routePrefix)
     .filter(x => !!x && x.trim().length)
@@ -19,25 +16,25 @@ export function makeControllerRouter(controllerType: Type, initialProvider: Serv
     .join('/');
 
   return DecoratorRecorder.methodSearch(Route, controllerType).map(methodRecord => {
-    initialProvider.validateDependencies(controllerType, methodRecord.path[1]);
-    const methodServiceFactory = initialProvider.prepareMethodFactory(controllerType, methodRecord.path[1]);
+    provider.validateDependencies(controllerType, methodRecord.path[1]);
+    const methodServiceFactory = provider.prepareMethodFactory(controllerType, methodRecord.path[1]);
 
-    const {path, httpMethod} = methodRecord.payload;
+    const { path, httpMethod } = methodRecord.payload;
     const routePath = '/' + ([routePrefix, path].filter(x => !!x && x.length).join('/'));
-    const controllerServiceFactory = initialProvider.prepareTypeFactory(controllerType);
+    const controllerServiceFactory = provider.prepareTypeFactory(controllerType);
 
-    return {
-      controllerType,
-      propertyKey: methodRecord.path[1],
-      routePath,
-      httpMethod,
-      routeCaller: (routeProvider, callback) => {
-        controllerServiceFactory(routeProvider, controllerInstance => {
-          methodServiceFactory(controllerInstance, routeProvider, resultMaybePromise => {
-            MaybePromise.then(() => resultMaybePromise, callback);
+    return new RouteDeclaration({
+      path: routePath,
+      method: httpMethod,
+      callback: context => {
+        controllerServiceFactory(context.provide, controllerInstance => {
+          methodServiceFactory(controllerInstance, context.provide, resultMaybePromise => {
+            MaybePromise.then(() => resultMaybePromise, result => {
+              resultCallback(context, undefined, result);
+            }, err => resultCallback(context, err));
           });
         });
-      },
-    };
+      }
+    });
   });
 }

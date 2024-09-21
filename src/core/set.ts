@@ -1,50 +1,78 @@
-/** @deprecated not done yet */
-export class SetWithComparer<T> implements Iterable<T> {
-  private _data: T[] = [];
-  private readonly _comparer: (x: T, y: T) => unknown;
+import { MapCallback, returnSelf } from './callback';
 
-  get length(): number {
-    return this._data.length;
+/**
+ * Custom set designed to provide the same signature and the way to configure comparison flow using {@link callback}
+ */
+export class CustomSet<T, R = unknown> implements Set<T> {
+  static readonly data: unique symbol = Symbol('CustomSet.data');
+
+  static readonly callback: unique symbol = Symbol('CustomSet.callback');
+
+  get [Symbol.toStringTag](): string {
+    return 'CustomSet';
   }
 
-  constructor(comparer: (x: T, y: T) => unknown = (x, y) => x === y) {
-    this._comparer = comparer;
+  // @ts-ignore
+  readonly [CustomSet.data] = new Map<R, T>();
+
+  // @ts-ignore
+  readonly [CustomSet.callback]: MapCallback<T, R>;
+
+  get size(): number {
+    return this[CustomSet.data].size;
   }
 
-  private _indexOf(item: T): number {
-    return this._data.findIndex(x => this._comparer(x, item));
+  constructor(callback?: MapCallback<T, R>) {
+    this[CustomSet.callback] = callback || returnSelf as any;
   }
 
-  has(item: T): boolean {
-    return this._indexOf(item) > -1;
-  }
-
-  add(item: T): void {
-    const index = this._indexOf(item);
-    if (index > -1) {
-      throw new Error('Item already set: ' + String(item));
+  add(value: T): this {
+    const key = this[CustomSet.callback](value);
+    if (!this[CustomSet.data].has(key)) {
+      this[CustomSet.data].set(key, value);
     }
-    this._data.push(item);
-  }
-
-  delete(item: T): boolean {
-    const index = this._indexOf(item);
-    if (index > -1) {
-      this._data.splice(index, 1);
-      return true;
-    }
-    return false;
+    return this;
   }
 
   clear(): void {
-    this._data.splice(0, -1);
+    this[CustomSet.data].clear();
   }
 
-  forEach(callback: (item: T, index: number) => void): void {
-    this._data.forEach(callback);
+  delete(value: T): boolean {
+    return this[CustomSet.data].delete(this[CustomSet.callback](value));
   }
 
-  [Symbol.iterator](): Iterator<T> {
-    return this._data[Symbol.iterator]();
+  forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void { // todo: handle thisArg?
+    return this[CustomSet.data].forEach(value => callbackfn(value, value, this));
+  }
+
+  has(value: T): boolean {
+    return this[CustomSet.data].has(this[CustomSet.callback](value));
+  }
+
+  entries(): IterableIterator<[T, T]> {
+    const iterator = this[CustomSet.data].values()[Symbol.iterator]();
+    const result: IterableIterator<[T, T]> = {
+      next(): IteratorResult<[T, T]> {
+        const result = iterator.next();
+        return result.done ? { done: true, value: undefined } : {
+          done: false, value: [result.value, result.value] as [T, T]
+        };
+      },
+      [Symbol.iterator]: () => result,
+    };
+    return result;
+  }
+
+  keys(): IterableIterator<T> {
+    return this[CustomSet.data].values();
+  }
+
+  values(): IterableIterator<T> {
+    return this[CustomSet.data].values();
+  }
+
+  [Symbol.iterator](): IterableIterator<T> {
+    return this[CustomSet.data].values();
   }
 }

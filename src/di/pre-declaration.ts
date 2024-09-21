@@ -1,9 +1,9 @@
-import { ServiceType } from './type';
+import { ServiceType } from './service-type';
 import { ServiceBehaviour } from './behaviour';
 import { Type } from '../core';
 
 /**
- * Middle layer to connect {@link ServiceCollection} and {@link DecoratorRecorder}.
+ * Middle layer to connect {@link ServiceSet} and {@link DecoratorRecorder}.
  */
 export class ServicePreDeclaration<T = unknown> {
   private readonly _serviceType: ServiceType<T>;

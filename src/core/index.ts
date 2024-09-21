@@ -8,3 +8,4 @@ export {
 export { arraySequenceEqual } from './array';
 export { AbstractType, Type, isType } from './type';
 export { MapWithKeyComparer } from './map';
+export { CustomSet } from './set';
