@@ -1,6 +1,6 @@
 import { ValueCallback, VoidCallback } from '../core';
 import { Closeable } from './close';
-import { EventfulFunction } from './event';
+import { ListenableFunction } from './event';
 
 type ReadFunction<T> = ValueCallback<ValueCallback<T>>;
 
@@ -33,9 +33,9 @@ export class Stream<T> implements Closeable {
 
   private readonly _originalClose: VoidCallback = () => void 0;
 
-  private readonly _close: EventfulFunction<() => void, void>;
+  private readonly _close: ListenableFunction<() => void, void>;
 
-  get close(): EventfulFunction<VoidCallback, void> {
+  get close(): ListenableFunction<VoidCallback, void> {
     return this._close;
   }
 
@@ -64,7 +64,7 @@ export class Stream<T> implements Closeable {
       this._originalClose = object.close;
     }
 
-    this._close = new EventfulFunction(() => {
+    this._close = new ListenableFunction(() => {
       this._originalClose();
       this._reader = nullReader;
       this._readable = false;

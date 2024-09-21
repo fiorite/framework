@@ -1,5 +1,5 @@
 import { HttpHeaders } from './headers';
-import { Closeable, EventfulFunction, Stream } from '../io';
+import { Closeable, ListenableFunction, Stream } from '../io';
 import { VoidCallback } from '../core';
 
 /** @source https://en.wikipedia.org/wiki/List_of_HTTP_header_fields */
@@ -42,7 +42,7 @@ export abstract class HttpMessage implements Closeable {
     return this.body.closed;
   }
 
-  get close(): EventfulFunction<VoidCallback, void> {
+  get close(): ListenableFunction<VoidCallback, void> {
     return this.body.close;
   }
 }
