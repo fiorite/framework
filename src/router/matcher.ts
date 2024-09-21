@@ -6,13 +6,13 @@ import {
   StaticPathComponent
 } from './segment';
 import { RadixMap } from './radix';
-import { HttpContext, HttpMethod, HttpRequest } from '../http';
+import { HttpCallback, HttpContext, HttpMethod, HttpRequest } from '../http';
 import { MaybePromise } from '../core';
 
 interface RouteMatchResult {
   readonly params: Record<string, unknown>;
   readonly path: string;
-  readonly data: ((context: HttpContext) => MaybePromise<unknown>)[];
+  readonly data: HttpCallback[];
   // readonly callback: unknown;
 }
 

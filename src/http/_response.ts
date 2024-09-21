@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
-import { ServerResponse } from 'node:http';
 
+/** @deprecated please remove */
 export class OldResponse extends Observable<Uint8Array> {
   readonly body: Observable<Uint8Array>;
 

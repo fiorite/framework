@@ -1,4 +1,4 @@
-import { provide } from '../service';
+import { provide } from '../di';
 import { Logger } from './logger';
 
 class ProvideContextLogger extends Logger {

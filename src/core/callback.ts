@@ -1,3 +1,5 @@
+export type AnyCallback = (...args: any[]) => any;
+
 export type ValueCallback<T> = (value: T) => void;
 
 export type MapCallback<T, R> = (value: T) => R;

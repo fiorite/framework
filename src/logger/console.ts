@@ -1,6 +1,6 @@
 import { LogLevel } from './level';
 import { Logger } from './logger';
-import { ServiceCollection } from '../service';
+import { ServiceCollection } from '../di';
 import { LevelFilter } from './level-filter';
 
 // Reset = "\x1b[0m"

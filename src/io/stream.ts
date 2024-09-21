@@ -1,4 +1,6 @@
 import { ValueCallback, VoidCallback } from '../core';
+import { Closeable } from './close';
+import { EventfulFunction } from './event';
 
 type ReadFunction<T> = ValueCallback<ValueCallback<T>>;
 
@@ -12,7 +14,7 @@ const nullWriter = () => {
   throw new Error('Stream is closed or writer is not set.');
 };
 
-export class Stream<T> {
+export class Stream<T> implements Closeable {
   private _reader: ReadFunction<T> = nullReader;
 
   private _readable = false;
@@ -29,7 +31,13 @@ export class Stream<T> {
     return this._writable;
   }
 
-  private readonly _close: VoidCallback = () => void 0;
+  private readonly _originalClose: VoidCallback = () => void 0;
+
+  private readonly _close: EventfulFunction<() => void, void>;
+
+  get close(): EventfulFunction<VoidCallback, void> {
+    return this._close;
+  }
 
   private _closed = false;
 
@@ -53,8 +61,18 @@ export class Stream<T> {
     }
 
     if (object.close) {
-      this._close = object.close;
+      this._originalClose = object.close;
     }
+
+    this._close = new EventfulFunction(() => {
+      this._originalClose();
+      this._reader = nullReader;
+      this._readable = false;
+      this._writer = nullWriter;
+      this._writable = false;
+      this._closed = true;
+      this._close.emit(); // emit event
+    });
 
     if (!this.readable && !this.writable) {
       this.close();
@@ -67,14 +85,5 @@ export class Stream<T> {
 
   write(value: T): void {
     this._writer(value);
-  }
-
-  close(): void {
-    this._close();
-    this._reader = nullReader;
-    this._readable = false;
-    this._writer = nullWriter;
-    this._writable = false;
-    this._closed = true;
   }
 }

@@ -1,13 +1,9 @@
 /** @source https://en.wikipedia.org/wiki/List_of_HTTP_status_codes */
-enum InformationalResponseStatusCode {
+export enum HttpStatusCode {
   Continue = 100,
   SwitchingProtocols = 101,
   Processing = 102,
   EarlyHints = 103,
-}
-
-/** @source https://en.wikipedia.org/wiki/List_of_HTTP_status_codes */
-enum SuccessStatusCode {
   OK = 200,
   Created = 201,
   Accepted = 202,
@@ -18,10 +14,6 @@ enum SuccessStatusCode {
   MultiStatus = 207,
   AlreadyReported = 208,
   IMUsed = 226,
-}
-
-/** @source https://en.wikipedia.org/wiki/List_of_HTTP_status_codes */
-enum RedirectionStatusCode {
   MultipleChoices = 300,
   MovedPermanently = 301,
   /** @deprecated currently {@link Found}. */
@@ -33,10 +25,6 @@ enum RedirectionStatusCode {
   SwitchProxy = 306,
   TemporaryRedirect = 307,
   PermanentRedirect = 308,
-}
-
-/** @source https://en.wikipedia.org/wiki/List_of_HTTP_status_codes */
-enum ClientErrorStatusCode {
   BadRequest = 400,
   Unauthorized = 401,
   PaymentRequired = 402,
@@ -67,10 +55,6 @@ enum ClientErrorStatusCode {
   TooManyRequests = 429,
   RequestHeaderFieldsTooLarge = 431,
   UnavailableForLegalReasons = 451,
-}
-
-/** @source https://en.wikipedia.org/wiki/List_of_HTTP_status_codes */
-enum ServerErrorStatusCode {
   InternalServerError = 500,
   NotImplemented = 501,
   BadGateway = 502,
@@ -83,17 +67,3 @@ enum ServerErrorStatusCode {
   NotExtended = 510,
   NetworkAuthenticationRequired = 511,
 }
-
-export type StatusCode = InformationalResponseStatusCode |
-  SuccessStatusCode |
-  RedirectionStatusCode |
-  ClientErrorStatusCode |
-  ServerErrorStatusCode;
-
-export const StatusCode = {
-  ...InformationalResponseStatusCode,
-  ...SuccessStatusCode,
-  ...RedirectionStatusCode,
-  ...ClientErrorStatusCode,
-  ...ServerErrorStatusCode,
-};

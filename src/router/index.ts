@@ -17,6 +17,7 @@ export {
   HttpPost,
   HttpPut
 } from './decorator';
+export { RoutingMiddleware } from './middlware';
 export {
   makeControllerRouter,
 } from './route';

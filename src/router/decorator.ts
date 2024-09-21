@@ -1,4 +1,4 @@
-import { Inherited, Provide } from '../service';
+import { Inherited, Provide } from '../di';
 import {
   ClassDecoratorWithPayload,
   makeClassDecorator,

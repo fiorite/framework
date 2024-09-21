@@ -19,7 +19,7 @@ export class ServiceScope {
     }, callback);
   }
 
-  destroyScope(): void {
+  destroy(): void {
     while (this._data.size) {
       this._data.forEach((value, key) => {
         this._data.delete(key);

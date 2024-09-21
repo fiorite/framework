@@ -1,4 +1,4 @@
-import { MaybeSyncProvideFunction } from '../service';
+import { MaybeSyncProvideFunction } from '../di';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
 
@@ -35,7 +35,7 @@ export class HttpContextHost {
     return this._context;
   }
 
-  bindContext(context: HttpContext): void {
+  apply(context: HttpContext): void {
     if (this._context) {
       throw new Error('#context: HttpContext already set.');
     }

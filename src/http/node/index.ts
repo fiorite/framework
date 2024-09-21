@@ -1,4 +1,2 @@
-export { NodeRequest } from './request';
-export { NodeRequestHeaders } from './request-headers';
-export { NodeResponse } from './response';
-export { NodeResponseHeaders } from './response-headers';
+export { NodeRequestHeaders, NodeRequest } from './request';
+export { NodeResponseHeaders, NodeResponse } from './response';

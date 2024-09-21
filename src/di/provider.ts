@@ -1,24 +1,23 @@
-import { FunctionClass, propertyNotFound, Type, ValueCallback } from '../core';
+import { AnyCallback, FunctionClass, Type, ValueCallback } from '../core';
 import { ServiceType } from './type';
 import { ServiceDeclaration } from './declaration';
 import { ServiceBehaviour } from './behaviour';
 import { ServiceScope } from './scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
 import { MaybeSyncProvideFunction, ServiceFactoryFunction, ServiceProvideFunction } from './function-type';
-import { _ServiceClassResolver, ServiceMethodResolveFunction, _ServiceMethodResolver } from './_resolver';
-import { AnyFunction } from '../core/function';
+import { _ServiceClassResolver, _ServiceMethodResolver, ServiceMethodResolveFunction } from './_resolver';
 import { MaybeSyncServiceProvider } from './maybe-sync';
 
 export interface ServiceProvider extends MaybeSyncProvideFunction {
   /**
    * @throws Error if service is asynchronous (promise like)
    */
-    <T>(type: ServiceType<T>): T;
+  <T>(type: ServiceType<T>): T;
 
   /**
    * Fallback to {@link ServiceProvideFunction}
    */
-    <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
 export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> implements Iterable<ServiceDeclaration> {
@@ -38,16 +37,6 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
 
   get maybeSyncProvider(): MaybeSyncServiceProvider {
     return this._maybeSyncProvider;
-  }
-
-  static findIn(object: object): ServiceProvider {
-    const descriptor = Object.getOwnPropertyDescriptor(object, ServiceProvider.symbol);
-
-    if (!descriptor) {
-      throw propertyNotFound(`ServiceProvider is not found in ${object.constructor.name}`);
-    }
-
-    return descriptor.value as ServiceProvider;
   }
 
   constructor(data: readonly ServiceDeclaration[], createdFrom?: ServiceProvider) {
@@ -103,10 +92,6 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
     return this._data.findIndex(x => x.serviceKey === type) > -1;
   }
 
-  setSelfTo(object: object): void {
-    Object.defineProperty(object, ServiceProvider.symbol, {value: this});
-  }
-
   prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
     if (this.has(type)) {
       return (provide, callback) => provide(type, callback);
@@ -131,14 +116,14 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
   prepareMethodFactory<T extends object, K extends keyof T>(
     type: Type<T>,
     propertyKey: K
-  ): ServiceMethodResolveFunction<T, T[K] extends AnyFunction ? ReturnType<T[K]> : never> {
+  ): ServiceMethodResolveFunction<T, T[K] extends AnyCallback ? ReturnType<T[K]> : never> {
     return _ServiceMethodResolver.from(type, propertyKey as string | symbol);
   }
 
   callObjectMethod<T extends object, K extends keyof T>(
     object: T,
     propertyKey: K,
-    callback: ValueCallback<T[K] extends AnyFunction ? ReturnType<T[K]> : never>
+    callback: ValueCallback<T[K] extends AnyCallback ? ReturnType<T[K]> : never>
   ): void {
     this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this.provide.bind(this), callback as any);
   }
@@ -159,7 +144,7 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
       throw new Error('No defined scope');
     }
 
-    this._scope.destroyScope();
+    this._scope.destroy();
     delete this._scope;
   }
 

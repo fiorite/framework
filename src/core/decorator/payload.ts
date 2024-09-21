@@ -1,6 +1,7 @@
 import { DecoratorFunction, DecoratorOuterFunction } from './function-type';
-import { AnyFunction, FunctionClass } from '../function';
+import { FunctionClass } from '../function';
 import { DecoratorRecorder } from './recorder';
+import { AnyCallback } from '../callback';
 
 export abstract class DecoratorWithPayload<TPayload, TDecorator extends DecoratorFunction> extends FunctionClass<TDecorator> {
   private readonly _decorator: DecoratorOuterFunction<TDecorator>;
@@ -25,7 +26,7 @@ export abstract class DecoratorWithPayload<TPayload, TDecorator extends Decorato
     super((
       (...args: any[]): any => {
         DecoratorRecorder.addEvent<TPayload, TDecorator, any[]>({path: args, decorator, payload: payload});
-        include.forEach((otherDecorator: AnyFunction) => otherDecorator(...args));
+        include.forEach((otherDecorator: AnyCallback) => otherDecorator(...args));
       }
     ) as TDecorator);
     this._decorator = decorator;

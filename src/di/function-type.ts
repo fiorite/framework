@@ -14,7 +14,7 @@ export interface MaybeSyncProvideFunction extends ServiceProvideFunction {
 
 export type ServiceFactoryFunction<T = unknown> = (provide: ServiceProvideFunction, callback: ValueCallback<T>) => void;
 
-export type ServiceLinearFactoryFunction<T> = (...args: any[]) => MaybePromise<T>;
+export type ServiceLinearFactoryFunction<R, P extends unknown[] = any[]> = (...args: P) => MaybePromise<R>;
 
 export namespace ServiceFactoryFunction {
   export function from(array: readonly ServiceType[]): ServiceFactoryFunction<unknown[]> {
