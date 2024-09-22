@@ -16,11 +16,15 @@ export interface RouteParameterConstraint<T = string> {
 
 export class NumberParameterConstraint implements RouteParameterConstraint<number> {
   readonly name: string = 'number';
-  readonly whitelist = new Utf16Sequence([...utf16.digit, utf16.ascii['.']]); // todo: add local length test
+  readonly whitelist = new Utf16Sequence([...utf16.digit, utf16.ascii['.'], utf16.ascii['-']]); // todo: add local length test
 
+  // todo: refactor constaints sense they are bad right now, two methods make no sense, could be one.
   tryLength(segment: string): number {
     let i = 0;
     let dots = 0;
+    if (utf16.ascii['-'] === utf16.at(segment, i)) {
+      i++;
+    }
     while (i < segment.length) {
       if (utf16.ascii['.'] === utf16.at(segment, i)) {
         dots++;
@@ -38,6 +42,11 @@ export class NumberParameterConstraint implements RouteParameterConstraint<numbe
   match(term: string): number | undefined {
     let index = -1;
     const dots = [];
+    let negative = false;
+    if (utf16.ascii['-'] === utf16.at(term, index)) {
+      index++;
+      negative = true;
+    }
     while (true) {
       index = term.indexOf('.', index + 1);
       if (index < 0) {
@@ -50,13 +59,19 @@ export class NumberParameterConstraint implements RouteParameterConstraint<numbe
       return undefined;
     }
 
-    const number = Number(term);
-    return Number.isNaN(number) ? undefined : number;
+    let number = Number(term);
+    if (Number.isNaN(number) ) {
+      return undefined;
+    }
+    if (negative) {
+      number *= -1;
+    }
+    return number;
   }
 }
 
-export class IntegerParameterConstraint implements RouteParameterConstraint<number> {
-  readonly name: string = 'integer';
+export class DigitParameterConstraint implements RouteParameterConstraint<number> {
+  readonly name: string = 'digit';
   readonly whitelist = utf16.digit;
 
   match(term: string): number | undefined {
@@ -276,7 +291,7 @@ export class RangeParameterConstraint extends NumberParameterConstraint {
       throw new Error('invalid constraint arguments: range(min: number, max: number)');
     }
     if (min > max) {
-      throw new Error('invalid constraint arguments: min should be > than max ('+arg1+' and '+arg2+')');
+      throw new Error('invalid constraint arguments: min should be > than max (' + arg1 + ' and ' + arg2 + ')');
     }
     this.min = min;
     this.max = max;
@@ -297,6 +312,11 @@ export class RegexpParameterConstraint implements RouteParameterConstraint {
     this._regexp = new RegExp(pattern);
   }
 
+  tryLength(segment: string): number {
+    const match = this._regexp.exec(segment);
+    return null === match || !segment.startsWith(match[0]) ? 0 : match[0].length;
+  }
+
   match(term: string): string | undefined {
     const match = this._regexp.exec(term);
     return null === match ? undefined : match[0];
@@ -305,7 +325,7 @@ export class RegexpParameterConstraint implements RouteParameterConstraint {
 
 export const routeParameterConstrains: Record<string, Type> = {
   'number': NumberParameterConstraint,
-  'integer': IntegerParameterConstraint,
+  'digit': DigitParameterConstraint,
   'boolean': BooleanParameterConstraint,
   'alpha': AlphaParameterConstraint,
   'alphanumeric': AlphanumericParameterConstraint,

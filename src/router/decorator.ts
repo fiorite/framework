@@ -21,6 +21,7 @@ export class ControllerPayload {
   }
 }
 
+/** @deprecated was thinking of removing it and having specific ones, like {@link RoutePrefix} */
 export function Controller<T>(routePrefix?: string): ClassDecoratorWithPayload<ControllerPayload, T> {
   return makeClassDecorator(Controller, new ControllerPayload(routePrefix), [Inherited().calledBy(Controller)]);
 }
@@ -46,8 +47,8 @@ export class RoutePayload {
   }
 }
 
-export function Route(path?: string, httpMethod?: HttpMethod | string): MethodDecoratorWithPayload<RoutePayload> {
-  return makeMethodDecorator(Route, new RoutePayload(path, httpMethod));
+export function Route(path?: string, method?: HttpMethod | string): MethodDecoratorWithPayload<RoutePayload> {
+  return makeMethodDecorator(Route, new RoutePayload(path, method));
 }
 
 export const HttpGet = (path?: string) => {

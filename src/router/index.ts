@@ -4,7 +4,7 @@ export {
 export {
   RouteParameterConstraint,
   NumberParameterConstraint,
-  IntegerParameterConstraint,
+  DigitParameterConstraint,
   BooleanParameterConstraint,
   AlphaParameterConstraint,
   AlphanumericParameterConstraint,
