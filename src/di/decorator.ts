@@ -34,6 +34,9 @@ export class ServicePayload<T> {
   }
 }
 
+/**
+ * @deprecated use {@link Inherited}, {@link Scoped}, {@link Singleton} or {@link Prototype} instead. will be removed soon.
+ */
 export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecoratorWithPayload<ServicePayload<T>, T>
 /**
  * @deprecated not implemented, experimental overload
@@ -42,6 +45,9 @@ export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecorator
  * @constructor
  */
 export function Service<T>(factory: ServiceLinearFactoryFunction<T>, dependencies?: ServiceType[]): ClassDecoratorWithPayload<ServicePayload<T>, T>;
+/**
+ * @deprecated use {@link Inherited}, {@link Scoped}, {@link Singleton} or {@link Prototype} instead. will be removed soon.
+ */
 export function Service(...args: unknown[]): ClassDecoratorWithPayload<ServicePayload<unknown>, any> {
   let payload: ServicePayload<unknown>;
 
