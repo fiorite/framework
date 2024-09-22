@@ -6,19 +6,34 @@ export interface RouteParameterConstraint<T = string> {
   readonly minLength?: number;
   readonly maxLength?: number;
 
+  tryLength?(segment: string): number;
+
   /**
    * {@link term} validation results into <T> value, otherwise returns undefined.
    */
   match(term: string): T | undefined;
 }
 
-export interface RouteParameterConstraintConstructor {
-  new<T>(...args: string[]): RouteParameterConstraint<T>;
-}
-
 export class NumberParameterConstraint implements RouteParameterConstraint<number> {
   readonly name: string = 'number';
   readonly whitelist = new Utf16Sequence([...utf16.digit, utf16.ascii['.']]); // todo: add local length test
+
+  tryLength(segment: string): number {
+    let i = 0;
+    let dots = 0;
+    while (i < segment.length) {
+      if (utf16.ascii['.'] === utf16.at(segment, i)) {
+        dots++;
+        if (dots > 1) {
+          return i - 1;
+        }
+      } else if (!utf16.digit.includes(segment, i)) {
+        break;
+      }
+      i++;
+    }
+    return i;
+  }
 
   match(term: string): number | undefined {
     let index = -1;
@@ -42,11 +57,11 @@ export class NumberParameterConstraint implements RouteParameterConstraint<numbe
 
 export class IntegerParameterConstraint implements RouteParameterConstraint<number> {
   readonly name: string = 'integer';
-  readonly whitelist = utf16.digit; // todo: add local length test
+  readonly whitelist = utf16.digit;
 
   match(term: string): number | undefined {
     const number = Number(term);
-    return Number.isNaN(number) ? undefined : number;
+    return Number.isNaN(number) ? undefined : number; // todo: add length check
   }
 }
 
@@ -291,7 +306,6 @@ export class RegexpParameterConstraint implements RouteParameterConstraint {
 export const routeParameterConstrains: Record<string, Type> = {
   'number': NumberParameterConstraint,
   'integer': IntegerParameterConstraint,
-  'int': IntegerParameterConstraint, // alias
   'boolean': BooleanParameterConstraint,
   'alpha': AlphaParameterConstraint,
   'alphanumeric': AlphanumericParameterConstraint,

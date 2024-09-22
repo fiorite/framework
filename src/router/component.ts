@@ -65,6 +65,10 @@ export class ParameterRouteComponent implements RouteComponent {
   }
 
   tryLength(path: string): number {
+    if (this.constraint && this.constraint.tryLength) {
+      return this.constraint.tryLength(path);
+    }
+
     let length = 0;
     if (this._charList) {
       while (length < path.length) {
