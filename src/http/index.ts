@@ -6,7 +6,7 @@ export { HttpHeaders } from './headers';
 export { HttpMessageHeader, HttpMessage } from './message';
 export { addHttpServer, HttpServer, HttpServerState } from './server';
 export { HttpMiddleware, CorsHttpMiddleware } from './middleware';
-export { HttpRequestHeader, HttpRequest } from './request';
+export { HttpRequestHeader, HttpRequest, HttpParams, HttpQuery } from './request';
 export { HttpResponseHeader, HttpResponse } from './response';
 export { HttpStatusCode } from './status-code';
 export { HttpCallback } from './callback';

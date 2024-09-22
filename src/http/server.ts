@@ -2,7 +2,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { HttpContext, HttpContextHost } from './context';
 import { ServiceProvider, ServiceSet } from '../di';
 import { NodeRequest, NodeResponse } from './node';
-import { HttpRequest } from './request';
+import { HttpParams, HttpQuery, HttpRequest } from './request';
 import { HttpResponse } from './response';
 import { doNothing, FunctionClass, ValueCallback, VoidCallback } from '../core';
 import { HttpCallback } from './callback';
@@ -21,6 +21,8 @@ export function addHttpServer(set: ServiceSet, factory: (provide: ServiceProvide
       return host.context;
     }, [HttpContextHost])
     .addInherited(HttpRequest, (context: HttpContext) => context.request, [HttpContext])
+    .addInherited(HttpParams, (request: HttpRequest) => request.params, [HttpRequest])
+    .addInherited(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
     .addInherited(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
   ;
 }

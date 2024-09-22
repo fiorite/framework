@@ -1,4 +1,4 @@
-import { HttpRequest, HttpRequestHeader } from '../request';
+import { HttpRequest, HttpRequestHeader, HttpParams, HttpQuery } from '../request';
 import { HttpHeaders } from '../headers';
 import { Stream } from '../../io';
 import type { IncomingMessage } from 'http';
@@ -100,15 +100,15 @@ export class NodeRequest extends HttpRequest {
     this._url = value;
   }
 
-  private readonly _query: Map<string, string>;
+  private readonly _query: HttpQuery;
 
-  override get query(): Map<string, string> {
+  override get query(): HttpQuery {
     return this._query;
   }
 
-  private readonly _params: Map<string, string | number | boolean>;
+  private readonly _params: HttpParams;
 
-  override get params(): Map<string, string | number | boolean> {
+  override get params(): HttpParams {
     return this._params;
   }
 
@@ -132,8 +132,8 @@ export class NodeRequest extends HttpRequest {
     super();
     this._original = request;
     this._url = new URL(request.url!, 'http://localhost');
-    this._query = new Map(this._url.searchParams); // todo: fix
-    this._params = new Map(); // todo: parse params
+    this._query = new HttpQuery(this._url.searchParams); // todo: fix
+    this._params = new HttpParams(); // todo: parse params
     this._headers = new NodeRequestHeaders(request);
     this._body = new Stream({
       reader: callback => callback(request.read()),

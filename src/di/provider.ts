@@ -1,4 +1,4 @@
-import { AnyCallback, FunctionClass, Type, ValueCallback } from '../core';
+import { AnyCallback, CustomSet, FunctionClass, Type, ValueCallback } from '../core';
 import { ServiceType } from './service-type';
 import { ServiceDeclaration } from './declaration';
 import { ServiceBehaviour } from './behaviour';
@@ -11,19 +11,17 @@ import { MaybeSyncServiceProvider } from './maybe-sync';
 export interface ServiceProvider extends MaybeSyncProvideFunction {
   /**
    * @throws Error if service is asynchronous (promise like)
-   */
-  <T>(type: ServiceType<T>): T;
+   */<T>(type: ServiceType<T>): T;
 
   /**
    * Fallback to {@link ServiceProvideFunction}
-   */
-  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
 export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> implements Iterable<ServiceDeclaration> {
   static readonly symbol = Symbol('ServiceProvider');
 
-  private readonly _data: readonly ServiceDeclaration[];
+  private readonly _set = new CustomSet<ServiceDeclaration, ServiceType>(x => x.serviceKey);
 
   private _scope?: ServiceScope;
 
@@ -39,22 +37,24 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
     return this._maybeSyncProvider;
   }
 
-  constructor(data: readonly ServiceDeclaration[], createdFrom?: ServiceProvider) {
+  constructor(data: Iterable<ServiceDeclaration>, createdFrom?: ServiceProvider) {
     const maybeSyncProvider = new MaybeSyncServiceProvider((type, callback) => this.provide(type, callback));
     super(maybeSyncProvider);
     this._maybeSyncProvider = maybeSyncProvider;
-    if (!createdFrom) {
-      this._data = [ServiceDeclaration.fromInstance({
+    const array = [
+      ServiceDeclaration.fromInstance({
         serviceInstance: this,
         serviceKey: ServiceProvider,
-      }), ...remapBehaviourInheritance(data)];
-      validateCircularDependency(this._data);
-      validateBehaviourDependency(this._data);
+      }),
+      ...data,
+    ];
+    if (!createdFrom) { // todo: refactor in the future
+      const array2 = remapBehaviourInheritance(array);
+      array2.forEach(value => this._set.add(value));
+      validateCircularDependency(array2);
+      validateBehaviourDependency(array2);
     } else {
-      this._data = [ServiceDeclaration.fromInstance({
-        serviceInstance: this,
-        serviceKey: ServiceProvider,
-      }), ...data];
+      array.forEach(value => this._set.add(value));
       this._createdFrom = createdFrom;
     }
   }
@@ -63,13 +63,11 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
    * Raw implementation or {@link ServiceProvideFunction}.
    */
   provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
-    const index = this._data.findIndex(def => def.serviceKey === type);
+    const service = this._set[CustomSet.data].get(type) as ServiceDeclaration<T> | undefined;
 
-    if (index < 0) {
+    if (undefined === service) {
       throw new Error('Service is not found: ' + ServiceType.toString(type));
     }
-
-    const service = this._data[index] as ServiceDeclaration<T>;
 
     if (ServiceBehaviour.Scoped === service.behaviour) {
       if (!this._scope) {
@@ -89,7 +87,7 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
   }
 
   has(type: ServiceType): boolean {
-    return this._data.findIndex(x => x.serviceKey === type) > -1;
+    return this._set[CustomSet.data].has(type);
   }
 
   prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
@@ -133,7 +131,7 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
       throw new Error('Sub-scope is not supported');
     }
 
-    const scopeProvider = new ServiceProvider(this._data, this);
+    const scopeProvider = new ServiceProvider(this._set, this);
     scopeProvider._scope = new ServiceScope();
     configure(scopeProvider._maybeSyncProvider);
     return scopeProvider;
@@ -149,6 +147,6 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
   }
 
   [Symbol.iterator](): Iterator<ServiceDeclaration> {
-    return this._data[Symbol.iterator]();
+    return this._set[Symbol.iterator]();
   }
 }

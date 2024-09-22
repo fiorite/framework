@@ -48,11 +48,37 @@ export enum HttpRequestHeader {
   Warning = 'warning',
 }
 
+export class HttpParams extends Map<string, string | number | boolean> {
+  get [Symbol.toStringTag](): string {
+    return 'HttpParamMap';
+  }
+
+  toRecord(): Record<string, string | number | boolean> {
+    return Array.from(this).reduce((object, entry) => {
+      object[entry[0]] = entry[1];
+      return object;
+    }, {} as Record<string, string | number | boolean>);
+  }
+}
+
+export class HttpQuery extends Map<string, string> {
+  get [Symbol.toStringTag](): string {
+    return 'HttpParamMap';
+  }
+
+  toRecord(): Record<string, string> {
+    return Array.from(this).reduce((object, entry) => {
+      object[entry[0]] = entry[1];
+      return object;
+    }, {} as Record<string, string>);
+  }
+}
+
 export abstract class HttpRequest extends HttpMessage {
   abstract method: HttpMethod | string | undefined;
   abstract url: URL | undefined;
-  abstract readonly query: Map<string, string>;
+  abstract readonly query: HttpQuery;
   /** @deprecated will be somewhere else i believe */
-  abstract readonly params: Map<string, string | number | boolean>;
+  abstract readonly params: HttpParams;
   abstract override readonly headers: HttpHeaders<HttpRequestHeader | string>;
 }

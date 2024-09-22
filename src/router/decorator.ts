@@ -90,28 +90,28 @@ export const FromRequest = (callback: MapCallback<HttpRequest, MaybePromise<unkn
   return Provide(HttpContext, context => callback(context.request)).calledBy(FromRequest);
 };
 
-export const FromParam = (paramName: string, callback?: MapCallback<string | number | boolean | undefined, MaybePromise<unknown>>) => {
+export const FromParam = (key: string, callback?: MapCallback<string | number | boolean | undefined, MaybePromise<unknown>>) => {
   if (!callback) {
     callback = (x => x) as MapCallback<string | number | boolean | undefined, MaybePromise<unknown>>;
   }
 
-  return FromRequest(request => callback!(request.params.get(paramName))).calledBy(FromParam);
+  return FromRequest(request => callback!(request.params.get(key))).calledBy(FromParam);
 };
 
-export const FromQuery = (queryKey: string, callback?: MapCallback<string | undefined, MaybePromise<unknown>>) => {
+export const FromQuery = (key: string, callback?: MapCallback<string | undefined, MaybePromise<unknown>>) => {
   if (!callback) {
     callback = (x => x) as MapCallback<string | string[] | undefined, MaybePromise<unknown>>;
   }
 
-  return FromRequest(request => callback!(request.query.get(queryKey))).calledBy(FromQuery);
+  return FromRequest(request => callback!(request.query.get(key))).calledBy(FromQuery);
 };
 
-export const FromHeader = (headerName: string, callback?: MapCallback<string | string[] | number | undefined, MaybePromise<unknown>>) => {
+export const FromHeader = (key: string, callback?: MapCallback<string | string[] | number | undefined, MaybePromise<unknown>>) => {
   if (!callback) {
     callback = (x => x) as MapCallback<string | string[] | number | undefined, MaybePromise<unknown>>;
   }
 
-  return FromRequest(request => callback!(request.headers.get(headerName))).calledBy(FromQuery);
+  return FromRequest(request => callback!(request.headers.get(key))).calledBy(FromQuery);
 };
 
 export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T, MaybePromise<R>>) => {

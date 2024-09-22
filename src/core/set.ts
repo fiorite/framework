@@ -34,6 +34,13 @@ export class CustomSet<T, R = unknown> implements Set<T> {
     return this;
   }
 
+  // addAll(values: Iterable<T>): this {
+  //   for (let value of values) {
+  //     this.add(value);
+  //   }
+  //   return this;
+  // }
+
   clear(): void {
     this[CustomSet.data].clear();
   }

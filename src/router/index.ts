@@ -1,4 +1,5 @@
-export {
+export {} from './component';
+;export {
   FromBody,
   RoutePrefix,
   Route,

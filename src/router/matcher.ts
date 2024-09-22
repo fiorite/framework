@@ -1,14 +1,11 @@
 import {
-  DynamicPathComponent,
-  NullRouteComponent,
-  RoutePathComponent,
   segmentRoutePath,
-  StaticPathComponent
 } from './segment';
 import { RadixMap } from './radix';
 import { HttpCallback, HttpContext, HttpMethod, HttpRequest } from '../http';
 import { MaybePromise } from '../core';
 import { RouteDeclaration } from './route-declaration';
+import { NullRouteComponent, ParameterRouteComponent, RouteComponent, StaticRouteComponent } from './component';
 
 interface RouteMatchResult {
   readonly params: Record<string, unknown>;
@@ -115,11 +112,11 @@ export class RadixRouteComponentMatcher implements RoutePathMatcher {
 }
 
 export class StaticRouteComponentMatcher implements RoutePathMatcher {
-  get component(): StaticPathComponent {
+  get component(): StaticRouteComponent {
     return this._component;
   }
 
-  constructor(private _component: StaticPathComponent, readonly payload: ((context: HttpContext) => MaybePromise<unknown>)[]) {
+  constructor(private _component: StaticRouteComponent, readonly payload: ((context: HttpContext) => MaybePromise<unknown>)[]) {
   }
 
   match(path: string): RouteMatchResult | undefined {
@@ -135,7 +132,7 @@ export class StaticRouteComponentMatcher implements RoutePathMatcher {
 }
 
 export class DynamicRouteComponentMatcher implements RoutePathMatcher {
-  constructor(private _component: DynamicPathComponent, readonly payload: ((context: HttpContext) => MaybePromise<unknown>)[]) {
+  constructor(private _component: ParameterRouteComponent, readonly payload: ((context: HttpContext) => MaybePromise<unknown>)[]) {
   }
 
   match(path: string): RouteMatchResult | undefined {
@@ -167,7 +164,7 @@ class ComponentNode {
   private _data: ((context: HttpContext) => MaybePromise<unknown>)[] = [];
 
   constructor(
-    readonly component: RoutePathComponent,
+    readonly component: RouteComponent,
     readonly children: ComponentNode[] = []
   ) {
   }
@@ -193,9 +190,9 @@ class ComponentNode {
     }
     const composite = new CompositeRoutePathMatcher(array);
     let matcher: RoutePathMatcher;
-    if (this.component instanceof StaticPathComponent) {
+    if (this.component instanceof StaticRouteComponent) {
       matcher = new StaticRouteComponentMatcher(this.component, this._data);
-    } else if (this.component instanceof DynamicPathComponent) {
+    } else if (this.component instanceof ParameterRouteComponent) {
       matcher = new DynamicRouteComponentMatcher(this.component, this._data);
     } else if (this.component instanceof NullRouteComponent) {
       return composite;
@@ -209,7 +206,7 @@ class ComponentNode {
 
 interface InnerRouteDeclaration {
   readonly original: string;
-  readonly path: RoutePathComponent[];
+  readonly path: RouteComponent[];
   readonly method?: HttpMethod | string;
   readonly callback: (context: HttpContext) => unknown;
 }
@@ -217,23 +214,23 @@ interface InnerRouteDeclaration {
 export function makeRouter(declarations: Iterable<RouteDeclaration>): RouteMatcher {
   const routes: InnerRouteDeclaration[] = Array.from(declarations).map(x => {
     const path = segmentRoutePath(x.path).reduce((result, segment) => {
-      const slash = new StaticPathComponent('/');
+      const slash = new StaticRouteComponent('/');
       const queue = [slash, ...segment];
       while (queue.length) {
         const component = queue.shift()!;
         if (
-          component instanceof StaticPathComponent &&
+          component instanceof StaticRouteComponent &&
           result.length &&
-          result[result.length - 1] instanceof StaticPathComponent
+          result[result.length - 1] instanceof StaticRouteComponent
         ) {
-          const merged = new StaticPathComponent([result[result.length - 1].original, component.original].join(''));
+          const merged = new StaticRouteComponent([result[result.length - 1].original, component.original].join(''));
           result.splice(result.length - 1, 1, merged);
         } else {
           result.push(component);
         }
       }
       return result;
-    }, [] as RoutePathComponent[]);
+    }, [] as RouteComponent[]);
 
     return {
       original: x.path,
