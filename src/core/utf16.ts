@@ -14,7 +14,7 @@ export class Utf16Sequence implements Iterable<number> {
   }
 
   includes(value: number): boolean;
-  includes(string: string, index: number): boolean;
+  includes(string: string, at: number): boolean;
   includes(...args: unknown[]): boolean {
     return binarySearch(
       this._array,
