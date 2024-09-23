@@ -2,7 +2,7 @@ import { ApplicationFeature } from './feature';
 import { ServiceDescriptor, ServiceSet } from '../di';
 import { Type } from '../core';
 
-export class AddServiceFeature implements ApplicationFeature {
+export class AddServicesFeature implements ApplicationFeature {
   constructor(readonly values: Iterable<Type | ServiceDescriptor | object>) {
   }
 
@@ -11,6 +11,6 @@ export class AddServiceFeature implements ApplicationFeature {
   }
 }
 
-export function addService(...values: readonly (Type | ServiceDescriptor | object)[]): AddServiceFeature {
-  return new AddServiceFeature(values);
+export function addService(...values: readonly (Type | ServiceDescriptor | object)[]): AddServicesFeature {
+  return new AddServicesFeature(values);
 }
