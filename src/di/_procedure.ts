@@ -1,47 +1,47 @@
-import { ServiceDeclaration } from './declaration';
-import { ServiceBehaviour } from './behaviour';
-import { ServiceType } from './service-type';
+import { ServiceDescriptor } from './descriptor';
+import { ServiceBehavior } from './behavior';
+import { ServiceType } from './type';
 
 type IndexedValue<T> = [T, number];
 
-export function remapBehaviourInheritance(source: readonly ServiceDeclaration[]): readonly ServiceDeclaration[] {
-  const result: ServiceDeclaration[] = source.slice();
+export function remapBehaviourInheritance(source: readonly ServiceDescriptor[]): readonly ServiceDescriptor[] {
+  const result: ServiceDescriptor[] = source.slice();
 
-  const queue = source.map<IndexedValue<ServiceDeclaration>>((x, index) => [x, index])
-    .filter(x => ServiceBehaviour.Inherited === x[0].behaviour);
+  const queue = source.map<IndexedValue<ServiceDescriptor>>((x, index) => [x, index])
+    .filter(x => ServiceBehavior.Inherited === x[0].behavior);
 
   while (queue.length) {
     const entry = queue.shift()!;
 
-    const dependencies = entry[0].dependencies.map<IndexedValue<ServiceDeclaration>>(serviceKey => {
-      const index = result.findIndex(x => x.serviceKey === serviceKey);
+    const dependencies = entry[0].dependencies.map<IndexedValue<ServiceDescriptor>>(serviceKey => {
+      const index = result.findIndex(x => x.type === serviceKey);
       if (index < 0) {
         throw new Error('Missing dependency: '+ServiceType.toString(serviceKey));
       }
       return [result[index], index];
     });
 
-    const inheritedDeps = dependencies.filter(x => ServiceBehaviour.Inherited === x[0].behaviour);
+    const inheritedDeps = dependencies.filter(x => ServiceBehavior.Inherited === x[0].behavior);
 
     if (inheritedDeps.length) {
       inheritedDeps.forEach(entry2 => { // clean queue
-        const index = queue.findIndex(x => x[0].serviceKey === entry2[0].serviceKey);
+        const index = queue.findIndex(x => x[0].type === entry2[0].type);
         queue.splice(index, 1);
       });
 
       queue.unshift(...inheritedDeps, entry);  // requeue
     } else {
-      const inheritScopeBehaviour = dependencies.some(entry2 => ServiceBehaviour.Scoped === entry2[0].behaviour);
-      result[entry[1]] = entry[0].inheritBehaviour(inheritScopeBehaviour ? ServiceBehaviour.Scoped : ServiceBehaviour.Singleton);
+      const inheritScopeBehaviour = dependencies.some(entry2 => ServiceBehavior.Scoped === entry2[0].behavior);
+      result[entry[1]] = entry[0].inherit(inheritScopeBehaviour ? ServiceBehavior.Scoped : ServiceBehavior.Singleton);
     }
   }
 
   return result;
 }
 
-function mapDependenciesToDeclarations(collection: readonly ServiceDeclaration[], declaration: ServiceDeclaration): ServiceDeclaration[] {
+function mapDependenciesToDeclarations(collection: readonly ServiceDescriptor[], declaration: ServiceDescriptor): ServiceDescriptor[] {
   return declaration.dependencies.map(serviceKey => {
-    const index = collection.findIndex(x => x.serviceKey === serviceKey);
+    const index = collection.findIndex(x => x.type === serviceKey);
     if (index < 0) {
       throw new Error('Missing dependency: '+ServiceType.toString(serviceKey));
     }
@@ -50,7 +50,7 @@ function mapDependenciesToDeclarations(collection: readonly ServiceDeclaration[]
 }
 
 // todo: optimize algorithm probably
-export function validateCircularDependency(source: readonly ServiceDeclaration[]): void {
+export function validateCircularDependency(source: readonly ServiceDescriptor[]): void {
   const queue1 = source.slice();
 
   while (queue1.length) {
@@ -59,31 +59,31 @@ export function validateCircularDependency(source: readonly ServiceDeclaration[]
 
     while (queue2.length) {
       const declaration2 = queue2.shift()!;
-      if (declaration2.serviceKey === declaration1.serviceKey) {
-        throw new Error('Circular dependency detected: '+ServiceType.toString(declaration1.serviceKey));
+      if (declaration2.type === declaration1.type) {
+        throw new Error('Circular dependency detected: '+ServiceType.toString(declaration1.type));
       }
       queue2.unshift(...mapDependenciesToDeclarations(source, declaration2));
     }
   }
 }
 
-export function validateBehaviourDependency(source: readonly ServiceDeclaration[]): void {
+export function validateBehaviourDependency(source: readonly ServiceDescriptor[]): void {
   const queue = source.slice();
   while (queue.length) {
     const declaration = queue.shift()!;
     const dependencies = mapDependenciesToDeclarations(source, declaration);
 
-    const index1 = dependencies.findIndex(x => ServiceBehaviour.Inherited === x.behaviour);
+    const index1 = dependencies.findIndex(x => ServiceBehavior.Inherited === x.behavior);
     if (index1 > -1) {
       const dependency1 = dependencies[index1];
-      throw new Error('Inherit behaviour is not resolved: '+ServiceType.toString(dependency1.serviceKey));
+      throw new Error('Inherit behaviour is not resolved: '+ServiceType.toString(dependency1.type));
     }
 
-    if (ServiceBehaviour.Singleton === declaration.behaviour) {
-      const index2 = dependencies.findIndex(x => ServiceBehaviour.Scoped === x.behaviour);
+    if (ServiceBehavior.Singleton === declaration.behavior) {
+      const index2 = dependencies.findIndex(x => ServiceBehavior.Scoped === x.behavior);
       if (index2 > -1) {
         const dependency2 = dependencies[index2];
-        throw new Error(`Faulty behaviour dependency. Singleton (${ServiceType.toString(declaration.serviceKey)}) cannot depend on Scope (${ServiceType.toString(dependency2.serviceKey)}) behaviour.`);
+        throw new Error(`Faulty behaviour dependency. Singleton (${ServiceType.toString(declaration.type)}) cannot depend on Scope (${ServiceType.toString(dependency2.type)}) behaviour.`);
       }
     }
   }

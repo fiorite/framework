@@ -1,4 +1,4 @@
-import { ServiceType } from './service-type';
+import { ServiceType } from './type';
 import { ValueCallback } from '../core';
 import { ServiceCallbackQueue } from './_queue';
 

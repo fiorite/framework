@@ -1,7 +1,7 @@
-export enum ServiceBehaviour {
+export enum ServiceBehavior {
   /**
-   * Inherits {@link ServiceBehaviour.Scoped} if service depends on it,
-   * otherwise {@link ServiceBehaviour.Singleton} is being used.
+   * Inherits {@link ServiceBehavior.Scoped} if service depends on it,
+   * otherwise {@link ServiceBehavior.Singleton} is being used.
    */
   Inherited,
 

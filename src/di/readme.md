@@ -116,7 +116,9 @@ visit2.destroyScope(); // Visitor logs 'Goodbye at 6!'
 Mark class as `Service` (and start using component features to auto-wire or redefine arguments). e.g.
 
 ```typescript
-@Service()
+import { Inherited } from 'fiorite';
+
+@Inherited()
 class Garden {
   constructor(/* ...arguments */) {
   }

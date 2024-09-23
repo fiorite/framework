@@ -1,5 +1,5 @@
-import { ServiceType } from './service-type';
-import { ServiceBehaviour } from './behaviour';
+import { ServiceType } from './type';
+import { ServiceBehavior } from './behavior';
 import { Type } from '../core';
 
 /**
@@ -18,16 +18,16 @@ export class ServicePreDeclaration<T = unknown> {
     return this._actualType;
   }
 
-  private readonly _behaviour?: ServiceBehaviour;
+  private readonly _behaviour?: ServiceBehavior;
 
-  get behaviour(): ServiceBehaviour | undefined {
+  get behaviour(): ServiceBehavior | undefined {
     return this._behaviour;
   }
 
   constructor({ serviceType, actualType, behaviour }: {
     readonly actualType: Type<T>;
     readonly serviceType: ServiceType<T>;
-    readonly behaviour?: ServiceBehaviour;
+    readonly behaviour?: ServiceBehavior;
   }) {
     this._serviceType = serviceType;
     this._actualType = actualType;

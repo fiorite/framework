@@ -1,27 +1,29 @@
 import { AnyCallback, CustomSet, FunctionClass, Type, ValueCallback } from '../core';
-import { ServiceType } from './service-type';
-import { ServiceDeclaration } from './declaration';
-import { ServiceBehaviour } from './behaviour';
-import { ServiceScope } from './service-scope';
+import { ServiceType } from './type';
+import { ServiceDescriptor } from './descriptor';
+import { ServiceBehavior } from './behavior';
+import { ServiceScope } from './scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
-import { MaybeSyncProvideFunction, ServiceFactoryFunction, ServiceProvideFunction } from './function';
+import { ServiceFactoryFunction, ServiceProvideFunction } from './function';
 import { _ServiceClassResolver, _ServiceMethodResolver, ServiceMethodResolveFunction } from './_resolver';
-import { MaybeSyncServiceProvider } from './maybe-sync';
+import { InstantServiceProvideFunction, InstantServiceProvider } from './instant';
 
-export interface ServiceProvider extends MaybeSyncProvideFunction {
+export interface ServiceProvider extends InstantServiceProvideFunction {
   /**
    * @throws Error if service is asynchronous (promise like)
-   */<T>(type: ServiceType<T>): T;
+   */
+  <T>(type: ServiceType<T>): T;
 
   /**
    * Fallback to {@link ServiceProvideFunction}
-   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+   */
+  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
-export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> implements Iterable<ServiceDeclaration> {
+export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction> implements Iterable<ServiceDescriptor> {
   static readonly symbol = Symbol('ServiceProvider');
 
-  private readonly _set = new CustomSet<ServiceDeclaration, ServiceType>(x => x.serviceKey);
+  private readonly _set = new CustomSet<ServiceDescriptor, ServiceType>(x => x.type);
 
   private _scope?: ServiceScope;
 
@@ -31,22 +33,19 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
 
   private _createdFrom?: ServiceProvider;
 
-  private readonly _maybeSyncProvider: MaybeSyncServiceProvider;
+  private readonly _instantProvider: InstantServiceProvider;
 
-  get maybeSyncProvider(): MaybeSyncServiceProvider {
-    return this._maybeSyncProvider;
+  get instantProvider(): InstantServiceProvider {
+    return this._instantProvider;
   }
 
-  constructor(data: Iterable<ServiceDeclaration>, createdFrom?: ServiceProvider) {
-    const maybeSyncProvider = new MaybeSyncServiceProvider((type, callback) => this.provide(type, callback));
-    super(maybeSyncProvider);
-    this._maybeSyncProvider = maybeSyncProvider;
+  constructor(descriptors: Iterable<ServiceDescriptor>, createdFrom?: ServiceProvider) {
+    const instantProvider = new InstantServiceProvider((type, callback) => this.provide(type, callback));
+    super(instantProvider);
+    this._instantProvider = instantProvider;
     const array = [
-      ServiceDeclaration.fromInstance({
-        serviceInstance: this,
-        serviceKey: ServiceProvider,
-      }),
-      ...data,
+      ServiceDescriptor.value(ServiceProvider, this),
+      ...descriptors,
     ];
     if (!createdFrom) { // todo: refactor in the future
       const array2 = remapBehaviourInheritance(array);
@@ -63,23 +62,23 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
    * Raw implementation or {@link ServiceProvideFunction}.
    */
   provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
-    const service = this._set[CustomSet.data].get(type) as ServiceDeclaration<T> | undefined;
+    const descriptor = this._set[CustomSet.data].get(type) as ServiceDescriptor<T> | undefined;
 
-    if (undefined === service) {
+    if (undefined === descriptor) {
       throw new Error('Service is not found: ' + ServiceType.toString(type));
     }
 
-    if (ServiceBehaviour.Scoped === service.behaviour) {
+    if (ServiceBehavior.Scoped === descriptor.behavior) {
       if (!this._scope) {
         throw new Error('Scope is not defined. Use #createScope()');
       }
 
       return this._scope.provide(type, callback, callback2 => {
-        service.serviceFactory(this.provide.bind(this), callback2);
+        descriptor.factory(this.provide.bind(this), callback2);
       });
     }
 
-    return service.serviceFactory(this.provide.bind(this), callback);
+    return descriptor.factory(this.provide.bind(this), callback);
   }
 
   provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
@@ -126,14 +125,14 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
     this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this.provide.bind(this), callback as any);
   }
 
-  createScope(configure: (provide: MaybeSyncProvideFunction) => void = () => void 0): ServiceProvider {
+  createScope(configure: (provide: InstantServiceProvideFunction) => void = () => void 0): ServiceProvider {
     if (this._scope) {
       throw new Error('Sub-scope is not supported');
     }
 
     const scopeProvider = new ServiceProvider(this._set, this);
     scopeProvider._scope = new ServiceScope();
-    configure(scopeProvider._maybeSyncProvider);
+    configure(scopeProvider._instantProvider);
     return scopeProvider;
   }
 
@@ -146,7 +145,7 @@ export class ServiceProvider extends FunctionClass<MaybeSyncProvideFunction> imp
     delete this._scope;
   }
 
-  [Symbol.iterator](): Iterator<ServiceDeclaration> {
+  [Symbol.iterator](): Iterator<ServiceDescriptor> {
     return this._set[Symbol.iterator]();
   }
 }

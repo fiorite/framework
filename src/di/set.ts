@@ -1,13 +1,13 @@
 import { ServiceProvider } from './provider';
-import { ServiceDeclaration } from './declaration';
-import { ServiceType } from './service-type';
+import { ServiceDescriptor } from './descriptor';
+import { ServiceType } from './type';
 import { Service } from './decorator';
-import { ServiceBehaviour } from './behaviour';
+import { ServiceBehavior } from './behavior';
 import { AbstractType, CustomSet, DecoratorRecorder, doNothing, isType, Type, ValueCallback } from '../core';
-import { ServiceLinearFactoryFunction } from './function';
+import { ServiceFactoryReturnFunction } from './function';
 import { ServicePreDeclaration } from './pre-declaration';
 
-export class ServiceSet extends CustomSet<ServiceDeclaration, ServiceType> {
+export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
   get [Symbol.toStringTag](): string {
     return 'ServiceSet';
   }
@@ -27,7 +27,7 @@ export class ServiceSet extends CustomSet<ServiceDeclaration, ServiceType> {
   private _preDeclarations: readonly ServicePreDeclaration[] = [];
 
   constructor(preDeclarations: readonly ServicePreDeclaration[] = []) {
-    const getServiceType = (def: ServiceDeclaration) => def.serviceKey;
+    const getServiceType = (def: ServiceDescriptor) => def.type;
     super(getServiceType);
     this._preDeclarations = preDeclarations;
   }
@@ -37,9 +37,13 @@ export class ServiceSet extends CustomSet<ServiceDeclaration, ServiceType> {
     return this;
   }
 
-  addAll(iterable: Iterable<Type | ServiceDeclaration | object>): this {
+  useProject(): void {
+    throw new Error('Not implemented.');
+  }
+
+  addAll(iterable: Iterable<Type | ServiceDescriptor | object>): this {
     Array.from(iterable).forEach(item => {
-      if (item instanceof ServiceDeclaration) {
+      if (item instanceof ServiceDescriptor) {
         this.add(item);
       } else {
         if (isType(item)) {
@@ -53,17 +57,17 @@ export class ServiceSet extends CustomSet<ServiceDeclaration, ServiceType> {
   }
 
   addType<T>(type: Type<T>): this;
-  addType<T>(type: ServiceType<T>, implementation: Type<T>, behaviour?: ServiceBehaviour): this;
+  addType<T>(type: ServiceType<T>, actual: Type<T>, behaviour?: ServiceBehavior): this;
   addType(...args: unknown[]): this {
     if (args.length === 1) {
       this._addType(args[0] as Type);
     } else {
-      this._addType(args[1] as Type, args[0] as ServiceType, args[2] as ServiceBehaviour);
+      this._addType(args[1] as Type, args[0] as ServiceType, args[2] as ServiceBehavior);
     }
     return this;
   }
 
-  private _addType<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>, behaviour?: ServiceBehaviour): ServiceDeclaration {
+  private _addType<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>, behaviour?: ServiceBehavior): ServiceDescriptor {
     if (!behaviour || !serviceKey) {
       const result = this._preDeclarations
         .filter(x => x.actualType === serviceType)
@@ -76,7 +80,7 @@ export class ServiceSet extends CustomSet<ServiceDeclaration, ServiceType> {
             result.behaviour = preDef.behaviour;
           }
           return result;
-        }, {} as { key?: ServiceType, behaviour?: ServiceBehaviour });
+        }, {} as { key?: ServiceType, behaviour?: ServiceBehavior });
 
       if (!serviceKey && result.key) { // todo: throw warning that service decorator is different
         serviceKey = result.key as ServiceType<T>;
@@ -87,121 +91,112 @@ export class ServiceSet extends CustomSet<ServiceDeclaration, ServiceType> {
       }
     }
 
-    const declaration = ServiceDeclaration.fromType({
-      serviceType, serviceKey, behaviour,
-    });
+    const declaration = ServiceDescriptor.type(serviceKey || serviceType, serviceType, behaviour);
 
     this.add(declaration);
     return declaration;
   }
 
-  addCallback<T>(
+  addFactory<T>(
     type: ServiceType<T>,
-    callback: ServiceLinearFactoryFunction<T>,
+    factory: ServiceFactoryReturnFunction<T>,
     dependencies: ServiceType[] = [],
-    behaviour?: ServiceBehaviour,
+    behaviour?: ServiceBehavior,
   ): this {
-    return this.add(
-      ServiceDeclaration.fromFactory({
-        serviceKey: type, linearFactory: callback,
-        dependencies, behaviour,
-      })
-    );
+    const descriptor = ServiceDescriptor.factory(type, factory, dependencies, behaviour);
+    return this.add(descriptor);
   }
 
   addValue(object: object): this;
-  addValue<T extends object>(type: ServiceType<T>, object: T): this;
+  addValue<T extends object>(serviceType: ServiceType<T>, object: T): this;
   addValue(...args: unknown[]): this {
     return this.add(
-      args.length === 1 ? ServiceDeclaration.fromInstance({
-        serviceInstance: args[0] as object,
-      }) : ServiceDeclaration.fromInstance({
-        serviceInstance: args[1] as object, serviceKey: args[0] as ServiceType<object>,
-      })
+      args.length === 1 ? ServiceDescriptor.value(args[0] as object) :
+        ServiceDescriptor.value(args[0] as ServiceType<object>, args[1] as object)
     );
   }
 
   addInherited<T>(type: Type<T>): this;
   addInherited<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addInherited<T>(type: AbstractType<T>, factory: ServiceLinearFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addInherited<T>(type: AbstractType<T>, factory: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addInherited(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
-      return this.addType(type, type, ServiceBehaviour.Inherited);
+      return this.addType(type, type, ServiceBehavior.Inherited);
     }
 
     if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehaviour.Inherited);
+      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Inherited);
     }
 
-    return this.addCallback(
+    return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceLinearFactoryFunction<unknown>,
+      args[1] as ServiceFactoryReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
-      ServiceBehaviour.Inherited
+      ServiceBehavior.Inherited
     );
   }
 
   addSingleton<T>(type: Type<T>): this;
   addSingleton<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addSingleton<T>(type: AbstractType<T>, callback: ServiceLinearFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addSingleton<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addSingleton(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
-      return this.addType(type, type, ServiceBehaviour.Singleton);
+      return this.addType(type, type, ServiceBehavior.Singleton);
     }
 
     if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehaviour.Singleton);
+      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Singleton);
     }
 
-    return this.addCallback(
+    return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceLinearFactoryFunction<unknown>,
+      args[1] as ServiceFactoryReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
-      ServiceBehaviour.Singleton
+      ServiceBehavior.Singleton
     );
   }
 
   addScoped<T>(type: Type<T>): this;
   addScoped<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addScoped<T>(type: AbstractType<T>, callback: ServiceLinearFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addScoped<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addScoped(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
-      return this.addType(type, type, ServiceBehaviour.Scoped);
+      return this.addType(type, type, ServiceBehavior.Scoped);
     }
 
     if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehaviour.Scoped);
+      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Scoped);
     }
 
-    return this.addCallback(
+    return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceLinearFactoryFunction<unknown>,
+      args[1] as ServiceFactoryReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
-      ServiceBehaviour.Scoped
+      ServiceBehavior.Scoped
     );
   }
 
   addPrototype<T>(type: Type<T>): this;
   addPrototype<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addPrototype<T>(type: AbstractType<T>, callback: ServiceLinearFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addPrototype<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addPrototype(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
-      return this.addType(type, type, ServiceBehaviour.Prototype);
+      return this.addType(type, type, ServiceBehavior.Prototype);
     }
 
     if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehaviour.Prototype);
+      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Prototype);
     }
 
-    return this.addCallback(
+    return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceLinearFactoryFunction<unknown>,
+      args[1] as ServiceFactoryReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
-      ServiceBehaviour.Prototype
+      ServiceBehavior.Prototype
     );
   }
 
@@ -232,7 +227,7 @@ export class ServiceSet extends CustomSet<ServiceDeclaration, ServiceType> {
 }
 
 export function makeServiceProvider(
-  configure: (Type | ServiceDeclaration | object)[] | ValueCallback<ServiceSet>,
+  configure: (Type | ServiceDescriptor | object)[] | ValueCallback<ServiceSet>,
   includeGlobal = false,
   preCacheSingleton = false,
 ): ServiceProvider {
@@ -261,8 +256,8 @@ export function makeServiceProvider(
 
   if (preCacheSingleton) {
     Array.from(provider)
-      .filter(x => ServiceBehaviour.Singleton === x.behaviour)
-      .forEach(x => provider.provide(x.serviceKey, doNothing));
+      .filter(x => ServiceBehavior.Singleton === x.behavior)
+      .forEach(x => provider.provide(x.type, doNothing));
   }
 
   return provider;

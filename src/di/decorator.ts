@@ -1,5 +1,5 @@
-import { ServiceBehaviour } from './behaviour';
-import { ServiceType } from './service-type';
+import { ServiceBehavior } from './behavior';
+import { ServiceType } from './type';
 import {
   ClassDecoratorWithPayload,
   makeClassDecorator,
@@ -8,11 +8,11 @@ import {
   MaybePromise,
   ParameterDecoratorWithPayload
 } from '../core';
-import { ServiceLinearFactoryFunction } from './function';
+import { ServiceFactoryReturnFunction } from './function';
 
 export interface ServiceOptions<T> {
   readonly type: ServiceType<T>;
-  readonly behaviour: ServiceBehaviour;
+  readonly behaviour: ServiceBehavior;
 }
 
 export class ServicePayload<T> {
@@ -22,9 +22,9 @@ export class ServicePayload<T> {
     return this._type;
   }
 
-  private readonly _behaviour?: ServiceBehaviour;
+  private readonly _behaviour?: ServiceBehavior;
 
-  get behaviour(): ServiceBehaviour | undefined {
+  get behaviour(): ServiceBehavior | undefined {
     return this._behaviour;
   }
 
@@ -44,7 +44,7 @@ export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecorator
  * @param dependencies
  * @constructor
  */
-export function Service<T>(factory: ServiceLinearFactoryFunction<T>, dependencies?: ServiceType[]): ClassDecoratorWithPayload<ServicePayload<T>, T>;
+export function Service<T>(factory: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): ClassDecoratorWithPayload<ServicePayload<T>, T>;
 /**
  * @deprecated use {@link Inherited}, {@link Scoped}, {@link Singleton} or {@link Prototype} instead. will be removed soon.
  */
@@ -60,20 +60,20 @@ export function Service(...args: unknown[]): ClassDecoratorWithPayload<ServicePa
   return makeClassDecorator(Service, payload);
 }
 
-export const Singleton = (serviceType?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Singleton, type: serviceType }).calledBy(Singleton);
+export const Singleton = (type?: ServiceType) => {
+  return Service({ behaviour: ServiceBehavior.Singleton, type, }).calledBy(Singleton);
 };
 
-export const Scoped = (serviceType?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Scoped, type: serviceType, }).calledBy(Scoped);
+export const Scoped = (type?: ServiceType) => {
+  return Service({ behaviour: ServiceBehavior.Scoped, type, }).calledBy(Scoped);
 };
 
-export const Inherited = (serviceType?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Inherited, type: serviceType }).calledBy(Inherited);
+export const Inherited = (type?: ServiceType) => {
+  return Service({ behaviour: ServiceBehavior.Inherited, type, }).calledBy(Inherited);
 };
 
-export const Prototype = (serviceType?: ServiceType) => {
-  return Service({ behaviour: ServiceBehaviour.Prototype, type: serviceType }).calledBy(Prototype);
+export const Prototype = () => {
+  return Service({ behaviour: ServiceBehavior.Prototype, type: void 0, }).calledBy(Prototype);
 };
 
 export class ProvidePayload<T, R = unknown> {
