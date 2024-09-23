@@ -238,7 +238,6 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 export function makeServiceProvider(
   configure: Iterable<Type | ServiceDescriptor | object> | ValueCallback<ServiceSet>,
   includeGlobal = false,
-  preCacheSingleton = false,
 ): ServiceProvider {
   const preDeclarations = DecoratorRecorder.classSearch(Service).map(decorator => {
     const payload = decorator.payload;
@@ -261,15 +260,7 @@ export function makeServiceProvider(
     configurator.addAll(configure);
   }
 
-  const provider = configurator.toProvider();
-
-  if (preCacheSingleton) {
-    Array.from(provider)
-      .filter(x => ServiceBehavior.Singleton === x.behavior)
-      .forEach(x => provider.provide(x.type, doNothing));
-  }
-
-  return provider;
+  return configurator.toProvider();
 }
 
 /** @deprecated experimental API */

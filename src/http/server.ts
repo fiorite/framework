@@ -1,37 +1,10 @@
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { HttpContext, HttpContextHost } from './context';
-import { ServiceProvider, ServiceSet } from '../di';
+import { ServiceProvider } from '../di';
 import { NodeRequest, NodeResponse } from './node';
-import { HttpParams, HttpQuery, HttpRequest } from './request';
-import { HttpResponse } from './response';
 import { doNothing, FunctionClass, ValueCallback } from '../core';
 import { HttpCallback } from './callback';
 import { Closeable } from '../io';
-import { HttpPipeline } from './pipeline';
-
-export function addHttpServer(serviceSet: ServiceSet): void {
-  const pipeline = new HttpPipeline();
-
-  const httpServerFactory = (provider: ServiceProvider) => {
-    return new HttpServer({ callback: pipeline, provider, });
-  };
-
-  serviceSet.addValue(HttpPipeline, pipeline)
-    .addSingleton(HttpServer, httpServerFactory, [ServiceProvider]);
-
-  serviceSet.addScoped(HttpContextHost)
-    .addInherited(HttpContext, (host: HttpContextHost) => {
-      if (!host.context) {
-        throw new Error('HttpContext is missing');
-      }
-      return host.context;
-    }, [HttpContextHost])
-    .addInherited(HttpRequest, (context: HttpContext) => context.request, [HttpContext])
-    .addInherited(HttpParams, (request: HttpRequest) => request.params, [HttpRequest])
-    .addInherited(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
-    .addInherited(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
-  ;
-}
 
 /** @deprecated will be replaced with listener */
 export enum HttpServerState {

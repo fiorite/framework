@@ -1,6 +1,6 @@
-import { InstantServiceProvideFunction, ServiceSet } from '../di';
+import { ServiceProvider, ServiceSet } from '../di';
 
 export interface ApplicationFeature {
   configureServices?(serviceSet: ServiceSet): void;
-  configure?(provide: InstantServiceProvideFunction): void;
+  configure?(provide: ServiceProvider): void;
 }

@@ -4,7 +4,7 @@ export { HttpContext, HttpContextHost } from './context';
 export { HttpHeaders } from './headers';
 export { HttpMessageHeader, HttpMessage } from './message';
 export { HttpMethod } from './method';
-export { addHttpServer, HttpServer, HttpServerState } from './server';
+export { HttpServer, HttpServerState } from './server';
 export { HttpMiddleware } from './middleware';
 export { HttpPipeline } from './pipeline';
 export { HttpRequestHeader, HttpRequest, HttpParams, HttpQuery } from './request';
