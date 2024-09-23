@@ -14,7 +14,7 @@ make.application(                         // 1. setup your application
   add('message', () => 'hello world!'),   // 4. add service with 'message' id
   get('/', () => {                        // 5. add GET '/' route
     const message = provide('message');   // 6. provide the message
-    log.info('/ => ' + message);          // 7. log the message into console: / => hello world!
+    log.info('/ => ' + message);          // 7. log the message into console
     return message;                       // 8. respond with 'hello world!';
   }),
 ).listen(3000);                           // 9. start webserver at 3000 port.
