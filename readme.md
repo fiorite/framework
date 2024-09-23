@@ -5,6 +5,8 @@ Currently, work in progress, maybe release will happen.
 
 ## Getting started
 
+You decide the style of your app. It could be simple as:
+
 ```typescript
 import { add, cors, get, log, logger, make, provide } from 'fiorite';
 
@@ -20,6 +22,40 @@ make.application(                         // 1. setup your application
 ).listen(3000);                           // 9. start webserver at 3000 port.
 
 ```
+
+Or more complex style:
+
+```typescript
+import { addConsoleLogger, addCors, HttpGet, Logger, makeApplication } from './fiorite';
+
+class MessageHost {
+  constructor(readonly message: string) { }
+}
+
+class Controller {
+  constructor(@Provide() logger: Logger) { }
+
+  @HttpGet()
+  getMessage(host: MessageHost): string {
+    const message = host.message;
+    this.logger.info('/ => ' + message);
+    return message;
+  }
+}
+
+const messageHost = new MessageHost('Hello world!');
+
+const application = makeApplication(
+  addConsoleLogger(),
+  addCors(),
+  addService(messageHost),
+  addRouting(Controller),
+);
+
+application.listen(3000);
+```
+
+Cookbook ideas below:
 
 ```typescript
 import { get, param } from './fiorite';
