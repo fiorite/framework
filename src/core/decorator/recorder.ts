@@ -1,4 +1,4 @@
-import { DecoratorFunction, DecoratorOuterFunction } from './function-type';
+import { DecoratorFunction, DecoratorOuterFunction } from './function';
 import { isType, Type } from '../type';
 import type { ParameterDecoratorWithPayload } from './parameter';
 import type { MethodDecoratorWithPayload } from './method';
@@ -16,10 +16,10 @@ export interface DecoratorEvent<
 }
 
 export class DecoratorRecorder {
-  static #_instance = new DecoratorRecorder();
+  static readonly _instance = new DecoratorRecorder();
 
   static get instance(): DecoratorRecorder {
-    return this.#_instance;
+    return this._instance;
   }
 
   private _data: DecoratorEvent[] = [];

@@ -15,12 +15,10 @@ export class HttpServerFeature implements ApplicationFeature {
   configureServices(serviceSet: ServiceSet) {
     const pipeline = new HttpPipeline();
 
-    const httpServerFactory = (provider: ServiceProvider) => {
-      return new HttpServer({ callback: pipeline, provider, });
-    };
-
     serviceSet.addValue(HttpPipeline, pipeline)
-      .addSingleton(HttpServer, httpServerFactory, [ServiceProvider]);
+      .addSingleton(HttpServer, (provider: ServiceProvider) => {
+        return new HttpServer({ callback: pipeline, provider, });
+      }, [ServiceProvider]);
 
     serviceSet.addScoped(HttpContextHost)
       .addInherited(HttpContext, (host: HttpContextHost) => {

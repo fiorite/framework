@@ -3,7 +3,7 @@ import { MapCallback, returnSelf } from './callback';
 /**
  * Custom set designed to provide the same signature and the way to configure comparison flow using {@link callback}
  */
-export class CustomSet<T, R = unknown> implements Set<T> {
+export class CustomSet<T, K = unknown> implements Set<T> {
   static readonly data: unique symbol = Symbol('CustomSet.data');
 
   static readonly callback: unique symbol = Symbol('CustomSet.callback');
@@ -16,13 +16,13 @@ export class CustomSet<T, R = unknown> implements Set<T> {
   readonly [CustomSet.data] = new Map<R, T>();
 
   // @ts-ignore
-  readonly [CustomSet.callback]: MapCallback<T, R>;
+  readonly [CustomSet.callback]: MapCallback<T, K>;
 
   get size(): number {
     return this[CustomSet.data].size;
   }
 
-  constructor(callback?: MapCallback<T, R>) {
+  constructor(callback?: MapCallback<T, K>) {
     this[CustomSet.callback] = callback || returnSelf as any;
   }
 

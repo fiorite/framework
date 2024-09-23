@@ -1,4 +1,4 @@
-export { DecoratorFunction, DecoratorOuterFunction } from './function-type';
+export { DecoratorFunction, DecoratorOuterFunction } from './function';
 export { DecoratorRecorder } from './recorder';
 export { makeClassDecorator, ClassDecoratorWithPayload } from './class';
 export { makePropertyDecorator, PropertyDecoratorWithPayload } from './property';

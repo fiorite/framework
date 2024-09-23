@@ -28,12 +28,12 @@ export function addRouting(routes: Iterable<RouteDescriptor>): RoutingFeature {
   return new RoutingFeature(routes);
 }
 
-export class AddRoutesFeature implements ApplicationFeature {
+export class RoutesFeature implements ApplicationFeature {
   constructor(routes: Iterable<RouteDescriptor>) {
     throw new Error('not implemented');
   }
 }
 
-export function addRoute(route: RouteDescriptor): AddRoutesFeature {
-  return new AddRoutesFeature([route]);
+export function addRoute(route: RouteDescriptor): RoutesFeature {
+  return new RoutesFeature([route]);
 }

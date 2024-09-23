@@ -1,7 +1,7 @@
 import { ServiceType } from './type';
 import { ServiceFactoryFunction, ServiceFactoryReturnFunction } from './function';
 import { ServiceBehavior } from './behavior';
-import { Type } from '../core';
+import { AnyCallback, FunctionClass, Type } from '../core';
 import { _ServiceClassResolver } from './_resolver';
 import { ServiceFactoryReturn, ServiceSingletonFactory, ServiceValueFactory } from './factory';
 
@@ -30,8 +30,8 @@ export class ServiceDescriptor<T = unknown> {
     return this._behavior;
   }
 
-  static value<T extends object>(value: T): ServiceDescriptor<T>;
-  static value<T extends object>(type: ServiceType<T>, value: T): ServiceDescriptor<T>;
+  static value<T extends object | FunctionClass<AnyCallback>>(value: T): ServiceDescriptor<T>;
+  static value<T>(type: ServiceType<T>, value: T): ServiceDescriptor<T>;
   static value(...args: unknown[]): ServiceDescriptor {
     let type: ServiceType, value: object;
 

@@ -1,6 +1,6 @@
 import { DecoratorRecorder, FunctionClass, MaybePromise, Type } from '../core';
 import { Controller, Route } from './decorator';
-import { ServiceFactoryFunction, ServiceProvider, ServiceNotFoundError } from '../di';
+import { ServiceFactoryFunction, ServiceNotFoundError, ServiceProvider } from '../di';
 import { RouteDescriptor } from './route-descriptor';
 import { HttpCallback, HttpContext } from '../http';
 import { _ServiceClassResolver, _ServiceMethodResolver, ServiceMethodResolveFunction } from '../di/_resolver';

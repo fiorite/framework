@@ -1,4 +1,4 @@
-import { DecoratorFunction, DecoratorOuterFunction } from './function-type';
+import { DecoratorFunction, DecoratorOuterFunction } from './function';
 import { FunctionClass } from '../function';
 import { DecoratorRecorder } from './recorder';
 import { AnyCallback } from '../callback';

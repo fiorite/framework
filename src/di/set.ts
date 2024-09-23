@@ -3,16 +3,7 @@ import { ServiceDescriptor } from './descriptor';
 import { ServiceType } from './type';
 import { Service } from './decorator';
 import { ServiceBehavior } from './behavior';
-import {
-  AbstractType,
-  CustomSet,
-  DecoratorRecorder,
-  doNothing,
-  FunctionClass,
-  isType,
-  Type,
-  ValueCallback
-} from '../core';
+import { AbstractType, CustomSet, DecoratorRecorder, FunctionClass, isType, Type, ValueCallback } from '../core';
 import { ServiceFactoryReturnFunction } from './function';
 import { ServicePreDeclaration } from './pre-declaration';
 
@@ -66,7 +57,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
   }
 
   addType<T>(type: Type<T>): this;
-  addType<T>(type: ServiceType<T>, actual: Type<T>, behaviour?: ServiceBehavior): this;
+  addType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
   addType(...args: unknown[]): this {
     if (args.length === 1) {
       this._addType(args[0] as Type);
@@ -110,9 +101,9 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     type: ServiceType<T>,
     factory: ServiceFactoryReturnFunction<T>,
     dependencies: ServiceType[] = [],
-    behaviour?: ServiceBehavior,
+    behavior?: ServiceBehavior,
   ): this {
-    const descriptor = ServiceDescriptor.factory(type, factory, dependencies, behaviour);
+    const descriptor = ServiceDescriptor.factory(type, factory, dependencies, behavior);
     return this.add(descriptor);
   }
 
