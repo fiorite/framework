@@ -8,7 +8,7 @@ Currently, work in progress, maybe release will happen.
 You decide the style of your app. It could be simple as:
 
 ```typescript
-import { add, cors, get, log, logger, make, provide } from 'fiorite';
+import { add, cors, get, log, logger, make, provide } from 'fiorite/short';
 
 make.application(                         // 1. setup your application
   logger.console(),                       // 2. add console logger
@@ -23,17 +23,19 @@ make.application(                         // 1. setup your application
 
 ```
 
-Or more complex style:
+Or more complex style (OOP):
 
 ```typescript
-import { addConsoleLogger, addCors, HttpGet, Logger, makeApplication } from './fiorite';
+import { addConsoleLogger, addCors, addRouting, addService, HttpGet, Logger, makeApplication, Provide } from './fiorite';
 
 class MessageHost {
-  constructor(readonly message: string) { }
+  constructor(readonly message: string) {
+  }
 }
 
 class Controller {
-  constructor(@Provide() logger: Logger) { }
+  constructor(@Provide() logger: Logger) {
+  }
 
   @HttpGet()
   getMessage(host: MessageHost): string {
