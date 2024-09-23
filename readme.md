@@ -8,29 +8,16 @@ Currently, work in progress, maybe release will happen.
 ```typescript
 import { add, cors, get, log, logger, make, provide } from 'fiorite';
 
-// setup your application
-make.application(
-  // add console logger
-  logger.console(),
-
-  // add cors middleware
-  cors(),
-
-  // add service with 'message' id
-  add('message', () => 'hello world!'),
-
-  // add GET '/' route
-  get('/', () => {
-    // provide the message
-    const message = provide('message');
-
-    // log the message into console:
-    log.info('/ => ' + message); // / => hello world!
-
-    // respond with 'hello world!';
-    return message;
+make.application(                         // 1. setup your application
+  logger.console(),                       // 2. add console logger
+  cors(),                                 // 3. add cors middleware
+  add('message', () => 'hello world!'),   // 4. add service with 'message' id
+  get('/', () => {                        // 5. add GET '/' route
+    const message = provide('message');   // 6. provide the message
+    log.info('/ => ' + message);          // 7. log the message into console: / => hello world!
+    return message;                       // 8. respond with 'hello world!';
   }),
-).listen(3000); // start webserver at 3000 port.
+).listen(3000);                           // 9. start webserver at 3000 port.
 
 ```
 
