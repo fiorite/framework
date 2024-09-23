@@ -15,9 +15,16 @@ make.application(                         // 1. setup your application
   get('/', () => {                        // 5. add GET '/' route
     const message = provide('message');   // 6. provide the message
     log.info('/ => ' + message);          // 7. log the message into console
-    return message;                       // 8. respond with 'hello world!';
+    return message;                       // 8. response with 'hello world!';
   }),
 ).listen(3000);                           // 9. start webserver at 3000 port.
 
 ```
 
+```typescript
+import { get, param } from './fiorite';
+
+get('/hi/:to=length(1,64)', ctx => {      // 1. add route parameter with length
+  return 'hi ' + param(ctx, 'to');        // 2. response with greeting
+});
+```
