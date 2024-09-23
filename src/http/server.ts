@@ -4,16 +4,22 @@ import { ServiceProvider, ServiceSet } from '../di';
 import { NodeRequest, NodeResponse } from './node';
 import { HttpParams, HttpQuery, HttpRequest } from './request';
 import { HttpResponse } from './response';
-import { doNothing, FunctionClass, ValueCallback, VoidCallback } from '../core';
+import { doNothing, FunctionClass, ValueCallback } from '../core';
 import { HttpCallback } from './callback';
+import { Closeable } from '../io';
+import { HttpPipeline } from './pipeline';
 
-export function addHttpServer(set: ServiceSet, factory: (provide: ServiceProvider) => HttpCallback): void {
+export function addHttpServer(serviceSet: ServiceSet): void {
+  const pipeline = new HttpPipeline();
+
   const httpServerFactory = (provider: ServiceProvider) => {
-    return new HttpServer({ callback: factory(provider), provider, });
+    return new HttpServer({ callback: pipeline, provider, });
   };
 
-  set.addSingleton(HttpServer, httpServerFactory, [ServiceProvider])
-    .addScoped(HttpContextHost)
+  serviceSet.addValue(HttpPipeline, pipeline)
+    .addSingleton(HttpServer, httpServerFactory, [ServiceProvider]);
+
+  serviceSet.addScoped(HttpContextHost)
     .addInherited(HttpContext, (host: HttpContextHost) => {
       if (!host.context) {
         throw new Error('HttpContext is missing');
@@ -27,6 +33,7 @@ export function addHttpServer(set: ServiceSet, factory: (provide: ServiceProvide
   ;
 }
 
+/** @deprecated will be replaced with listener */
 export enum HttpServerState {
   Stopped,
   Starting,
@@ -35,14 +42,18 @@ export enum HttpServerState {
 }
 
 export class HttpServer extends FunctionClass<HttpCallback> {
+  /** @deprecated will be moved to listener */
   private _original?: Server;
 
+  /** @deprecated will be moved to listener */
   get original(): Server | undefined {
     return this._original;
   }
 
+  /** @deprecated will be moved to listener */
   private _state = HttpServerState.Stopped;
 
+  /** @deprecated will be moved to listener */
   get state(): HttpServerState {
     return this._state;
   }
@@ -57,14 +68,15 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     super(object.callback);
     this._provider = object.provider;
     this._callback = object.callback;
-    if (this._provider.scopeDefined) {
+    if (this._provider.scoped) {
       throw new Error('unable to apply service provide with defined scope in http server.');
     }
   }
 
-  handle(context: HttpContext): void {
-    this._callback(context);
-  }
+  //
+  // handle(context: HttpContext): void {
+  //   this._callback(context);
+  // }
 
   handleOriginal(req: IncomingMessage, res: ServerResponse): void {
     const provider = this._provider.createScope();
@@ -78,7 +90,10 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     this._callback(context);
   }
 
-  start(port: number, callback: VoidCallback = doNothing): void {
+  /**
+   * @deprecated refactor to #listen(): Listener
+   */
+  start(port: number, callback: ValueCallback<unknown> = doNothing): void {
     if (this._state !== HttpServerState.Stopped) {
       throw new Error('server is supposed to be stopped in order to start it.');
     }
@@ -93,11 +108,18 @@ export class HttpServer extends FunctionClass<HttpCallback> {
       originalServer.on('close', () => this.stop());
       originalServer.listen(port, () => {
         this._state = HttpServerState.Listening;
-        callback();
+        callback(void 0);
       });
     });
   }
 
+  listen(port: number, callback: ValueCallback<unknown> = doNothing): Closeable {
+    throw new Error('Not implemented.');
+  }
+
+  /**
+   * @deprecated refactor to #listen(): Listener
+   */
   stop(callback: ValueCallback<Error | undefined> = doNothing): void {
     if (this._state === HttpServerState.Stopped) {
       throw new Error('unable to stop inactive server.');

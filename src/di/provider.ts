@@ -20,6 +20,14 @@ export interface ServiceProvider extends InstantServiceProvideFunction {
   <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
+export class ServiceNotFoundError implements Error {
+  readonly name = 'ServiceNotFound';
+  readonly message: string;
+  constructor(readonly type: ServiceType) {
+    this.message = 'service is not found: '+ServiceType.toString(type);
+  }
+}
+
 export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction> implements Iterable<ServiceDescriptor> {
   static readonly symbol = Symbol('ServiceProvider');
 
@@ -27,22 +35,22 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
   private _scope?: ServiceScope;
 
-  get scopeDefined(): boolean {
+  get scoped(): boolean {
     return !!this._scope;
   }
 
   private _createdFrom?: ServiceProvider;
 
-  private readonly _instantProvider: InstantServiceProvider;
+  private readonly _instant: InstantServiceProvider;
 
-  get instantProvider(): InstantServiceProvider {
-    return this._instantProvider;
+  get instant(): InstantServiceProvider {
+    return this._instant;
   }
 
   constructor(descriptors: Iterable<ServiceDescriptor>, createdFrom?: ServiceProvider) {
     const instantProvider = new InstantServiceProvider((type, callback) => this.provide(type, callback));
     super(instantProvider);
-    this._instantProvider = instantProvider;
+    this._instant = instantProvider;
     const array = [
       ServiceDescriptor.value(ServiceProvider, this),
       ...descriptors,
@@ -65,7 +73,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     const descriptor = this._set[CustomSet.data].get(type) as ServiceDescriptor<T> | undefined;
 
     if (undefined === descriptor) {
-      throw new Error('Service is not found: ' + ServiceType.toString(type));
+      throw new ServiceNotFoundError(type);
     }
 
     if (ServiceBehavior.Scoped === descriptor.behavior) {
@@ -132,7 +140,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
     const scopeProvider = new ServiceProvider(this._set, this);
     scopeProvider._scope = new ServiceScope();
-    configure(scopeProvider._instantProvider);
+    configure(scopeProvider._instant);
     return scopeProvider;
   }
 

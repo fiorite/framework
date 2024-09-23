@@ -1,20 +1,21 @@
 import { CustomSet } from '../core';
-import { RouteDeclaration } from './route-declaration';
+import { RouteDescriptor } from './route-descriptor';
 import { HttpCallback, HttpMethod } from '../http';
 
-export class RouteSet extends CustomSet<RouteDeclaration, string> {
+export class RouteSet extends CustomSet<RouteDescriptor, string> {
   get [Symbol.toStringTag](): string {
     return 'RouteSet';
   }
 
-  constructor() {
-    const routeToString = (route: RouteDeclaration) => route.toString();
+  constructor(routes: Iterable<RouteDescriptor> = []) {
+    const routeToString = (route: RouteDescriptor) => route.toString();
     super(routeToString);
+    Array.from(routes).forEach(route => this.add(route));
   }
 
-  override add(value: RouteDeclaration): this {
+  override add(value: RouteDescriptor): this {
     if (this.has(value)) {
-      throw new Error('route "'+ value.toString() +'" is already added.');
+      throw new Error('route "' + value.toString() + '" is already added.');
     }
     return super.add(value);
   }
@@ -29,13 +30,13 @@ export class RouteSet extends CustomSet<RouteDeclaration, string> {
   map(...args: unknown[]): this {
     if (args.length === 2) {
       const [path, callback] = args as [string, HttpCallback];
-      const route = new RouteDeclaration({ path, callback });
+      const route = new RouteDescriptor({ path, callback });
       return this.add(route);
     }
 
     if (args.length === 3) {
       const [method, path, callback] = args as [HttpMethod | string, string, HttpCallback];
-      const route = new RouteDeclaration({ path, method, callback });
+      const route = new RouteDescriptor({ path, method, callback });
       return this.add(route);
     }
 

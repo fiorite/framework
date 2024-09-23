@@ -1,10 +1,8 @@
-import {
-  segmentRoutePath,
-} from './segment';
+import { segmentRoutePath, } from './segment';
 import { RadixMap } from './radix';
 import { HttpCallback, HttpContext, HttpMethod, HttpRequest } from '../http';
 import { MaybePromise } from '../core';
-import { RouteDeclaration } from './route-declaration';
+import { RouteDescriptor } from './route-descriptor';
 import { NullRouteComponent, ParameterRouteComponent, RouteComponent, StaticRouteComponent } from './component';
 
 interface RouteMatchResult {
@@ -12,10 +10,6 @@ interface RouteMatchResult {
   readonly path: string;
   readonly data: HttpCallback[];
   // readonly callback: unknown;
-}
-
-export interface RouteMatcher {
-  match(request: HttpRequest): RouteMatchResult | undefined;
 }
 
 export interface RoutePathMatcher {
@@ -65,29 +59,6 @@ export class RouteComponentChainMatcher implements RoutePathMatcher {
       },
       data: [...resultY.data],
     };
-  }
-}
-
-export class MainRouteMatcher implements RouteMatcher {
-  constructor(private _methodMatcher: Map<HttpMethod | string | undefined, RoutePathMatcher>) {
-  }
-
-  match(request: HttpRequest): RouteMatchResult | undefined {
-    if (this._methodMatcher.has(request.method)) {
-      const result = this._methodMatcher.get(request.method)!.match(request.url!.pathname);
-      if (undefined !== result && !result.path.length) { // if path has not processed part
-        return result;
-      }
-    }
-
-    if (this._methodMatcher.has(undefined)) {
-      const result = this._methodMatcher.get(undefined)!.match(request.url!.pathname);
-      if (undefined !== result && !result.path.length) { // if path has not processed part
-        return result;
-      }
-    }
-
-    return undefined;
   }
 }
 
@@ -211,76 +182,97 @@ interface InnerRouteDeclaration {
   readonly callback: (context: HttpContext) => unknown;
 }
 
-export function makeRouter(declarations: Iterable<RouteDeclaration>): RouteMatcher {
-  const routes: InnerRouteDeclaration[] = Array.from(declarations).map(x => {
-    const path = segmentRoutePath(x.path).reduce((result, segment) => {
-      const slash = new StaticRouteComponent('/');
-      const queue = [slash, ...segment];
-      while (queue.length) {
-        const component = queue.shift()!;
-        if (
-          component instanceof StaticRouteComponent &&
-          result.length &&
-          result[result.length - 1] instanceof StaticRouteComponent
-        ) {
-          const merged = new StaticRouteComponent([result[result.length - 1].original, component.original].join(''));
-          result.splice(result.length - 1, 1, merged);
-        } else {
-          result.push(component);
+/** todo: rewrite to make it mutable */
+export class RouteMatcher {
+  private _methodMatcher: Map<HttpMethod | string | undefined, RoutePathMatcher>;
+
+  constructor(descriptors: Iterable<RouteDescriptor>) {
+    const routes: InnerRouteDeclaration[] = Array.from(descriptors).map(x => {
+      const path = segmentRoutePath(x.path).reduce((result, segment) => {
+        const slash = new StaticRouteComponent('/');
+        const queue = [slash, ...segment];
+        while (queue.length) {
+          const component = queue.shift()!;
+          if (
+            component instanceof StaticRouteComponent &&
+            result.length &&
+            result[result.length - 1] instanceof StaticRouteComponent
+          ) {
+            const merged = new StaticRouteComponent([result[result.length - 1].original, component.original].join(''));
+            result.splice(result.length - 1, 1, merged);
+          } else {
+            result.push(component);
+          }
         }
+        return result;
+      }, [] as RouteComponent[]);
+
+      return {
+        original: x.path,
+        path,
+        method: x.method,
+        callback: x.callback,
+      };
+    });
+
+    const methodMap = routes.reduce((result, route) => {
+      if (result.has(route.method)) {
+        result.get(route.method)!.push(route);
+      } else {
+        result.set(route.method, [route]);
       }
+
       return result;
-    }, [] as RouteComponent[]);
+    }, new Map<HttpMethod | string | undefined, InnerRouteDeclaration[]>);
 
-    return {
-      original: x.path,
-      path,
-      method: x.method,
-      callback: x.callback,
-    };
-  });
 
-  const methodMap = routes.reduce((result, route) => {
-    if (result.has(route.method)) {
-      result.get(route.method)!.push(route);
-    } else {
-      result.set(route.method, [route]);
+    this._methodMatcher = new Map(
+      Array.from(methodMap.entries()).map(([method, routes]) => {
+        const root = new ComponentNode(new NullRouteComponent());
+
+        const queue = [...routes];
+        while (queue.length) {
+          const route = queue.shift()!;
+
+          let node: ComponentNode | undefined = undefined;
+          let depth = 0;
+          while (depth < route.path.length) {
+            const array: ComponentNode[] = (node ? node.children : root.children);
+            const index: number = array.findIndex(x => x.component.equals(route.path[depth]));
+            if (index > -1) {
+              node = array[index];
+            } else {
+              node = new ComponentNode(route.path[depth]);
+              array.push(node);
+            }
+            depth++;
+            if (depth >= route.path.length) {
+              node.push(route.callback);
+            }
+          }
+        }
+
+
+        return [method, root.wrap()];
+      }),
+    );
+  }
+
+  match(request: HttpRequest): RouteMatchResult | undefined {
+    if (this._methodMatcher.has(request.method)) {
+      const result = this._methodMatcher.get(request.method)!.match(request.url!.pathname);
+      if (undefined !== result && !result.path.length) { // if path has not processed part
+        return result;
+      }
     }
 
-    return result;
-  }, new Map<HttpMethod | string | undefined, InnerRouteDeclaration[]>);
-
-
-  const methodMap2 = new Map(
-    Array.from(methodMap.entries()).map(([method, routes]) => {
-      const root = new ComponentNode(new NullRouteComponent());
-
-      const queue = [...routes];
-      while (queue.length) {
-        const route = queue.shift()!;
-
-        let node: ComponentNode | undefined = undefined;
-        let depth = 0;
-        while (depth < route.path.length) {
-          const array: ComponentNode[] = (node ? node.children : root.children);
-          const index: number = array.findIndex(x => x.component.equals(route.path[depth]));
-          if (index > -1) {
-            node = array[index];
-          } else {
-            node = new ComponentNode(route.path[depth]);
-            array.push(node);
-          }
-          depth++;
-          if (depth >= route.path.length) {
-            node.push(route.callback);
-          }
-        }
+    if (this._methodMatcher.has(undefined)) {
+      const result = this._methodMatcher.get(undefined)!.match(request.url!.pathname);
+      if (undefined !== result && !result.path.length) { // if path has not processed part
+        return result;
       }
+    }
 
-
-      return [method, root.wrap()];
-    })
-  );
-
-  return new MainRouteMatcher(methodMap2);
+    return undefined;
+  }
 }

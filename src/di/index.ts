@@ -8,5 +8,5 @@ export {
 export { ServiceFactoryFunction, ServiceProvideFunction } from './function';
 export { InstantServiceProvideFunction, InstantServiceProvider } from './instant';
 export { ServiceType } from './type';
-export { ServiceProvider } from './provider';
+export { ServiceProvider, ServiceNotFoundError } from './provider';
 export { OnScopeDestroy } from './scope';

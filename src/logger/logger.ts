@@ -1,6 +1,6 @@
 import { LogEvent } from './event';
 import { FunctionClass } from '../core';
-import { LogFunction } from './function-type';
+import { LogFunction } from './function';
 import { LogLevel } from './level';
 
 export interface Logger extends LogFunction {

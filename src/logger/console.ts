@@ -1,7 +1,5 @@
 import { LogLevel } from './level';
 import { Logger } from './logger';
-import { ServiceSet } from '../di';
-import { LevelFilter } from './level-filter';
 
 // Reset = "\x1b[0m"
 // Bright = "\x1b[1m"
@@ -82,12 +80,4 @@ export class ConsoleLogger extends Logger {
       }
     });
   }
-}
-
-export function addConsoleLog(configure: ServiceSet, level?: LogLevel): void {
-  let logger: Logger = new ConsoleLogger();
-  if (level) {
-    logger = new LevelFilter(logger, level!);
-  }
-  configure.addValue(Logger, logger);
 }

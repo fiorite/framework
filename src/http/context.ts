@@ -1,4 +1,4 @@
-import { ServiceProvideSyncFunction } from '../di';
+import { InstantServiceProvideFunction } from '../di';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
 
@@ -15,13 +15,13 @@ export class HttpContext {
     return this._response;
   }
 
-  private readonly _provide: ServiceProvideSyncFunction;
+  private readonly _provide: InstantServiceProvideFunction;
 
-  get provide(): ServiceProvideSyncFunction {
+  get provide(): InstantServiceProvideFunction {
     return this._provide;
   }
 
-  constructor(request: HttpRequest, response: HttpResponse, provide: ServiceProvideSyncFunction) {
+  constructor(request: HttpRequest, response: HttpResponse, provide: InstantServiceProvideFunction) {
     this._request = request;
     this._response = response;
     this._provide = provide;

@@ -1,11 +1,12 @@
 export { OldResponse, ok } from './_response';
-export { HttpMethod } from './method';
 export { HttpError } from './error';
 export { HttpContext, HttpContextHost } from './context';
 export { HttpHeaders } from './headers';
 export { HttpMessageHeader, HttpMessage } from './message';
+export { HttpMethod } from './method';
 export { addHttpServer, HttpServer, HttpServerState } from './server';
-export { HttpMiddleware, CorsHttpMiddleware } from './middleware';
+export { HttpMiddleware } from './middleware';
+export { HttpPipeline } from './pipeline';
 export { HttpRequestHeader, HttpRequest, HttpParams, HttpQuery } from './request';
 export { HttpResponseHeader, HttpResponse } from './response';
 export { HttpStatusCode } from './status-code';

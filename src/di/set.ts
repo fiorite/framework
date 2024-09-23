@@ -3,7 +3,16 @@ import { ServiceDescriptor } from './descriptor';
 import { ServiceType } from './type';
 import { Service } from './decorator';
 import { ServiceBehavior } from './behavior';
-import { AbstractType, CustomSet, DecoratorRecorder, doNothing, isType, Type, ValueCallback } from '../core';
+import {
+  AbstractType,
+  CustomSet,
+  DecoratorRecorder,
+  doNothing,
+  FunctionClass,
+  isType,
+  Type,
+  ValueCallback
+} from '../core';
 import { ServiceFactoryReturnFunction } from './function';
 import { ServicePreDeclaration } from './pre-declaration';
 
@@ -227,7 +236,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 }
 
 export function makeServiceProvider(
-  configure: (Type | ServiceDescriptor | object)[] | ValueCallback<ServiceSet>,
+  configure: Iterable<Type | ServiceDescriptor | object> | ValueCallback<ServiceSet>,
   includeGlobal = false,
   preCacheSingleton = false,
 ): ServiceProvider {
@@ -246,10 +255,10 @@ export function makeServiceProvider(
     configurator.markToIncludeGlobal();
   }
 
-  if (Array.isArray(configure)) {
-    configurator.addAll(configure);
-  } else {
+  if ('function' === typeof configure) {
     configure(configurator);
+  } else {
+    configurator.addAll(configure);
   }
 
   const provider = configurator.toProvider();
@@ -261,4 +270,11 @@ export function makeServiceProvider(
   }
 
   return provider;
+}
+
+/** @deprecated experimental API */
+export class ServiceExtension extends FunctionClass<ValueCallback<ServiceSet>> {
+  constructor(callback: ValueCallback<ServiceSet>) {
+    super(callback);
+  }
 }

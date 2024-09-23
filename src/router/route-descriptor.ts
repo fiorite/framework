@@ -1,6 +1,6 @@
 import { HttpCallback, HttpMethod } from '../http';
 
-export class RouteDeclaration {
+export class RouteDescriptor {
   private readonly _path: string;
 
   get path(): string {

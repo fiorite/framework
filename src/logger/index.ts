@@ -1,6 +1,6 @@
-export { ConsoleLogger, addConsoleLog } from './console';
+export { ConsoleLogger } from './console';
 export { LogEvent } from './event';
-export { LogFunction } from './function-type';
+export { LogFunction } from './function';
 export { log } from './global';
 export { LogLevel } from './level';
 export { Logger } from './logger';

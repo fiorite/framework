@@ -37,11 +37,9 @@ export {
   HttpPut,
 } from './decorator';
 export {
-  makeRouter,
-  RouteMatcher,
   RoutePathMatcher,
   RadixRouteComponentMatcher,
-  MainRouteMatcher,
+  RouteMatcher,
   StaticRouteComponentMatcher,
   DynamicRouteComponentMatcher,
   CompositeRoutePathMatcher,
@@ -51,8 +49,9 @@ export { RoutingMiddleware } from './middlware';
 export { RadixMap } from './radix';
 export {
   makeControllerRouter,
+  ControllerRoutes,
   ControllerRouteCallback,
 } from './route';
-export { RouteDeclaration } from './route-declaration';
+export { RouteDescriptor } from './route-descriptor';
 export { RouteSet } from './route-set';
 export { segmentRoutePath } from './segment';
