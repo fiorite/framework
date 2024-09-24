@@ -1,9 +1,9 @@
 import { segmentRoutePath, } from './segment';
 import { RadixMap } from './radix';
-import { HttpCallback, HttpContext, HttpMethod, HttpRequest } from '../http';
-import { MaybePromise } from '../core';
-import { RouteDescriptor } from './route-descriptor';
+import { HttpCallback, HttpMethod, HttpRequest } from '../http';
+import { RouteDescriptor } from './descriptor';
 import { NullRouteComponent, ParameterRouteComponent, RouteComponent, StaticRouteComponent } from './component';
+import { RouteCallback } from './callback';
 
 interface RouteMatchResult {
   readonly params: Record<string, unknown>;
@@ -87,7 +87,7 @@ export class StaticRouteComponentMatcher implements RoutePathMatcher {
     return this._component;
   }
 
-  constructor(private _component: StaticRouteComponent, readonly payload: ((context: HttpContext) => MaybePromise<unknown>)[]) {
+  constructor(private _component: StaticRouteComponent, readonly payload: RouteCallback[]) {
   }
 
   match(path: string): RouteMatchResult | undefined {
@@ -103,7 +103,7 @@ export class StaticRouteComponentMatcher implements RoutePathMatcher {
 }
 
 export class DynamicRouteComponentMatcher implements RoutePathMatcher {
-  constructor(private _component: ParameterRouteComponent, readonly payload: ((context: HttpContext) => MaybePromise<unknown>)[]) {
+  constructor(private _component: ParameterRouteComponent, readonly payload: RouteCallback[]) {
   }
 
   match(path: string): RouteMatchResult | undefined {
@@ -132,7 +132,7 @@ export class DynamicRouteComponentMatcher implements RoutePathMatcher {
 }
 
 class ComponentNode {
-  private _data: ((context: HttpContext) => MaybePromise<unknown>)[] = [];
+  private _data: RouteCallback[] = [];
 
   constructor(
     readonly component: RouteComponent,
@@ -140,7 +140,7 @@ class ComponentNode {
   ) {
   }
 
-  push(payload: ((context: HttpContext) => MaybePromise<unknown>)): void {
+  push(payload: RouteCallback): void {
     this._data.push(payload);
   }
 
@@ -179,7 +179,7 @@ interface InnerRouteDeclaration {
   readonly original: string;
   readonly path: RouteComponent[];
   readonly method?: HttpMethod | string;
-  readonly callback: (context: HttpContext) => unknown;
+  readonly callback: RouteCallback;
 }
 
 /** todo: rewrite to make it mutable */

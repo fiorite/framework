@@ -1,4 +1,13 @@
 export {
+  RouteCallback,
+  StatusCodeResult,
+  RouteCallbackResult,
+  OkResult,
+  ok,
+  NoContentResult,
+  noContent
+} from './callback';
+export {
   RouteComponent, StaticRouteComponent, ParameterRouteComponent, NullRouteComponent, CatchAllRouteComponent
 } from './component';
 export {
@@ -48,10 +57,9 @@ export {
 export { RoutingMiddleware } from './middlware';
 export { RadixMap } from './radix';
 export {
-  makeControllerRouter,
   ControllerRoutes,
   ControllerRouteCallback,
 } from './route';
-export { RouteDescriptor } from './route-descriptor';
+export { RouteDescriptor } from './descriptor';
 export { RouteSet } from './route-set';
 export { segmentRoutePath } from './segment';

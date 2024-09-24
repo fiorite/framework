@@ -1,7 +1,7 @@
 import { FunctionClass } from '../core';
 import {
   HttpMethod,
-  HttpMiddleware,
+  HttpCallback,
   HttpPipeline,
   HttpRequestHeader,
   HttpResponseHeader,
@@ -10,7 +10,7 @@ import {
 import { ApplicationFeature } from './feature';
 import { InstantServiceProvideFunction, ServiceSet } from '../di';
 
-export class CorsMiddleware extends FunctionClass<HttpMiddleware> {
+export class CorsMiddleware extends FunctionClass<HttpCallback> {
   constructor() {
     super(({ request, response }, next) => {
       response.headers.set(HttpResponseHeader.AccessControlAllowOrigin, '*');

@@ -60,7 +60,7 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     );
     provider(HttpContextHost).apply(context);
     res.once('close', () => provider.destroyScope());
-    this._callback(context);
+    this._callback(context, doNothing);
   }
 
   /**

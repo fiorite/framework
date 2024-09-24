@@ -1,5 +1,5 @@
-import { AnyCallback, FunctionClass, ValueCallback, VoidCallback } from '../core';
-import { Closeable, CloseFunction } from './close';
+import { AnyCallback, doNothing, FunctionClass, ValueCallback, VoidCallback } from '../core';
+import { Closeable, CloseFunction, MaybeErrorCallback } from './close';
 
 export interface Listenable<TCallback extends AnyCallback = VoidCallback> {
   listen(callback: TCallback): Closeable;
@@ -23,11 +23,12 @@ export class ListenableFunction<TCallback extends AnyCallback, TEvent> extends F
     }
 
     let listener: ListenableFunctionListener;
-    const closeListener = () => {
+    const closeListener: CloseFunction = (callback: MaybeErrorCallback = doNothing) => {
       const index = this._listeners.indexOf(callback);
       if (index > -1) {
         this._listeners.splice(index, 1);
         listener.close.emit();
+        callback(); // todo: rewind
       }
     };
 

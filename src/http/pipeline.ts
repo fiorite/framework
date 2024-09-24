@@ -1,9 +1,9 @@
 import { FunctionClass, VoidCallback } from '../core';
 import { HttpCallback } from './callback';
-import { HttpMiddleware } from './middleware';
+import { HttpStatusCode } from './status-code';
 
-class MiddlewareBridge extends FunctionClass<HttpMiddleware> {
-  constructor(a: HttpMiddleware, b: HttpMiddleware) {
+class MiddlewareBridge extends FunctionClass<HttpCallback> {
+  constructor(a: HttpCallback, b: HttpCallback) {
     super((context, next) => {
       a(context, () => b(context, next));
     });
@@ -14,38 +14,49 @@ const errorFallback: VoidCallback = () => {
   throw new Error('http pipeline fallback is bound to throw error.');
 };
 
-export class HttpPipeline extends FunctionClass<HttpCallback> implements Set<HttpMiddleware> {
+const defaultFallback: HttpCallback = (context, next) => {
+  if (!context.response.headersSent && undefined === context.response.statusCode) {
+    context.response.statusCode = HttpStatusCode.NotFound;
+  }
+
+  if (!context.response.closed) {
+    context.response.close();
+  }
+
+  next();
+};
+
+export class HttpPipeline extends FunctionClass<HttpCallback> implements Set<HttpCallback> {
   get [Symbol.toStringTag](): string {
     return 'HttpPipeline';
   }
 
-  private readonly _array: HttpMiddleware[] = [];
+  private readonly _array: HttpCallback[] = [];
 
   get size(): number {
     return this._array.length;
   }
 
   private _callback: HttpCallback;
-  private readonly _fallback: VoidCallback;
+  private readonly _fallback: HttpCallback;
 
-  constructor(array: Iterable<HttpMiddleware> = [], fallback: VoidCallback = errorFallback) {
-    super(context => this._callback(context));
+  constructor(array: Iterable<HttpCallback> = [], fallback: HttpCallback = defaultFallback) {
+    super((context, next) => this._callback(context, () => fallback(context, next)));
     this._fallback = fallback;
-    this._callback = fallback;
+    this._callback = errorFallback;
     this._array.push(...array);
     this._rebuild();
   }
 
   private _rebuild(): void {
     if (this._array.length) {
-      const callback = this._array.reverse().reduce((bridge, next) => new MiddlewareBridge(next, bridge));
-      this._callback = context => callback(context, this._fallback);
+      this._callback = this._array.reverse().reduce((bridge, next) => new MiddlewareBridge(next, bridge));
     } else {
-      this._callback = this._fallback;
+      this._callback = errorFallback;
     }
   }
 
-  add(value: HttpMiddleware): this {
+  add(value: HttpCallback): this {
     if (!this._array.includes(value)) {
       this._array.push(value);
       this._rebuild();
@@ -58,7 +69,7 @@ export class HttpPipeline extends FunctionClass<HttpCallback> implements Set<Htt
     this._rebuild();
   }
 
-  delete(value: HttpMiddleware): boolean {
+  delete(value: HttpCallback): boolean {
     const index = this._array.indexOf(value);
     if (index > -1) {
       this._array.splice(index, 1);
@@ -68,31 +79,31 @@ export class HttpPipeline extends FunctionClass<HttpCallback> implements Set<Htt
     return false;
   }
 
-  forEach(callbackfn: (value: HttpMiddleware, value2: HttpMiddleware, set: Set<HttpMiddleware>) => void): void {
+  forEach(callbackfn: (value: HttpCallback, value2: HttpCallback, set: Set<HttpCallback>) => void): void {
     return this._array.forEach(middleware => {
       return callbackfn(middleware, middleware, this);
     });
   }
 
-  has(value: HttpMiddleware): boolean {
+  has(value: HttpCallback): boolean {
     return this._array.includes(value);
   }
 
-  entries(): IterableIterator<[HttpMiddleware, HttpMiddleware]> {
-    return this._array.map<[HttpMiddleware, HttpMiddleware]>(middleware => {
+  entries(): IterableIterator<[HttpCallback, HttpCallback]> {
+    return this._array.map<[HttpCallback, HttpCallback]>(middleware => {
       return [middleware, middleware];
     })[Symbol.iterator]();
   }
 
-  keys(): IterableIterator<HttpMiddleware> {
+  keys(): IterableIterator<HttpCallback> {
     return this._array[Symbol.iterator]();
   }
 
-  values(): IterableIterator<HttpMiddleware> {
+  values(): IterableIterator<HttpCallback> {
     return this._array[Symbol.iterator]();
   }
 
-  [Symbol.iterator](): IterableIterator<HttpMiddleware> {
+  [Symbol.iterator](): IterableIterator<HttpCallback> {
     return this._array[Symbol.iterator]();
   }
 }

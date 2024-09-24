@@ -1,10 +1,12 @@
-import { ValueCallback, VoidCallback } from '../core';
-import { Closeable } from './close';
+import { doNothing, ValueCallback, VoidCallback } from '../core';
+import { Closeable, CloseFunction, MaybeErrorCallback } from './close';
 import { ListenableFunction } from './listen';
+
+type FlushCallback = MaybeErrorCallback;
 
 type ReadFunction<T> = ValueCallback<ValueCallback<T>>;
 
-type WriteFunction<T> = ValueCallback<T>;
+type WriteFunction<T> = (value: T, callback?: FlushCallback) => void;
 
 const nullReader = () => {
   throw new Error('Stream is closed or reader is not set.');
@@ -14,7 +16,7 @@ const nullWriter = () => {
   throw new Error('Stream is closed or writer is not set.');
 };
 
-export class Stream<T> implements Closeable {
+export class CustomStream<T> implements Closeable {
   private _reader: ReadFunction<T> = nullReader;
 
   private _readable = false;
@@ -31,11 +33,11 @@ export class Stream<T> implements Closeable {
     return this._writable;
   }
 
-  private readonly _originalClose: VoidCallback = () => void 0;
+  private readonly _originalClose: ValueCallback<VoidCallback> = callback => callback(); // todo: add callback
 
-  private readonly _close: ListenableFunction<() => void, void>;
+  private readonly _close: ListenableFunction<CloseFunction, void>;
 
-  get close(): ListenableFunction<VoidCallback, void> {
+  get close(): ListenableFunction<CloseFunction, void> {
     return this._close;
   }
 
@@ -46,8 +48,8 @@ export class Stream<T> implements Closeable {
   }
 
   constructor(object: {
-    readonly reader?: ValueCallback<ValueCallback<T>>;
-    readonly writer?: ValueCallback<T>,
+    readonly reader?: ReadFunction<T>;
+    readonly writer?: WriteFunction<T>,
     readonly close?: VoidCallback,
   } = {}) {
     if (object.reader) {
@@ -64,18 +66,20 @@ export class Stream<T> implements Closeable {
       this._originalClose = object.close;
     }
 
-    this._close = new ListenableFunction(() => {
-      this._originalClose();
-      this._reader = nullReader;
-      this._readable = false;
-      this._writer = nullWriter;
-      this._writable = false;
-      this._closed = true;
-      this._close.emit(); // emit event
+    this._close = new ListenableFunction((callback: FlushCallback = doNothing) => {
+      this._originalClose(() => {
+        this._reader = nullReader;
+        this._readable = false;
+        this._writer = nullWriter;
+        this._writable = false;
+        this._closed = true;
+        this._close.emit(); // emit event
+        callback();
+      });
     });
 
     if (!this.readable && !this.writable) {
-      this.close();
+      this.close(doNothing);
     }
   }
 
@@ -83,7 +87,7 @@ export class Stream<T> implements Closeable {
     this._reader(callback);
   }
 
-  write(value: T): void {
-    this._writer(value);
+  write(value: T, callback: FlushCallback = doNothing): void {
+    this._writer(value, callback);
   }
 }

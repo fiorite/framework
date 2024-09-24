@@ -1,5 +1,5 @@
 import { CustomSet } from '../core';
-import { RouteDescriptor } from './route-descriptor';
+import { RouteDescriptor } from './descriptor';
 import { HttpCallback, HttpMethod } from '../http';
 
 export class RouteSet extends CustomSet<RouteDescriptor, string> {

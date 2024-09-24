@@ -1,4 +1,5 @@
-import { HttpCallback, HttpMethod } from '../http';
+import { HttpMethod } from '../http';
+import { RouteCallback } from './callback';
 
 export class RouteDescriptor {
   private readonly _path: string;
@@ -13,16 +14,16 @@ export class RouteDescriptor {
     return this._method;
   }
 
-  private readonly _callback: HttpCallback;
+  private readonly _callback: RouteCallback;
 
-  get callback(): HttpCallback {
+  get callback(): RouteCallback {
     return this._callback;
   }
 
   constructor(object: {
     readonly path: string;
     readonly method?: HttpMethod | string;
-    readonly callback: HttpCallback;
+    readonly callback: RouteCallback;
   }) {
     this._path = object.path;
     this._method = object.method;

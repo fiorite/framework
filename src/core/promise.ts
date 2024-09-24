@@ -4,7 +4,7 @@ export type MaybePromise<T> = PromiseLike<T> | T;
 
 export namespace MaybePromise {
   function isPromiseLike<T>(object: unknown): object is PromiseLike<T> {
-    return object !== null && typeof (object as PromiseLike<T>).then === 'function';
+    return null !== object && undefined !== object && typeof (object as PromiseLike<T>).then === 'function';
   }
 
   const rethrowError: (err: unknown) => void = err => {

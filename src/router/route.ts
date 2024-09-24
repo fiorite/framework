@@ -1,7 +1,7 @@
-import { DecoratorRecorder, FunctionClass, MaybePromise, Type } from '../core';
+import { DecoratorRecorder, FunctionClass, MaybePromise, Type, VoidCallback } from '../core';
 import { Controller, Route } from './decorator';
-import { ServiceFactoryFunction, ServiceNotFoundError, ServiceProvider } from '../di';
-import { RouteDescriptor } from './route-descriptor';
+import { ServiceFactoryFunction, ServiceNotFoundError } from '../di';
+import { RouteDescriptor } from './descriptor';
 import { HttpCallback, HttpContext } from '../http';
 import { _ServiceClassResolver, _ServiceMethodResolver, ServiceMethodResolveFunction } from '../di/_resolver';
 
@@ -10,21 +10,21 @@ export class ControllerRouteCallback extends FunctionClass<HttpCallback> {
   readonly resolveType: ServiceFactoryFunction;
   readonly propertyKey: string | symbol;
   readonly resolveMethod: ServiceMethodResolveFunction<unknown, unknown>;
-  readonly resultCallback: (context: HttpContext, err?: unknown, result?: unknown) => void;
+  readonly resultCallback: (context: HttpContext, err: unknown, result: unknown, next: VoidCallback) => void;
 
   constructor(object: {
     readonly controllerType: Type;
     readonly resolveType: ServiceFactoryFunction;
     readonly propertyKey: string | symbol;
     readonly resolveMethod: ServiceMethodResolveFunction<unknown, unknown>;
-    readonly resultCallback: (context: HttpContext, err?: unknown, result?: unknown) => void;
+    readonly resultCallback: (context: HttpContext, err: unknown, result: unknown, next: VoidCallback) => void;
   }) {
-    super(context => {
+    super((context, next) => {
       object.resolveType(context.provide, controllerObject => {
         object.resolveMethod(controllerObject, context.provide, resultMaybePromise => {
           MaybePromise.then(() => resultMaybePromise, result => {
-            object.resultCallback(context, undefined, result);
-          }, err => object.resultCallback(context, err));
+            object.resultCallback(context, undefined, result, next);
+          }, err => object.resultCallback(context, err, undefined, next));
         });
       });
     });
@@ -41,7 +41,7 @@ export class ControllerRoutes implements Iterable<RouteDescriptor> {
 
   constructor(
     controllerType: Type,
-    resultCallback: (context: HttpContext, err?: unknown, result?: unknown) => void
+    resultCallback: (context: HttpContext, err: unknown | undefined, result: unknown | undefined, next: VoidCallback) => void
   ) {
     const routePrefix = DecoratorRecorder.classSearch(Controller, controllerType)
       .map(x => x.payload.routePrefix)
@@ -99,36 +99,4 @@ export class ControllerRoutes implements Iterable<RouteDescriptor> {
   [Symbol.iterator](): Iterator<RouteDescriptor> {
     return this._array[Symbol.iterator]();
   }
-}
-
-/** @deprecated will be removed since the goal to avoid ServiceProvider as argument and trust the runtime */
-export function makeControllerRouter(
-  controllerType: Type,
-  provider: ServiceProvider,
-  resultCallback: (context: HttpContext, err?: unknown, result?: unknown) => void
-): readonly RouteDescriptor[] {
-  const routePrefix = DecoratorRecorder.classSearch(Controller, controllerType)
-    .map(x => x.payload.routePrefix)
-    .filter(x => !!x && x.trim().length)
-    .reverse()
-    .join('/');
-
-  return DecoratorRecorder.methodSearch(Route, controllerType).map(methodRecord => {
-    provider.validateDependencies(controllerType, methodRecord.path[1]);
-    const methodServiceFactory = provider.prepareMethodFactory(controllerType, methodRecord.path[1]);
-
-    const { path, httpMethod } = methodRecord.payload;
-    const routePath = '/' + ([routePrefix, path].filter(x => !!x && x.length).join('/'));
-    const controllerServiceFactory = provider.prepareTypeFactory(controllerType);
-
-    const callback = new ControllerRouteCallback({
-      controllerType,
-      resolveType: controllerServiceFactory,
-      propertyKey: methodRecord.path[1],
-      resolveMethod: methodServiceFactory,
-      resultCallback,
-    });
-
-    return new RouteDescriptor({ path: routePath, method: httpMethod, callback });
-  });
 }

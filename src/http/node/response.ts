@@ -2,7 +2,7 @@ import type { ServerResponse } from 'node:http';
 import { HttpResponse, HttpResponseHeader } from '../response';
 import { HttpHeaders } from '../headers';
 import { HttpStatusCode } from '../status-code';
-import { Stream } from '../../io';
+import { CustomStream } from '../../io';
 
 export class NodeResponseHeaders implements HttpHeaders<HttpResponseHeader | string> {
   get [Symbol.toStringTag](): string {
@@ -95,9 +95,9 @@ export class NodeResponse extends HttpResponse {
     this._original.statusCode = value;
   }
 
-  private readonly _body: Stream<Uint8Array>;
+  private readonly _body: CustomStream<Uint8Array>;
 
-  override get body(): Stream<Uint8Array> {
+  override get body(): CustomStream<Uint8Array> {
     return this._body;
   }
 
@@ -105,8 +105,8 @@ export class NodeResponse extends HttpResponse {
     super();
     this._original = response;
     this._headers = new NodeResponseHeaders(response);
-    this._body = new Stream({
-      writer: value => response.write(value),
+    this._body = new CustomStream({
+      writer: (value, callback) => response.write(value, err => callback(null === err ? undefined : err)),
       close: () => response.end(),
     });
     response.on('close', () => this._body.close());

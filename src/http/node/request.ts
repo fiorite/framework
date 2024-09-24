@@ -1,6 +1,6 @@
 import { HttpRequest, HttpRequestHeader, HttpParams, HttpQuery } from '../request';
 import { HttpHeaders } from '../headers';
-import { Stream } from '../../io';
+import { CustomStream } from '../../io';
 import type { IncomingMessage } from 'http';
 import { HttpMethod } from '../method';
 import { URL } from 'node:url';
@@ -122,9 +122,9 @@ export class NodeRequest extends HttpRequest {
     return true;
   }
 
-  private readonly _body: Stream<Uint8Array>;
+  private readonly _body: CustomStream<Uint8Array>;
 
-  override get body(): Stream<Uint8Array> {
+  override get body(): CustomStream<Uint8Array> {
     return this._body;
   }
 
@@ -135,7 +135,7 @@ export class NodeRequest extends HttpRequest {
     this._query = new HttpQuery(this._url.searchParams); // todo: fix
     this._params = new HttpParams(); // todo: parse params
     this._headers = new NodeRequestHeaders(request);
-    this._body = new Stream({
+    this._body = new CustomStream({
       reader: callback => callback(request.read()),
       close: () => request.destroy(),
     });

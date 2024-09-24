@@ -1,5 +1,7 @@
-export type CloseFunction = () => void;
+export type MaybeErrorCallback = (error?: unknown) => void;
+
+export type CloseFunction = (callback?: MaybeErrorCallback) => void;
 
 export interface Closeable {
-  close(): void;
+  close(callback?: MaybeErrorCallback): void;
 }
