@@ -27,15 +27,25 @@ export const provide = ((provide, callback) => {
 
 let callers = 0;
 
+/**
+ * @param provider
+ * @param callback
+ */
 export function runProviderContext(provider: ServiceProvider, callback: (complete: () => void) => void) {
+  let done = false;
   const complete = () => {
-    callers--;
-    if (callers <= 0) {
-      provideImplementation = defaultImplementation;
+    if (!done) {
+      callers--;
+      if (callers <= 0) {
+        provideImplementation = defaultImplementation;
+      }
+      done = true;
     }
   };
 
-  if (provideImplementation === provider) {
+  const implementation = provider.instant;
+
+  if (provideImplementation === implementation) {
     callers++;
     callback(complete);
   } else {
@@ -47,7 +57,7 @@ export function runProviderContext(provider: ServiceProvider, callback: (complet
       throw new Error('Unable to use Scoped provider implementation. To avoid sharing context of particular client.');
     }
 
-    provideImplementation = provider.instant;
+    provideImplementation = implementation;
     callers++;
     callback(complete);
   }
