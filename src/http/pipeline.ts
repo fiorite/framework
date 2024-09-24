@@ -19,9 +19,7 @@ const defaultFallback: HttpCallback = (context, next) => {
     context.response.statusCode = HttpStatusCode.NotFound;
   }
 
-  if (!context.response.closed) {
-    context.response.close();
-  }
+  context.response.close();
 
   next();
 };

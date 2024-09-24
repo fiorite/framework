@@ -1,11 +1,11 @@
-import { HttpRequest, HttpRequestHeader, HttpParams, HttpQuery } from '../request';
+import { HttpParams, HttpQuery, HttpRequest, HttpRequestHeader } from '../request';
 import { HttpHeaders } from '../headers';
-import { CustomStream } from '../../io';
 import type { IncomingMessage } from 'http';
 import { HttpMethod } from '../method';
 import { URL } from 'node:url';
+import { ListenableFunction, VoidCallback } from '../../core';
 
-export class NodeRequestHeaders implements HttpHeaders<HttpRequestHeader | string> {
+export class NodeServerRequestHeaders implements HttpHeaders<HttpRequestHeader | string> {
   get [Symbol.toStringTag](): string {
     return 'NodeRequestHeaders';
   }
@@ -75,7 +75,7 @@ export class NodeRequestHeaders implements HttpHeaders<HttpRequestHeader | strin
   }
 }
 
-export class NodeRequest extends HttpRequest {
+export class NodeServerRequest extends HttpRequest {
   private readonly _original: IncomingMessage;
 
   get original(): IncomingMessage {
@@ -112,7 +112,7 @@ export class NodeRequest extends HttpRequest {
     return this._params;
   }
 
-  private readonly _headers: NodeRequestHeaders;
+  private readonly _headers: NodeServerRequestHeaders;
 
   override get headers(): HttpHeaders<HttpRequestHeader | string> {
     return this._headers;
@@ -122,10 +122,10 @@ export class NodeRequest extends HttpRequest {
     return true;
   }
 
-  private readonly _body: CustomStream<Uint8Array>;
+  private readonly _close: ListenableFunction<VoidCallback, void>;
 
-  override get body(): CustomStream<Uint8Array> {
-    return this._body;
+  override get close(): ListenableFunction<VoidCallback, void> {
+    return this._close;
   }
 
   constructor(request: IncomingMessage) {
@@ -134,11 +134,16 @@ export class NodeRequest extends HttpRequest {
     this._url = new URL(request.url!, 'http://localhost');
     this._query = new HttpQuery(this._url.searchParams); // todo: fix
     this._params = new HttpParams(); // todo: parse params
-    this._headers = new NodeRequestHeaders(request);
-    this._body = new CustomStream({
-      reader: callback => callback(request.read()),
-      close: () => request.destroy(),
-    });
-    request.on('close', () => this._body.close());
+    this._headers = new NodeServerRequestHeaders(request);
+    this._close = new ListenableFunction<VoidCallback, void>(() => request.destroy());
+    request.on('close', () => this._close.emit());
+  }
+
+  override read(size?: number | undefined): Uint8Array {
+    return this._original.read(size);
+  }
+
+  override write(): never {
+    throw new Error('Method not implemented.');
   }
 }

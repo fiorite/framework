@@ -2,9 +2,9 @@ import type { ServerResponse } from 'node:http';
 import { HttpResponse, HttpResponseHeader } from '../response';
 import { HttpHeaders } from '../headers';
 import { HttpStatusCode } from '../status-code';
-import { CustomStream } from '../../io';
+import { ListenableFunction, VoidCallback } from '../../core';
 
-export class NodeResponseHeaders implements HttpHeaders<HttpResponseHeader | string> {
+export class NodeServerResponseHeaders implements HttpHeaders<HttpResponseHeader | string> {
   get [Symbol.toStringTag](): string {
     return 'NodeResponseHeaders';
   }
@@ -70,14 +70,14 @@ export class NodeResponseHeaders implements HttpHeaders<HttpResponseHeader | str
   }
 }
 
-export class NodeResponse extends HttpResponse {
+export class NodeServerResponse extends HttpResponse {
   private readonly _original: ServerResponse;
 
   get original(): ServerResponse {
     return this._original;
   }
 
-  private readonly _headers: NodeResponseHeaders;
+  private readonly _headers: NodeServerResponseHeaders;
 
   override get headers(): HttpHeaders<HttpResponseHeader | string> {
     return this._headers;
@@ -95,20 +95,25 @@ export class NodeResponse extends HttpResponse {
     this._original.statusCode = value;
   }
 
-  private readonly _body: CustomStream<Uint8Array>;
+  private readonly _close: ListenableFunction<VoidCallback, void>;
 
-  override get body(): CustomStream<Uint8Array> {
-    return this._body;
+  override get close(): ListenableFunction<VoidCallback, void> {
+    return this._close;
   }
 
   constructor(response: ServerResponse) {
     super();
     this._original = response;
-    this._headers = new NodeResponseHeaders(response);
-    this._body = new CustomStream({
-      writer: (value, callback) => response.write(value, err => callback(null === err ? undefined : err)),
-      close: () => response.end(),
-    });
-    response.on('close', () => this._body.close());
+    this._headers = new NodeServerResponseHeaders(response);
+    this._close = new ListenableFunction<VoidCallback, void>(() => response.end());
+    response.on('close', () => this._close.emit());
+  }
+
+  override read(): never {
+    throw new Error('Method not implemented.');
+  }
+
+  override write(buffer: Uint8Array, callback?: VoidCallback | undefined): void {
+    this._original.write(buffer, callback); // add 'drain' handler
   }
 }

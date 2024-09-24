@@ -1,6 +1,5 @@
 import { HttpHeaders } from './headers';
-import { Closeable, CustomStream, ListenableFunction } from '../io';
-import { CloseFunction } from '../io/close';
+import { ListenableFunction, VoidCallback } from '../core';
 
 /** @source https://en.wikipedia.org/wiki/List_of_HTTP_header_fields */
 export enum HttpMessageHeader {
@@ -15,7 +14,7 @@ export enum HttpMessageHeader {
   Pragma = 'pragma',
 }
 
-export abstract class HttpMessage implements Closeable {
+export abstract class HttpMessage {
   abstract readonly headers: HttpHeaders<HttpMessageHeader | string>;
   abstract readonly headersSent: boolean;
 
@@ -28,21 +27,16 @@ export abstract class HttpMessage implements Closeable {
     return this.headers.get(HttpMessageHeader.ContentType) as string | undefined; // todo: handle array
   }
 
-  get readable(): boolean {
-    return this.body.readable;
-  }
+  abstract readonly close: ListenableFunction<VoidCallback, void>;
 
-  get writable(): boolean {
-    return this.body.writable;
-  }
+  /**
+   * @param size
+   */
+  abstract read(size?: number): Uint8Array;
 
-  abstract readonly body: CustomStream<Uint8Array>;
-
-  get closed(): boolean {
-    return this.body.closed;
-  }
-
-  get close(): ListenableFunction<CloseFunction, void> {
-    return this.body.close;
-  }
+  /**
+   * @param buffer
+   * @param callback called on flush
+   */
+  abstract write(buffer: Uint8Array, callback?: VoidCallback): void;
 }

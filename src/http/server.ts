@@ -1,10 +1,9 @@
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { HttpContext, HttpContextHost } from './context';
 import { ServiceProvider } from '../di';
-import { NodeRequest, NodeResponse } from './node';
+import { NodeServerRequest, NodeServerResponse } from './node';
 import { doNothing, FunctionClass, ValueCallback } from '../core';
 import { HttpCallback } from './callback';
-import { Closeable } from '../io';
 
 /** @deprecated will be replaced with listener */
 export enum HttpServerState {
@@ -54,8 +53,8 @@ export class HttpServer extends FunctionClass<HttpCallback> {
   handleOriginal(req: IncomingMessage, res: ServerResponse): void {
     const provider = this._provider.createScope();
     const context = new HttpContext(
-      new NodeRequest(req),
-      new NodeResponse(res),
+      new NodeServerRequest(req),
+      new NodeServerResponse(res),
       provider,
     );
     provider(HttpContextHost).apply(context);
@@ -86,7 +85,7 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     });
   }
 
-  listen(port: number, callback: ValueCallback<unknown> = doNothing): Closeable {
+  listen(port: number, callback: ValueCallback<unknown> = doNothing): HttpServerListener {
     throw new Error('Not implemented.');
   }
 
@@ -113,5 +112,11 @@ export class HttpServer extends FunctionClass<HttpCallback> {
       this._state = HttpServerState.Stopped;
       callback(void 0);
     }
+  }
+}
+
+export class HttpServerListener {
+  close(): void {
+
   }
 }

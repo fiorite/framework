@@ -8,6 +8,7 @@ export {
   ValueCallback, VoidCallback, PredicateCallback, MapCallback, returnSelf, doNothing, AnyCallback
 } from './callback';
 export { AbstractType, Type, isType } from './type';
+export { ListenableFunction, ListenableFunctionListener } from './listener';
 export { MapWithKeyComparer } from './map';
 export { binarySearch } from './search';
 export { CustomSet } from './set';

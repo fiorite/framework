@@ -1,11 +1,6 @@
 import { AnyCallback, doNothing, FunctionClass, ValueCallback, VoidCallback } from '../core';
-import { Closeable, CloseFunction, MaybeErrorCallback } from './close';
 
-export interface Listenable<TCallback extends AnyCallback = VoidCallback> {
-  listen(callback: TCallback): Closeable;
-}
-
-export class ListenableFunction<TCallback extends AnyCallback, TEvent> extends FunctionClass<TCallback> implements Listenable<ValueCallback<TEvent>> {
+export class ListenableFunction<TCallback extends AnyCallback, TEvent> extends FunctionClass<TCallback> {
   private _listeners: ValueCallback<TEvent>[] = [];
 
   constructor(callback: TCallback) {
@@ -23,7 +18,7 @@ export class ListenableFunction<TCallback extends AnyCallback, TEvent> extends F
     }
 
     let listener: ListenableFunctionListener;
-    const closeListener: CloseFunction = (callback: MaybeErrorCallback = doNothing) => {
+    const closeListener: VoidCallback = (callback: VoidCallback = doNothing) => {
       const index = this._listeners.indexOf(callback);
       if (index > -1) {
         this._listeners.splice(index, 1);
@@ -37,15 +32,15 @@ export class ListenableFunction<TCallback extends AnyCallback, TEvent> extends F
   }
 }
 
-export class ListenableFunctionListener implements Closeable {
-  private readonly _close: ListenableFunction<CloseFunction, void>;
+export class ListenableFunctionListener {
+  private readonly _close: ListenableFunction<VoidCallback, void>;
 
-  get close(): ListenableFunction<CloseFunction, void> {
+  get close(): ListenableFunction<VoidCallback, void> {
     return this._close;
   }
 
-  constructor(close: CloseFunction) {
-    this._close = new ListenableFunction(close);
+  constructor(callback: VoidCallback) {
+    this._close = new ListenableFunction(callback);
   }
 }
 
