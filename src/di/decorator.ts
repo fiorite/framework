@@ -97,6 +97,9 @@ export class ProvidePayload<T, R = unknown> {
 
 export type ProvideDecorator<T, R = unknown> = ParameterDecoratorWithPayload<ProvidePayload<T, R>>;
 
+export function Provide(): ProvideDecorator<unknown>;
+export function Provide<T>(type: ServiceType<T>): ProvideDecorator<T>;
+export function Provide<T, R>(type: ServiceType<T>, callback: MapCallback<T, MaybePromise<R>>): ProvideDecorator<T, R>;
 export function Provide<T, R = unknown>(type?: ServiceType<T>, callback?: MapCallback<T, MaybePromise<R>>): ProvideDecorator<T, R> {
   const payload = new ProvidePayload(type, callback);
   return makeParameterDecorator(Provide, payload);

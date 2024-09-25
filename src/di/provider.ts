@@ -12,19 +12,22 @@ export interface ServiceProvider extends InstantServiceProvideFunction {
   /**
    * @throws Error if service is asynchronous (promise like)
    */
+
   <T>(type: ServiceType<T>): T;
 
   /**
    * Fallback to {@link ServiceProvideFunction}
    */
+
   <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
 export class ServiceNotFoundError implements Error {
   readonly name = 'ServiceNotFound';
   readonly message: string;
+
   constructor(readonly type: ServiceType) {
-    this.message = 'service is not found: '+ServiceType.toString(type);
+    this.message = 'service is not found: ' + ServiceType.toString(type);
   }
 }
 
@@ -47,8 +50,12 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     return this._instant;
   }
 
+  get provide(): InstantServiceProvideFunction {
+    return this._instant;
+  }
+
   constructor(descriptors: Iterable<ServiceDescriptor>, createdFrom?: ServiceProvider) {
-    const instantProvider = new InstantServiceProvider((type, callback) => this.provide(type, callback));
+    const instantProvider = new InstantServiceProvider((type, callback) => this._provide(type, callback));
     super(instantProvider);
     this._instant = instantProvider;
     const array = [
@@ -69,7 +76,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   /**
    * Raw implementation or {@link ServiceProvideFunction}.
    */
-  provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
+  private _provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
     const descriptor = this._set[CustomSet.data].get(type) as ServiceDescriptor<T> | undefined;
 
     if (undefined === descriptor) {
@@ -82,16 +89,16 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
       }
 
       return this._scope.provide(type, callback, callback2 => {
-        descriptor.factory(this.provide.bind(this), callback2);
+        descriptor.factory(this._provide.bind(this), callback2);
       });
     }
 
-    return descriptor.factory(this.provide.bind(this), callback);
+    return descriptor.factory(this._provide.bind(this), callback);
   }
 
-  provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
-    return ServiceFactoryFunction.from(array)(this.provide.bind(this), callback);
-  }
+  // provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
+  //   return ServiceFactoryFunction.from(array)(this._provide.bind(this), callback);
+  // }
 
   has(type: ServiceType): boolean {
     return this._set[CustomSet.data].has(type);
@@ -106,7 +113,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   }
 
   instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
-    return this.prepareTypeFactory(type)(this.provide.bind(this), callback);
+    return this.prepareTypeFactory(type)(this._provide.bind(this), callback);
   }
 
   validateDependencies<T extends object, K extends keyof T>(type: Type<T>, propertyKey: K): void {
@@ -130,7 +137,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     propertyKey: K,
     callback: ValueCallback<T[K] extends AnyCallback ? ReturnType<T[K]> : never>
   ): void {
-    this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this.provide.bind(this), callback as any);
+    this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this._provide.bind(this), callback as any);
   }
 
   createScope(configure: (provide: InstantServiceProvideFunction) => void = () => void 0): ServiceProvider {

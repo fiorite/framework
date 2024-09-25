@@ -210,7 +210,7 @@ export function segmentRoutePath(path: string): RouteComponent[][] {
         }
         i = clear(i + paramname.length);
         let constraint;
-        if (i < path.length && utf16.ascii[':'] === utf16.at(path, i)) { // constraint definition
+        if (i < path.length || (utf16.ascii[':'] === utf16.at(path, i) || utf16.ascii['='] === utf16.at(path, i))) { // constraint definition
           i++;
           if (i >= path.length) {
             throw new Error('constraint is empty in the end of the line "{param:". revise the path.');
@@ -240,6 +240,7 @@ export function segmentRoutePath(path: string): RouteComponent[][] {
               } else if (utf16.ascii[')'] === utf16.at(path, i)) {
                 // close bracket
                 closed = true;
+                i++;
                 break;
               }
 
@@ -261,7 +262,7 @@ export function segmentRoutePath(path: string): RouteComponent[][] {
             throw new Error('unknown param constraint "' + constraintname + '"');
           }
         }
-        if (i < path.length && utf16.ascii['}'] !== utf16.at(path, i)) {
+        if (i >= path.length || utf16.ascii['}'] !== utf16.at(path, i)) {
           throw new Error('curly bracket should be closed after parameter definition "{param}".');
         }
         length += i;
