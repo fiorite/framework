@@ -1,7 +1,6 @@
-import { HttpCallback, HttpPipeline } from '../http';
+import { HttpBodyResult, HttpCallback, HttpPipeline } from '../http';
 import { ApplicationFeature } from './feature';
 import { FunctionClass } from '../core';
-import { RequestBody } from '../routing';
 import { InstantServiceProvideFunction, ServiceSet } from '../di';
 
 export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
@@ -26,7 +25,7 @@ export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
 
               const text = new TextDecoder().decode(binary);
               const json = JSON.parse(text);
-              context.provide(RequestBody).fulfill(json);
+              context.provide(HttpBodyResult).fulfill(json);
               next();
             } else {
               length += chunk.length;
@@ -52,7 +51,8 @@ export class JsonParserFeature implements ApplicationFeature {
   }
 
   configureServices(serviceSet: ServiceSet) {
-    serviceSet.addValue(JsonParserMiddleware, this._middleware);
+    serviceSet.addScoped(HttpBodyResult)
+      .addValue(JsonParserMiddleware, this._middleware);
   }
 
   configure(provide: InstantServiceProvideFunction) {

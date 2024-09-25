@@ -1,11 +1,13 @@
 export { HttpCallback } from './callback';
-export { HttpError } from './error';
 export { HttpContext, HttpContextHost } from './context';
+export { FromRequest, FromQuery, FromHeader, FromBody } from './decorator';
+export { HttpError } from './error';
 export { HttpHeaders } from './headers';
-export { HttpMessageHeader, HttpMessage } from './message';
+export { HttpMessageHeader, HttpMessage, HttpMessageCloseFunction } from './message';
 export { HttpMethod } from './method';
-export { HttpServer, HttpServerState } from './server';
 export { HttpPipeline } from './pipeline';
-export { HttpRequestHeader, HttpRequest, HttpParams, HttpQuery } from './request';
+export { HttpRequestHeader, HttpRequest, HttpQuery } from './request';
 export { HttpResponseHeader, HttpResponse } from './response';
+export { HttpBodyResult } from './result';
+export { HttpServer, HttpServerState } from './server';
 export { HttpStatusCode } from './status-code';

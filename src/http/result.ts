@@ -1,4 +1,4 @@
-export class RequestBody<T> {
+export class HttpBodyResult<T> {
   private _fulfilled = false;
 
   private _value?: T;

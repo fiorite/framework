@@ -2,11 +2,12 @@ import type { ServerResponse } from 'node:http';
 import { HttpResponse, HttpResponseHeader } from '../response';
 import { HttpHeaders } from '../headers';
 import { HttpStatusCode } from '../status-code';
-import { ListenableFunction, VoidCallback } from '../../core';
+import { VoidCallback } from '../../core';
+import { HttpMessageCloseFunction } from '../message';
 
 export class NodeServerResponseHeaders implements HttpHeaders<HttpResponseHeader | string> {
   get [Symbol.toStringTag](): string {
-    return 'NodeResponseHeaders';
+    return 'NodeServerResponseHeaders';
   }
 
   private _response: ServerResponse;
@@ -95,9 +96,9 @@ export class NodeServerResponse extends HttpResponse {
     this._original.statusCode = value;
   }
 
-  private readonly _close: ListenableFunction<VoidCallback, void>;
+  private readonly _close: HttpMessageCloseFunction;
 
-  override get close(): ListenableFunction<VoidCallback, void> {
+  override get close(): HttpMessageCloseFunction {
     return this._close;
   }
 
@@ -105,7 +106,7 @@ export class NodeServerResponse extends HttpResponse {
     super();
     this._original = response;
     this._headers = new NodeServerResponseHeaders(response);
-    this._close = new ListenableFunction<VoidCallback, void>(() => response.end());
+    this._close = new HttpMessageCloseFunction(() => response.end());
     response.on('close', () => this._close.emit());
   }
 

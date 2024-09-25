@@ -1,13 +1,14 @@
-import { HttpParams, HttpQuery, HttpRequest, HttpRequestHeader } from '../request';
+import { HttpQuery, HttpRequest, HttpRequestHeader } from '../request';
 import { HttpHeaders } from '../headers';
 import type { IncomingMessage } from 'http';
 import { HttpMethod } from '../method';
-import { URL } from 'node:url';
-import { ListenableFunction, ValueCallback, VoidCallback } from '../../core';
+import { ValueCallback } from '../../core';
+import { TLSSocket } from 'tls';
+import { HttpMessageCloseFunction } from '../message';
 
 export class NodeServerRequestHeaders implements HttpHeaders<HttpRequestHeader | string> {
   get [Symbol.toStringTag](): string {
-    return 'NodeRequestHeaders';
+    return 'NodeServerRequestHeaders';
   }
 
   private _request: IncomingMessage;
@@ -75,6 +76,21 @@ export class NodeServerRequestHeaders implements HttpHeaders<HttpRequestHeader |
   }
 }
 
+// const scheme = 'https' === request.headers['x-forwarded-proto'] || 'on' === request.headers['x-forwarded-ssl'] ? 'https:' : 'http:';
+// request.headers['x-forwarded-proto'] === 'https' || request.headers['x-forwarded-ssl'] === 'on' ?
+//               'https' : http,
+// request.socket.
+// request.headers['x-forwarded-proto'] === 'https' || request.headers['x-forwarded-ssl'] === 'on' ?
+//   'https' : http,
+
+// export class ForwardedURL extends URL {
+//   readonly original: URL;
+//   constructor(url: string | URL, base: string | URL, original: URL) {
+//     super(url, base);
+//     this.original = original;
+//   }
+// }
+
 export class NodeServerRequest extends HttpRequest {
   private readonly _original: IncomingMessage;
 
@@ -106,12 +122,6 @@ export class NodeServerRequest extends HttpRequest {
     return this._query;
   }
 
-  private readonly _params: HttpParams;
-
-  override get params(): HttpParams {
-    return this._params;
-  }
-
   private readonly _headers: NodeServerRequestHeaders;
 
   override get headers(): HttpHeaders<HttpRequestHeader | string> {
@@ -122,22 +132,21 @@ export class NodeServerRequest extends HttpRequest {
     return true;
   }
 
-  private readonly _close: ListenableFunction<VoidCallback, void>;
+  private readonly _close: HttpMessageCloseFunction;
 
-  override get close(): ListenableFunction<VoidCallback, void> {
+  override get close(): HttpMessageCloseFunction {
     return this._close;
   }
-
-  private _readable = false;
 
   constructor(request: IncomingMessage) {
     super();
     this._original = request;
-    this._url = new URL(request.url!, 'http://localhost');
-    this._query = new HttpQuery(this._url.searchParams); // todo: fix
-    this._params = new HttpParams(); // todo: parse params
+    const host = request.headers.host || request.socket.localAddress + ':' + String(request.socket.localPort);
+    const scheme = request.socket instanceof TLSSocket ? 'https:' : 'http:';
+    this._url = new URL(request.url!, scheme + '//' + host);
+    this._query = new HttpQuery(this._url.searchParams);
     this._headers = new NodeServerRequestHeaders(request);
-    this._close = new ListenableFunction<VoidCallback, void>(() => request.destroy());
+    this._close = new HttpMessageCloseFunction(() => request.destroy());
     request.on('close', () => this._close.emit());
   }
 

@@ -1,11 +1,5 @@
 export {
   RouteCallback,
-  StatusCodeResult,
-  RouteCallbackResult,
-  OkResult,
-  ok,
-  NoContentResult,
-  noContent
 } from './callback';
 export {
   RouteComponent, StaticRouteComponent, ParameterRouteComponent, NullRouteComponent, CatchAllRouteComponent
@@ -27,13 +21,9 @@ export {
   RegexpParameterConstraint,
 } from './constraint';
 export {
-  FromBody,
   RoutePrefix,
   Route,
-  FromQuery,
   FromParam,
-  FromHeader,
-  FromRequest,
   Controller,
   HttpGet,
   HttpHead,
@@ -55,8 +45,16 @@ export {
   RouteComponentChainMatcher
 } from './matcher';
 export { RoutingMiddleware } from './middlware';
+export { RouteParams } from './params';
 export { RadixMap } from './radix';
-export { RequestBody } from './request-body';
+export {
+  StatusCodeResult,
+  RouteResult,
+  OkResult,
+  ok,
+  NoContentResult,
+  noContent
+} from './result';
 export {
   ControllerRoutes,
   ControllerRouteCallback,

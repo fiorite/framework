@@ -1,4 +1,4 @@
-import { Inherited, Provide } from '../di';
+import { Inherited, Provide, ProvideDecorator } from '../di';
 import {
   ClassDecoratorWithPayload,
   makeClassDecorator,
@@ -7,8 +7,8 @@ import {
   MaybePromise,
   MethodDecoratorWithPayload
 } from '../core';
-import { HttpContext, HttpMethod, HttpRequest } from '../http';
-import { RequestBody } from './request-body';
+import { HttpMethod } from '../http';
+import { RouteParams } from './params';
 
 export class ControllerPayload {
   private readonly _routePrefix?: string;
@@ -88,41 +88,23 @@ export const HttpPatch = (path?: string) => {
   return Route(path, HttpMethod.Patch).calledBy(HttpPatch);
 };
 
-export const FromRequest = (callback: MapCallback<HttpRequest, MaybePromise<unknown>>) => {
-  return Provide(HttpContext, context => callback(context.request)).calledBy(FromRequest);
-};
-
-export const FromParam = (key: string, callback?: MapCallback<string | number | boolean | undefined, MaybePromise<unknown>>) => {
-  if (!callback) {
-    callback = (x => x) as MapCallback<string | number | boolean | undefined, MaybePromise<unknown>>;
+export function FromParam(key: string): ProvideDecorator<RouteParams, string | number | boolean | undefined>;
+export function FromParam<R>(key: string, callback: MapCallback<string | number | boolean | undefined, MaybePromise<R>>): ProvideDecorator<RouteParams, MaybePromise<R>>;
+export function FromParam<R>(callback: MapCallback<RouteParams, R>): ProvideDecorator<RouteParams, MaybePromise<R>>;
+export function FromParam(...args: unknown[]) {
+  let callback: MapCallback<RouteParams, unknown>;
+  if (1 === args.length) {
+    if ('string' === typeof args[0]) {
+      callback = params => params.get(args[0] as string);
+    } else {
+      callback = args[0] as MapCallback<RouteParams, unknown>;
+    }
+  } else {
+    callback = params => {
+      const value = params.get(args[0] as string);
+      return (args[1] as MapCallback<string | number | boolean | undefined, unknown>)(value);
+    };
   }
 
-  return FromRequest(request => callback!(request.params.get(key))).calledBy(FromParam);
-};
-
-export const FromQuery = (key: string, callback?: MapCallback<string | undefined, MaybePromise<unknown>>) => {
-  if (!callback) {
-    callback = (x => x) as MapCallback<string | string[] | undefined, MaybePromise<unknown>>;
-  }
-
-  return FromRequest(request => callback!(request.query.get(key))).calledBy(FromQuery);
-};
-
-export const FromHeader = (key: string, callback?: MapCallback<string | string[] | number | undefined, MaybePromise<unknown>>) => {
-  if (!callback) {
-    callback = (x => x) as MapCallback<string | string[] | number | undefined, MaybePromise<unknown>>;
-  }
-
-  return FromRequest(request => callback!(request.headers.get(key))).calledBy(FromQuery);
-};
-
-export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T | undefined, MaybePromise<R>>) => {
-  if (!callback) {
-    callback = ((x: T) => x) as unknown as MapCallback<T | undefined, MaybePromise<R>>;
-  }
-
-  // noinspection UnnecessaryLocalVariableJS
-  const d = Provide<RequestBody<T>, MaybePromise<R>>(RequestBody, body => callback(body.value!))
-    .calledBy(FromBody);
-  return d;
-};
+  return Provide(RouteParams, callback).calledBy(FromParam);
+}

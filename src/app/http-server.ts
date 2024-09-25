@@ -1,14 +1,5 @@
 import { ServiceProvider, ServiceSet } from '../di';
-import {
-  HttpContext,
-  HttpContextHost,
-  HttpParams,
-  HttpPipeline,
-  HttpQuery,
-  HttpRequest,
-  HttpResponse,
-  HttpServer
-} from '../http';
+import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse, HttpServer } from '../http';
 import { ApplicationFeature } from './feature';
 
 export class HttpServerFeature implements ApplicationFeature {
@@ -28,7 +19,6 @@ export class HttpServerFeature implements ApplicationFeature {
         return host.context;
       }, [HttpContextHost])
       .addInherited(HttpRequest, (context: HttpContext) => context.request, [HttpContext])
-      .addInherited(HttpParams, (request: HttpRequest) => request.params, [HttpRequest])
       .addInherited(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
       .addInherited(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
     ;
