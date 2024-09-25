@@ -96,9 +96,9 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     return descriptor.factory(this._provide.bind(this), callback);
   }
 
-  // provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
-  //   return ServiceFactoryFunction.from(array)(this._provide.bind(this), callback);
-  // }
+  provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
+    return ServiceFactoryFunction.from(array)(this._provide.bind(this), callback);
+  }
 
   has(type: ServiceType): boolean {
     return this._set[CustomSet.data].has(type);

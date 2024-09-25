@@ -73,16 +73,17 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     let configured = false;
 
     if (preCacheSingleton) {
-      Array.from(provider)
-        .filter(x => ServiceBehavior.Singleton === x.behavior)
-        .forEach(x => {
-          provider.provide(x.type, () => {
-            preCached = true;
-            if (configured) {
-              complete();
-            }
-          });
-        });
+      provider.provideAll(
+        Array.from(provider)
+          .filter(x => ServiceBehavior.Singleton === x.behavior)
+          .map(x => x.type),
+        () => {
+          preCached = true;
+          if (configured) {
+            complete();
+          }
+        }
+      );
     }
 
     features.filter(x => x.configure).forEach(x => x.configure!(provider));

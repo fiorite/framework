@@ -60,5 +60,5 @@ export function FromBody(...args: unknown[]) {
   if (1 === args.length) {
     callback = args[0] as MapCallback<unknown, unknown>;
   }
-  return Provide<HttpBodyResult<unknown>>(HttpBodyResult, body => callback(body.value)).calledBy(FromBody);
+  return Provide<HttpBodyResult<unknown>, unknown>(HttpBodyResult, body => callback(body.value)).calledBy(FromBody);
 }
