@@ -25,7 +25,8 @@ export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
               }, new Uint8Array(length));
 
               const text = new TextDecoder().decode(binary);
-              context.provide(RequestBody).value = JSON.parse(text);
+              const json = JSON.parse(text);
+              context.provide(RequestBody).fulfill(json);
               next();
             } else {
               length += chunk.length;
