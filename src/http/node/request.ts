@@ -3,7 +3,7 @@ import { HttpHeaders } from '../headers';
 import type { IncomingMessage } from 'http';
 import { HttpMethod } from '../method';
 import { URL } from 'node:url';
-import { ListenableFunction, VoidCallback } from '../../core';
+import { ListenableFunction, ValueCallback, VoidCallback } from '../../core';
 
 export class NodeServerRequestHeaders implements HttpHeaders<HttpRequestHeader | string> {
   get [Symbol.toStringTag](): string {
@@ -128,6 +128,8 @@ export class NodeServerRequest extends HttpRequest {
     return this._close;
   }
 
+  private _readable = false;
+
   constructor(request: IncomingMessage) {
     super();
     this._original = request;
@@ -139,8 +141,13 @@ export class NodeServerRequest extends HttpRequest {
     request.on('close', () => this._close.emit());
   }
 
-  override read(size?: number | undefined): Uint8Array {
-    return this._original.read(size);
+  override read(callback: ValueCallback<Uint8Array | undefined>): void {
+    const read = () => {
+      const chunk = this._original.read();
+      callback(null === chunk ? undefined : chunk);
+    };
+
+    this._original.once('readable', read);
   }
 
   override write(): never {

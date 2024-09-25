@@ -3,17 +3,17 @@ import {
   addCors,
   addFactory,
   addRoute,
-  RoutesFeature,
   addRouting,
-  ServicesFeature,
   addType,
   addValue,
   CorsFeature,
-  makeApplication
+  makeApplication,
+  RoutesFeature,
+  ServicesFeature
 } from './app';
 import { makeServiceProvider, ServiceBehavior, ServiceType } from './di';
 import { HttpCallback, HttpMethod } from './http';
-import { RouteDescriptor } from './router';
+import { RouteDescriptor } from './routing';
 import { Type } from './core';
 import { ServiceFactoryReturnFunction } from './di/function';
 

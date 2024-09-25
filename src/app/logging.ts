@@ -1,5 +1,5 @@
 import { ServiceSet } from '../di';
-import { ConsoleLogger, LevelFilter, Logger, LogLevel } from '../logger';
+import { ConsoleLogger, LevelFilter, Logger, LogLevel } from '../logging';
 import { ApplicationFeature } from './feature';
 
 export class ConsoleLoggerFeature implements ApplicationFeature {

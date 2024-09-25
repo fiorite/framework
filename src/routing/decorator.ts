@@ -8,6 +8,7 @@ import {
   MethodDecoratorWithPayload
 } from '../core';
 import { HttpContext, HttpMethod, HttpRequest } from '../http';
+import { RequestBody } from './request-body';
 
 export class ControllerPayload {
   private readonly _routePrefix?: string;
@@ -115,10 +116,13 @@ export const FromHeader = (key: string, callback?: MapCallback<string | string[]
   return FromRequest(request => callback!(request.headers.get(key))).calledBy(FromQuery);
 };
 
-export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T, MaybePromise<R>>) => {
+export const FromBody = <T = unknown, R = unknown>(callback?: MapCallback<T | undefined, MaybePromise<R>>) => {
   if (!callback) {
-    callback = ((x: T) => x) as unknown as MapCallback<T, MaybePromise<R>>;
+    callback = ((x: T) => x) as unknown as MapCallback<T | undefined, MaybePromise<R>>;
   }
 
-  return FromRequest(request => callback!((request as any).body as T));
+  // noinspection UnnecessaryLocalVariableJS
+  const d = Provide<RequestBody<T>, MaybePromise<R>>(RequestBody, body => callback(body.value!))
+    .calledBy(FromBody);
+  return d;
 };

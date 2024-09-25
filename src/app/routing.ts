@@ -1,6 +1,6 @@
 import { ApplicationFeature } from './feature';
 import { InstantServiceProvideFunction, ServiceSet } from '../di';
-import { RouteDescriptor, RouteMatcher, RouteSet, RoutingMiddleware } from '../router';
+import { RequestBody, RouteDescriptor, RouteMatcher, RouteSet, RoutingMiddleware } from '../routing';
 import { HttpPipeline } from '../http';
 
 export class RoutingFeature implements ApplicationFeature {
@@ -15,7 +15,8 @@ export class RoutingFeature implements ApplicationFeature {
   }
 
   configureServices(serviceSet: ServiceSet) {
-    serviceSet.addValue(RouteMatcher, this._routeMatcher)
+    serviceSet.addScoped(RequestBody)
+      .addValue(RouteMatcher, this._routeMatcher)
       .addValue(RoutingMiddleware, this._middleware);
   }
 

@@ -8,11 +8,11 @@ import {
   ServiceSet
 } from '../di';
 import { HttpServer } from '../http';
-import { RouteMatcher } from '../router';
-import { Logger } from '../logger';
+import { RouteMatcher } from '../routing';
+import { Logger } from '../logging';
 import { MaybePromise, ValueCallback, VoidCallback } from '../core';
-import { Closeable } from '../io';
 import { addHttpServer, HttpServerFeature } from './http-server';
+import { HttpServerListener } from '../http/server';
 
 export class Application {
   private readonly _provider: ServiceProvider;
@@ -45,14 +45,14 @@ export class Application {
     runProviderContext(this._provider, callback);
   }
 
-  listen(port: number, callback: ValueCallback<unknown>): Closeable {
-    let closeable: Closeable;
+  listen(port: number, callback: ValueCallback<unknown>): HttpServerListener {
+    let listener: HttpServerListener;
     runProviderContext(this._provider, complete => {
-      closeable = this._provider(HttpServer).listen(port, value => {
+      listener = this._provider(HttpServer).listen(port, value => {
         MaybePromise.then(() => callback(value), complete);
       });
     });
-    return closeable!;
+    return listener!;
   }
 }
 

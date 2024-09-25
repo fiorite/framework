@@ -1,7 +1,7 @@
 import { FunctionClass, MaybePromise } from '../core';
 import { HttpCallback, HttpStatusCode } from '../http';
 import { RouteMatcher } from './matcher';
-import { log } from '../logger';
+import { log } from '../logging';
 
 export class RoutingMiddleware extends FunctionClass<HttpCallback> {
   constructor(routeMatcher: RouteMatcher) {

@@ -56,6 +56,7 @@ export {
 } from './matcher';
 export { RoutingMiddleware } from './middlware';
 export { RadixMap } from './radix';
+export { RequestBody } from './request-body';
 export {
   ControllerRoutes,
   ControllerRouteCallback,

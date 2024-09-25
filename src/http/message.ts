@@ -1,5 +1,5 @@
 import { HttpHeaders } from './headers';
-import { ListenableFunction, VoidCallback } from '../core';
+import { ListenableFunction, ValueCallback, VoidCallback } from '../core';
 
 /** @source https://en.wikipedia.org/wiki/List_of_HTTP_header_fields */
 export enum HttpMessageHeader {
@@ -29,14 +29,11 @@ export abstract class HttpMessage {
 
   abstract readonly close: ListenableFunction<VoidCallback, void>;
 
-  /**
-   * @param size
-   */
-  abstract read(size?: number): Uint8Array;
+  abstract read(callback: ValueCallback<Uint8Array | undefined>): void;
 
   /**
    * @param buffer
    * @param callback called on flush
    */
-  abstract write(buffer: Uint8Array, callback?: VoidCallback): void;
+  abstract write(buffer: Uint8Array | string, callback?: VoidCallback): void;
 }
