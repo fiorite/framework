@@ -64,13 +64,13 @@ export class ProvidePayload<T, R = unknown> {
 
 export type ProvideDecorator<T, R = unknown> = ParameterDecoratorWithPayload<ProvidePayload<T, R>>;
 
-export function Provide(): ClassDecoratorWithPayload<void>;
+// export function Provide(): ClassDecoratorWithPayload<void>;
 export function Provide<T>(type: ServiceType<T>): ProvideDecorator<T>;
 export function Provide<T, R>(type: ServiceType<T>, callback: MapCallback<T, MaybePromise<R>>): ProvideDecorator<T, R>;
 export function Provide(...args: unknown[]): unknown {
-  if (!args.length) {
-    return makeClassDecorator(Provide, void 0);
-  }
+  // if (!args.length) {
+  //   return makeClassDecorator(Provide, void 0);
+  // }
 
   const payload = new ProvidePayload(args[0] as ServiceType, args[1] as MapCallback<unknown, unknown>);
   return makeParameterDecorator(Provide, payload);
