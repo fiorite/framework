@@ -8,7 +8,7 @@ export type ServiceFactoryFunction<T = unknown> = (provide: ServiceProvideFuncti
 export type ServiceFactoryReturnFunction<R, P extends unknown[] = any[]> = (...args: P) => MaybePromise<R>;
 
 export namespace ServiceFactoryFunction {
-  export function from(array: readonly ServiceType[]): ServiceFactoryFunction<unknown[]> {
+  export function all(array: readonly ServiceType[]): ServiceFactoryFunction<unknown[]> {
     return (provide: ServiceProvideFunction, callback: ValueCallback<unknown[]>) => {
       if (!array.length) {
         return callback([]);

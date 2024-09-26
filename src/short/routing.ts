@@ -50,11 +50,11 @@ export function patch(path: string, callback: RouteCallback): never {
   return route(HttpMethod.Patch, path, callback);
 }
 
-export function param(ctx: HttpContext, key: string): string | number | boolean | undefined;
-export function param<R>(ctx: HttpContext, key: string, callback: MapCallback<string | number | boolean | undefined, R>): R;
-export function param<R>(ctx: HttpContext, callback: MapCallback<RouteParams, R>): R;
-export function param(ctx: HttpContext, ...args: unknown[]) {
-  const params = ctx.provide(RouteParams);
+export function param(context: HttpContext, key: string): string | number | boolean | undefined;
+export function param<R>(context: HttpContext, key: string, callback: MapCallback<string | number | boolean | undefined, R>): R;
+export function param<R>(context: HttpContext, callback: MapCallback<RouteParams, R>): R;
+export function param(context: HttpContext, ...args: unknown[]) {
+  const params = context.provide(RouteParams);
 
   if (1 === args.length) {
     if ('string' === typeof args[0]) {

@@ -2,7 +2,7 @@ import { ClassDecorator2, DecoratorOuterFunction } from './function';
 import { DecoratorWithPayload } from './payload';
 import { Type } from '../type';
 
-export interface ClassDecoratorWithPayload<TPayload, T> extends DecoratorWithPayload<TPayload, ClassDecorator2<T>> {
+export interface ClassDecoratorWithPayload<TPayload, T = unknown> extends DecoratorWithPayload<TPayload, ClassDecorator2<T>> {
   (target: Type<T>): void;
 }
 

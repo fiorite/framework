@@ -3,7 +3,16 @@ export { makeServiceProvider, ServiceSet } from './set';
 export { runProviderContext, provide } from './global';
 export { ServiceDescriptor } from './descriptor';
 export {
-  Service, Singleton, Inherited, Scoped, Prototype, ServiceOptions, ServicePayload, ProvidePayload, Provide, ProvideDecorator
+  BehaveLike,
+  Singleton,
+  Inherited,
+  Scoped,
+  Prototype,
+  BehaveLikePayload,
+  BehaveLikeDecorator,
+  ProvidePayload,
+  Provide,
+  ProvideDecorator
 } from './decorator';
 export { ServiceFactoryFunction, ServiceProvideFunction } from './function';
 export { InstantServiceProvideFunction, InstantServiceProvider } from './instant';

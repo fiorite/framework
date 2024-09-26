@@ -1,7 +1,7 @@
 import { ServiceProvider } from './provider';
 import { ServiceDescriptor } from './descriptor';
 import { ServiceType } from './type';
-import { Service } from './decorator';
+import { BehaveLike, Provide } from './decorator';
 import { ServiceBehavior } from './behavior';
 import { AbstractType, CustomSet, DecoratorRecorder, FunctionClass, isType, Type, ValueCallback } from '../core';
 import { ServiceFactoryReturnFunction } from './function';
@@ -230,14 +230,24 @@ export function makeServiceProvider(
   configure: Iterable<Type | ServiceDescriptor | object> | ValueCallback<ServiceSet>,
   includeGlobal = false,
 ): ServiceProvider {
-  const preDeclarations = DecoratorRecorder.classSearch(Service).map(decorator => {
+  const preDeclarations = DecoratorRecorder.classSearch(BehaveLike).map(decorator => {
     const payload = decorator.payload;
     const actualType = decorator.path[0] as Type;
-    const serviceType = payload.type || actualType;
+    const serviceType = actualType;
     return new ServicePreDeclaration({
       actualType, serviceType, behaviour: payload.behaviour,
     });
   });
+
+  DecoratorRecorder.classSearch(Provide)
+    .filter(x => !preDeclarations.some(y => y.actualType === x.path[0]))
+    .forEach(decorator => {
+      return new ServicePreDeclaration({
+        actualType: decorator.path[0] as Type,
+        serviceType: decorator.path[0],
+        behaviour: ServiceBehavior.Inherited,
+      });
+    });
 
   const configurator = new ServiceSet(preDeclarations);
 

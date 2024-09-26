@@ -10,24 +10,21 @@ import {
 import { HttpMethod } from '../http';
 import { RouteParams } from './params';
 
-export class ControllerPayload {
-  private readonly _routePrefix?: string;
+export class RoutePrefixPayload {
+  private readonly _path?: string;
 
-  get routePrefix(): string | undefined {
-    return this._routePrefix;
+  get path(): string | undefined {
+    return this._path;
   }
 
-  constructor(routePrefix?: string) {
-    this._routePrefix = routePrefix;
+  constructor(value?: string) {
+    this._path = value;
   }
 }
 
-/** @deprecated was thinking of removing it and having specific ones, like {@link RoutePrefix} */
-export function Controller<T>(routePrefix?: string): ClassDecoratorWithPayload<ControllerPayload, T> {
-  return makeClassDecorator(Controller, new ControllerPayload(routePrefix), [Inherited().calledBy(Controller)]);
+export function RoutePrefix<T>(path: string): ClassDecoratorWithPayload<RoutePrefixPayload, T> {
+  return makeClassDecorator(RoutePrefix, new RoutePrefixPayload(path), [Inherited().calledBy(RoutePrefix)]);
 }
-
-export const RoutePrefix = (path: string) => Controller(path).calledBy(RoutePrefix);
 
 export class RoutePayload {
   private readonly _path?: string;

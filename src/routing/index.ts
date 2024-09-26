@@ -24,7 +24,6 @@ export {
   RoutePrefix,
   Route,
   FromParam,
-  Controller,
   HttpGet,
   HttpHead,
   HttpConnect,
@@ -56,9 +55,9 @@ export {
   noContent
 } from './result';
 export {
-  ControllerRoutes,
-  ControllerRouteCallback,
+  TypeRoutes,
+  ObjectMethodCallback,
 } from './route';
 export { RouteDescriptor } from './descriptor';
-export { RouteSet } from './route-set';
+export { RouteSet } from './set';
 export { segmentRoutePath } from './segment';

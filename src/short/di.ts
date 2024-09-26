@@ -1,7 +1,8 @@
 import { addFactory, addType, addValue, ServicesFeature } from '../app';
 import { ServiceBehavior, ServiceType } from '../di';
-import { Type } from '../core';
+import { Type, ValueCallback } from '../core';
 import { ServiceFactoryReturnFunction } from '../di/function';
+import { HttpContext } from '../http';
 
 export function add(value: object): ServicesFeature;
 export function add<T>(type: ServiceType<T>, value: T): ServicesFeature;
@@ -22,4 +23,22 @@ export function factory<T>(
   behaviour?: ServiceBehavior,
 ): ServicesFeature {
   return addFactory(type, factory, dependencies, behaviour);
+}
+
+/**
+ * todo: use instead of global in ../di
+ * @param context
+ * @param type
+ */
+function provide<T>(context: HttpContext, type: ServiceType<T>): T;
+function provide<T>(context: HttpContext, type: ServiceType<T>, callback: ValueCallback<T>): void;
+function provide<T>(type: ServiceType<T>): T;
+function provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+function provide(...args: unknown[]): unknown {
+  if (args[0] instanceof HttpContext) {
+    const type = args[1] as ServiceType;
+    return args[2] ? args[0].provide(type, args[2] as ValueCallback<unknown>) : args[0].provide(type);
+  }
+
+  throw new Error('not implemented fully');
 }

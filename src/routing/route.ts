@@ -1,94 +1,81 @@
-import { DecoratorRecorder, FunctionClass, MaybePromise, Type, VoidCallback } from '../core';
-import { Controller, Route } from './decorator';
-import { ServiceFactoryFunction, ServiceNotFoundError } from '../di';
+import { DecoratorRecorder, FunctionClass, Type, ValueCallback, VoidCallback } from '../core';
+import { Route, RoutePrefix } from './decorator';
+import { ServiceFactoryFunction, ServiceNotFoundError, ServiceType } from '../di';
 import { RouteDescriptor } from './descriptor';
 import { HttpCallback, HttpContext } from '../http';
-import { _ServiceClassResolver, _ServiceMethodResolver, ServiceMethodResolveFunction } from '../di/_resolver';
+import { ObjectMethodFactory, TypeFactory } from '../di/factory';
 
-export class ControllerRouteCallback extends FunctionClass<HttpCallback> {
-  readonly controllerType: Type;
-  readonly resolveType: ServiceFactoryFunction;
-  readonly propertyKey: string | symbol;
-  readonly resolveMethod: ServiceMethodResolveFunction<unknown, unknown>;
-  readonly resultCallback: (context: HttpContext, err: unknown, result: unknown, next: VoidCallback) => void;
+export class ObjectMethodCallback<T = unknown> extends FunctionClass<HttpCallback> {
+  private readonly _type: Type<T>;
+  private readonly _typeFactory: TypeFactory<T>;
+  private readonly _propertyKey: string | symbol;
+  private readonly _objectMethodFactory: ObjectMethodFactory<T>;
+  private readonly _callback: (context: HttpContext, result: unknown, next: VoidCallback) => void;
 
-  constructor(object: {
-    readonly controllerType: Type;
-    readonly resolveType: ServiceFactoryFunction;
-    readonly propertyKey: string | symbol;
-    readonly resolveMethod: ServiceMethodResolveFunction<unknown, unknown>;
-    readonly resultCallback: (context: HttpContext, err: unknown, result: unknown, next: VoidCallback) => void;
-  }) {
-    super((context, next) => {
-      object.resolveType(context.provide, controllerObject => {
-        object.resolveMethod(controllerObject, context.provide, resultMaybePromise => {
-          MaybePromise.then(() => resultMaybePromise, result => {
-            object.resultCallback(context, undefined, result, next);
-          }, err => object.resultCallback(context, err, undefined, next));
+  constructor(
+    type: Type,
+    propertyKey: string | symbol,
+    callback: (context: HttpContext, result: unknown, next: VoidCallback) => void
+  ) {
+    const typeFactory = new TypeFactory<T>(type);
+    const methodFactory = new ObjectMethodFactory(type, propertyKey);
+
+    const reuseTypeFactory: ServiceFactoryFunction<T> = (provide, callback1) => {
+      let provided = false;
+      try {
+        provide(type, object => {
+          provided = true;
+          callback1(object);
         });
+      } catch (err) {
+        if (!provided && err instanceof ServiceNotFoundError) {
+          typeFactory(provide, callback1);
+        } else {
+          throw err;
+        }
+      }
+    };
+
+    super((context, next) => {
+      reuseTypeFactory(context.provide, object => {
+        methodFactory(<R>(type2: ServiceType<R>, callback2: ValueCallback<R>) => {
+          if (type2 === type) {
+            return callback2(object as unknown as R);
+          }
+
+          return context.provide(type2, callback2);
+        }, result => callback(context, result, next));
       });
     });
-    this.controllerType = object.controllerType;
-    this.resolveType = object.resolveType;
-    this.propertyKey = object.propertyKey;
-    this.resolveMethod = object.resolveMethod;
-    this.resultCallback = object.resultCallback;
+    this._type = type;
+    this._typeFactory = typeFactory;
+    this._propertyKey = propertyKey;
+    this._objectMethodFactory = methodFactory;
+    this._callback = callback;
   }
 }
 
-export class ControllerRoutes implements Iterable<RouteDescriptor> {
+export class TypeRoutes implements Iterable<RouteDescriptor> {
   private readonly _array: readonly RouteDescriptor[] = [];
 
   constructor(
-    controllerType: Type,
-    resultCallback: (context: HttpContext, err: unknown | undefined, result: unknown | undefined, next: VoidCallback) => void
+    type: Type,
+    resultCallback: (context: HttpContext, result: unknown | undefined, next: VoidCallback) => void
   ) {
-    const routePrefix = DecoratorRecorder.classSearch(Controller, controllerType)
-      .map(x => x.payload.routePrefix)
+    const routePrefix = DecoratorRecorder.classSearch(RoutePrefix, type)
+      .map(x => x.payload.path)
       .filter(x => !!x && x.trim().length)
       .reverse()
       .join('/');
 
-    this._array = DecoratorRecorder.methodSearch(Route, controllerType).map(methodRecord => {
-      // provider.validateDependencies(controllerType, methodRecord.path[1]);
-      const methodServiceFactory = _ServiceMethodResolver.from(controllerType, methodRecord.path[1] as string | symbol);
-
+    this._array = DecoratorRecorder.methodSearch(Route, type).map(methodRecord => {
       const { path, httpMethod } = methodRecord.payload;
       const routePath = '/' + ([routePrefix, path].filter(x => !!x && x.length).join('/'));
-
-      // region lazy class instantiation pipeline, todo: refactor this
-
-      let classResolver: _ServiceClassResolver<unknown>;
-      const controllerServiceFactory: ServiceFactoryFunction = (provide, callback1) => {
-        let canceled = false;
-        try {
-          provide(controllerType, controller => {
-            canceled = true;
-            callback1(controller);
-          });
-        } catch (err) {
-          if (!canceled && err instanceof ServiceNotFoundError) {
-            if (!classResolver) {
-              classResolver = _ServiceClassResolver.from(controllerType);
-            }
-            classResolver(provide, callback1);
-          } else {
-            throw err;
-          }
-        }
-      };
-
-      // endregion
-
-      const callback = new ControllerRouteCallback({
-        controllerType,
-        resolveType: controllerServiceFactory,
-        propertyKey: methodRecord.path[1],
-        resolveMethod: methodServiceFactory,
-        resultCallback,
+      return new RouteDescriptor({
+        path: routePath,
+        method: httpMethod,
+        callback: new ObjectMethodCallback(type, methodRecord.path[1], resultCallback),
       });
-
-      return new RouteDescriptor({ path: routePath, method: httpMethod, callback });
     });
   }
 

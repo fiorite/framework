@@ -1,11 +1,10 @@
-import { AnyCallback, CustomSet, FunctionClass, Type, ValueCallback } from '../core';
+import { CustomSet, FunctionClass, ValueCallback } from '../core';
 import { ServiceType } from './type';
 import { ServiceDescriptor } from './descriptor';
 import { ServiceBehavior } from './behavior';
 import { ServiceScope } from './scope';
 import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
 import { ServiceFactoryFunction, ServiceProvideFunction } from './function';
-import { _ServiceClassResolver, _ServiceMethodResolver, ServiceMethodResolveFunction } from './_resolver';
 import { InstantServiceProvideFunction, InstantServiceProvider } from './instant';
 
 export interface ServiceProvider extends InstantServiceProvideFunction {
@@ -97,48 +96,48 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   }
 
   provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
-    return ServiceFactoryFunction.from(array)(this._provide.bind(this), callback);
+    return ServiceFactoryFunction.all(array)(this._provide.bind(this), callback);
   }
 
   has(type: ServiceType): boolean {
     return this._set[CustomSet.data].has(type);
   }
 
-  prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
-    if (this.has(type)) {
-      return (provide, callback) => provide(type, callback);
-    }
-
-    return _ServiceClassResolver.from(type);
-  }
-
-  instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
-    return this.prepareTypeFactory(type)(this._provide.bind(this), callback);
-  }
-
-  validateDependencies<T extends object, K extends keyof T>(type: Type<T>, propertyKey: K): void {
-    const methodResolver = _ServiceMethodResolver.from(type, propertyKey as string | symbol);
-    methodResolver.dependencies.forEach((dep, index) => { // validate dependencies
-      if (!this.has(dep)) {
-        throw new Error(`Unknown param source at ${type.name}#${String(propertyKey)}(...[${index}]: ${ServiceType.toString(dep)})`);
-      }
-    });
-  }
-
-  prepareMethodFactory<T extends object, K extends keyof T>(
-    type: Type<T>,
-    propertyKey: K
-  ): ServiceMethodResolveFunction<T, T[K] extends AnyCallback ? ReturnType<T[K]> : never> {
-    return _ServiceMethodResolver.from(type, propertyKey as string | symbol);
-  }
-
-  callObjectMethod<T extends object, K extends keyof T>(
-    object: T,
-    propertyKey: K,
-    callback: ValueCallback<T[K] extends AnyCallback ? ReturnType<T[K]> : never>
-  ): void {
-    this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this._provide.bind(this), callback as any);
-  }
+  // prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
+  //   if (this.has(type)) {
+  //     return (provide, callback) => provide(type, callback);
+  //   }
+  //
+  //   return _ServiceClassResolver.from(type);
+  // }
+  //
+  // instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
+  //   return this.prepareTypeFactory(type)(this._provide.bind(this), callback);
+  // }
+  //
+  // validateDependencies<T extends object, K extends keyof T>(type: Type<T>, propertyKey: K): void {
+  //   const methodResolver = _ServiceMethodResolver.from(type, propertyKey as string | symbol);
+  //   methodResolver.dependencies.forEach((dep, index) => { // validate dependencies
+  //     if (!this.has(dep)) {
+  //       throw new Error(`Unknown param source at ${type.name}#${String(propertyKey)}(...[${index}]: ${ServiceType.toString(dep)})`);
+  //     }
+  //   });
+  // }
+  //
+  // prepareMethodFactory<T extends object, K extends keyof T>(
+  //   type: Type<T>,
+  //   propertyKey: K
+  // ): ServiceMethodResolveFunction<T, T[K] extends AnyCallback ? ReturnType<T[K]> : never> {
+  //   return _ServiceMethodResolver.from(type, propertyKey as string | symbol);
+  // }
+  //
+  // callObjectMethod<T extends object, K extends keyof T>(
+  //   object: T,
+  //   propertyKey: K,
+  //   callback: ValueCallback<T[K] extends AnyCallback ? ReturnType<T[K]> : never>
+  // ): void {
+  //   this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this._provide.bind(this), callback as any);
+  // }
 
   createScope(configure: (provide: InstantServiceProvideFunction) => void = () => void 0): ServiceProvider {
     if (this._scope) {

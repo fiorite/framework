@@ -8,73 +8,40 @@ import {
   MaybePromise,
   ParameterDecoratorWithPayload
 } from '../core';
-import { ServiceFactoryReturnFunction } from './function';
 
-export interface ServiceOptions<T> {
-  readonly type: ServiceType<T>;
-  readonly behaviour: ServiceBehavior;
-}
+export class BehaveLikePayload {
+  private readonly _behaviour: ServiceBehavior;
 
-export class ServicePayload<T> {
-  private readonly _type?: ServiceType<T>;
-
-  get type(): ServiceType<T> | undefined {
-    return this._type;
-  }
-
-  private readonly _behaviour?: ServiceBehavior;
-
-  get behaviour(): ServiceBehavior | undefined {
+  get behaviour(): ServiceBehavior {
     return this._behaviour;
   }
 
-  constructor(options: Partial<ServiceOptions<T>> = {}) {
-    this._type = options.type;
-    this._behaviour = options.behaviour;
+  constructor(behaviour: ServiceBehavior) {
+    this._behaviour = behaviour;
   }
 }
 
-/**
- * @deprecated use {@link Inherited}, {@link Scoped}, {@link Singleton} or {@link Prototype} instead. will be removed soon.
- */
-export function Service<T>(options?: Partial<ServiceOptions<T>>): ClassDecoratorWithPayload<ServicePayload<T>, T>
-/**
- * @deprecated not implemented, experimental overload
- * @param factory
- * @param dependencies
- * @constructor
- */
-export function Service<T>(factory: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): ClassDecoratorWithPayload<ServicePayload<T>, T>;
-/**
- * @deprecated use {@link Inherited}, {@link Scoped}, {@link Singleton} or {@link Prototype} instead. will be removed soon.
- */
-export function Service(...args: unknown[]): ClassDecoratorWithPayload<ServicePayload<unknown>, any> {
-  let payload: ServicePayload<unknown>;
-
-  if (!args.length || (args.length === 1 && typeof args === 'object')) {
-    payload = new ServicePayload(args[0] || {});
-  } else {
-    throw new Error('not implemented, experimental overload'); // factory
-  }
-
-  return makeClassDecorator(Service, payload);
+export function BehaveLike(behaviour: ServiceBehavior): ClassDecoratorWithPayload<BehaveLikePayload, unknown> {
+  return makeClassDecorator(BehaveLike, new BehaveLikePayload(behaviour));
 }
 
-export const Singleton = (type?: ServiceType) => {
-  return Service({ behaviour: ServiceBehavior.Singleton, type, }).calledBy(Singleton);
-};
+export type BehaveLikeDecorator<T> = ClassDecoratorWithPayload<BehaveLikePayload, T>;
 
-export const Scoped = (type?: ServiceType) => {
-  return Service({ behaviour: ServiceBehavior.Scoped, type, }).calledBy(Scoped);
-};
+export function Inherited<T>(): BehaveLikeDecorator<T> {
+  return BehaveLike(ServiceBehavior.Inherited).calledBy(Inherited);
+}
 
-export const Inherited = (type?: ServiceType) => {
-  return Service({ behaviour: ServiceBehavior.Inherited, type, }).calledBy(Inherited);
-};
+export function Singleton<T>(): BehaveLikeDecorator<T> {
+  return BehaveLike(ServiceBehavior.Inherited).calledBy(Inherited);
+}
 
-export const Prototype = () => {
-  return Service({ behaviour: ServiceBehavior.Prototype, type: void 0, }).calledBy(Prototype);
-};
+export function Scoped<T>(): BehaveLikeDecorator<T> {
+  return BehaveLike(ServiceBehavior.Inherited).calledBy(Inherited);
+}
+
+export function Prototype<T>(): BehaveLikeDecorator<T> {
+  return BehaveLike(ServiceBehavior.Inherited).calledBy(Inherited);
+}
 
 export class ProvidePayload<T, R = unknown> {
   private readonly _referTo?: ServiceType<T>;
@@ -97,10 +64,14 @@ export class ProvidePayload<T, R = unknown> {
 
 export type ProvideDecorator<T, R = unknown> = ParameterDecoratorWithPayload<ProvidePayload<T, R>>;
 
-export function Provide(): ProvideDecorator<unknown>;
+export function Provide(): ClassDecoratorWithPayload<void>;
 export function Provide<T>(type: ServiceType<T>): ProvideDecorator<T>;
 export function Provide<T, R>(type: ServiceType<T>, callback: MapCallback<T, MaybePromise<R>>): ProvideDecorator<T, R>;
-export function Provide<T, R = unknown>(type?: ServiceType<T>, callback?: MapCallback<T, MaybePromise<R>>): ProvideDecorator<T, R> {
-  const payload = new ProvidePayload(type, callback);
+export function Provide(...args: unknown[]): unknown {
+  if (!args.length) {
+    return makeClassDecorator(Provide, void 0);
+  }
+
+  const payload = new ProvidePayload(args[0] as ServiceType, args[1] as MapCallback<unknown, unknown>);
   return makeParameterDecorator(Provide, payload);
 }
