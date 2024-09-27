@@ -149,16 +149,6 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   //   });
   // }
 
-  // catchAllLate(callback: VoidCallback): void {
-  //   const descriptors = Array.from(this._descriptors.values()).filter(descriptor => descriptor.lateType);
-  //
-  //   descriptors.map(descriptor => {
-  //     descriptor.factory(this._provide.bind(this), (description2, value) => {
-  //
-  //     });
-  //   });
-  // }
-
   touchAllSingletons(callback: VoidCallback): void {
     const descriptors: ServiceDescriptor[] = [];
     this._descriptors.forEach(descriptor => {

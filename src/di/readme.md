@@ -106,7 +106,7 @@ Whether you decide to build more complex pipeline, tracking decorator chain it i
 To access call chain, use:
 
 ```typescript
-GetIncrementFunction().callers; // [Provide, GetIncrementFunction]
+GetIncrementFunction().stackTrace; // [Provide, GetIncrementFunction]
 ```
 
 ---

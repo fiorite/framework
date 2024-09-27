@@ -26,30 +26,6 @@ export abstract class ServiceFactory<T> extends FunctionClass<ServiceFactoryFunc
   }
 }
 
-/**
- * @deprecated not implemented yet, only draft, only idea
- */
-export class LateServiceFactory<T = unknown> extends ServiceFactory<[Type<T>, T]> {
-  private readonly _original: ServiceFactory<T>;
-
-  get original(): ServiceFactory<T> {
-    return this._original;
-  }
-
-  constructor(original: ServiceFactory<T>) {
-    super((provide, callback2) => {
-      return original(provide, result => {
-        if (typeof result === 'object' && null !== result && isType(result.constructor)) {
-          return callback2([result.constructor as Type, result]);
-        }
-
-        throw new Error('late factory failed. result ought to be object which constructor is gotten as a service type. actual: '+result);
-      });
-    }, original.dependencies);
-    this._original = original;
-  }
-}
-
 export class ValueFactory<T> extends ServiceFactory<T> {
   private readonly _value: T;
 
@@ -64,10 +40,10 @@ export class ValueFactory<T> extends ServiceFactory<T> {
 }
 
 export class ServiceFactoryReturn<T> extends ServiceFactory<T> {
-  private readonly _factory: ServiceFactoryReturnFunction<T>;
+  private readonly _original: ServiceFactoryReturnFunction<T>;
 
-  get factory(): ServiceFactoryReturnFunction<T> {
-    return this._factory;
+  get original(): ServiceFactoryReturnFunction<T> {
+    return this._original;
   }
 
   constructor(factory: ServiceFactoryReturnFunction<T>, dependencies: readonly ServiceType[] = []) {
@@ -76,7 +52,7 @@ export class ServiceFactoryReturn<T> extends ServiceFactory<T> {
         MaybePromise.then(() => factory(...args), callback);
       });
     }, dependencies);
-    this._factory = factory;
+    this._original = factory;
   }
 }
 

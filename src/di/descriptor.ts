@@ -1,14 +1,10 @@
 import { ServiceType } from './type';
-import { ServiceFactoryReturnFunction, ServiceProvideFunction } from './function';
+import { ServiceFactoryReturnFunction } from './function';
 import { ServiceBehavior } from './behavior';
-import { AnyCallback, FunctionClass, Type, ValueCallback } from '../core';
-import { LateServiceFactory, ServiceFactory, ServiceFactoryReturn, TypeFactory, ValueFactory } from './factory';
+import { AnyCallback, FunctionClass, Type } from '../core';
+import { ServiceFactory, ServiceFactoryReturn, TypeFactory, ValueFactory } from './factory';
 
 export class ServiceDescriptor<T = unknown> {
-  get lateType(): boolean {
-    return  this.factory instanceof LateServiceFactory;
-  }
-
   private readonly _type: ServiceType<T>;
 
   get type(): ServiceType<T> {
@@ -29,23 +25,6 @@ export class ServiceDescriptor<T = unknown> {
 
   get behavior(): ServiceBehavior {
     return this._behavior;
-  }
-
-  /**
-   * @deprecated not implemented yet, only draft, only idea
-   */
-  static fromLateFactory<T>(
-    factory: ServiceFactoryReturnFunction<T>,
-    dependencies: ServiceType[] = [],
-    behavior?: ServiceBehavior,
-  ): ServiceDescriptor<[Type<T>, T]> {
-    if (dependencies.length < factory.length) {
-      throw new Error('Factory dependencies missing. Deps [' + dependencies.map(ServiceType.toString).join(', ') + ']. Function: ' + factory.toString());
-    }
-
-    const factoryReturn = new ServiceFactoryReturn(factory, dependencies);
-    const lateFactory = new LateServiceFactory(factoryReturn);
-    return new ServiceDescriptor(lateFactory, lateFactory, behavior);
   }
 
   static fromValue<T extends object | FunctionClass<AnyCallback>>(value: T): ServiceDescriptor<T>;
@@ -104,22 +83,6 @@ export class ServiceDescriptor<T = unknown> {
     this._type = type;
     this._behavior = behavior || ServiceBehavior.Inherited;
     this._factory = factory;
-  }
-
-  /**
-   * @deprecated not implemented yet, only draft, only idea
-   */
-  catchUp(provide: ServiceProvideFunction, callback: ValueCallback<T extends [Type, infer P] ? [ServiceDescriptor<P>, P] : never>): void {
-    if (!this.lateType) {
-      throw new Error('unable to catch up with descriptor that is not late factory.');
-    }
-
-    const factory = this.factory as unknown as LateServiceFactory;
-
-    factory(provide, ([type, value]) => {
-      const descriptor = new ServiceDescriptor(type, factory.original, this.behavior);
-      callback([descriptor, value] as any);
-    });
   }
 
   inherit(behavior: ServiceBehavior.Scoped | ServiceBehavior.Singleton): ServiceDescriptor<T> {

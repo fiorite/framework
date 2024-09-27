@@ -30,12 +30,6 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     this._behavioralMap = new Map(behavioralMap);
   }
 
-  /**
-   * @deprecated an issue regarding late factories.
-   * solution could be to create late types which resolves with late factories.
-   * if type is recognized in late factory, late type will be ignored.
-   * kinda cool approach.
-   */
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
     decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
       .filter(type => !this[CustomSet.data].has(type))
@@ -43,9 +37,6 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     return this;
   }
 
-  /**
-   * @deprecated an issue regarding late factories
-   */
   includeDependencies(): this {
     const queue = Array.from(this);
     while (queue.length) {
@@ -102,18 +93,6 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     behavior?: ServiceBehavior,
   ): this {
     const descriptor = ServiceDescriptor.fromFactory(type, factory, dependencies, behavior);
-    return this.add(descriptor);
-  }
-
-  /**
-   * @deprecated not implemented yet, only draft, only idea
-   */
-  addLateFactory<T>(
-    factory: ServiceFactoryReturnFunction<T>,
-    dependencies: ServiceType[] = [],
-    behavior?: ServiceBehavior,
-  ): this {
-    const descriptor = ServiceDescriptor.fromLateFactory(factory, dependencies, behavior);
     return this.add(descriptor);
   }
 
