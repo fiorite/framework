@@ -76,7 +76,7 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     let configured = false;
 
     if (touchSingletons) {
-      provider.touchSingletons(() => {
+      provider.touchAllSingletons(() => {
         completed = true;
         if (configured) {
           complete();

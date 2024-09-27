@@ -50,11 +50,11 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     },
     [ServiceBehavior.Scoped]: ([provider, descriptor]): ServiceFactoryFunction => {
       return (provide, callback) => {
-        if (!provider._scope) {
+        if (!provider._serviceScope) {
           throw new Error('Scope is not defined. Use #createScope()');
         }
 
-        return provider._scope.provide(descriptor.type, callback, resolve => {
+        return provider._serviceScope.provide(descriptor.type, callback, resolve => {
           descriptor.factory(provide, resolve);
         });
       };
@@ -70,10 +70,10 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
   private readonly _callbackShare: ServiceCallbackQueue;
 
-  private _scope?: ServiceScope;
+  private _serviceScope?: ServiceScope;
 
-  get scoped(): boolean {
-    return !!this._scope;
+  get hasScope(): boolean {
+    return !!this._serviceScope;
   }
 
   private _sourcedFrom?: ServiceProvider;
@@ -90,9 +90,10 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
   private _runtimeMap = new Map<ServiceType, ServiceFactoryFunction<unknown>>;
 
-  constructor(descriptors: Iterable<ServiceDescriptor>, checkRules = true) {
+  constructor(descriptors: Iterable<ServiceDescriptor>, serviceScope?: ServiceScope) {
     const instantProvider = new InstantServiceProvider((type, callback) => this._provide(type, callback));
     super(instantProvider);
+    this._serviceScope = serviceScope;
     this._instantProvider = instantProvider;
     this._runtimeMap.set(ServiceProvider, (_, callback) => callback(this));
 
@@ -139,18 +140,6 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     return this._descriptors[CustomSet.data].has(type);
   }
 
-  // prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
-  //   if (this.has(type)) {
-  //     return (provide, callback) => provide(type, callback);
-  //   }
-  //
-  //   return _ServiceClassResolver.from(type);
-  // }
-  //
-  // instantiateType<T>(type: Type<T>, callback: ValueCallback<T>): void {
-  //   return this.prepareTypeFactory(type)(this._provide.bind(this), callback);
-  // }
-  //
   // validateDependencies<T extends object, K extends keyof T>(type: Type<T>, propertyKey: K): void {
   //   const methodResolver = _ServiceMethodResolver.from(type, propertyKey as string | symbol);
   //   methodResolver.dependencies.forEach((dep, index) => { // validate dependencies
@@ -159,23 +148,18 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   //     }
   //   });
   // }
+
+  // catchAllLate(callback: VoidCallback): void {
+  //   const descriptors = Array.from(this._descriptors.values()).filter(descriptor => descriptor.lateType);
   //
-  // prepareMethodFactory<T extends object, K extends keyof T>(
-  //   type: Type<T>,
-  //   propertyKey: K
-  // ): ServiceMethodResolveFunction<T, T[K] extends AnyCallback ? ReturnType<T[K]> : never> {
-  //   return _ServiceMethodResolver.from(type, propertyKey as string | symbol);
-  // }
+  //   descriptors.map(descriptor => {
+  //     descriptor.factory(this._provide.bind(this), (description2, value) => {
   //
-  // callObjectMethod<T extends object, K extends keyof T>(
-  //   object: T,
-  //   propertyKey: K,
-  //   callback: ValueCallback<T[K] extends AnyCallback ? ReturnType<T[K]> : never>
-  // ): void {
-  //   this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this._provide.bind(this), callback as any);
+  //     });
+  //   });
   // }
 
-  touchSingletons(callback: VoidCallback): void {
+  touchAllSingletons(callback: VoidCallback): void {
     const descriptors: ServiceDescriptor[] = [];
     this._descriptors.forEach(descriptor => {
       if (ServiceBehavior.Singleton === descriptor.behavior && !this._singletons.has(descriptor.type)) {
@@ -187,23 +171,22 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   }
 
   createScope(configure: (provide: InstantServiceProvideFunction) => void = () => void 0): ServiceProvider {
-    if (this._scope) {
+    if (this._serviceScope) {
       throw new Error('Sub-scope is not supported');
     }
 
-    const scopeProvider = new ServiceProvider(this);
-    scopeProvider._scope = new ServiceScope();
+    const scopeProvider = new ServiceProvider(this, new ServiceScope());
     configure(scopeProvider._instantProvider);
     return scopeProvider;
   }
 
   destroyScope(): void {
-    if (!this._scope) {
+    if (!this._serviceScope) {
       throw new Error('No defined scope');
     }
 
-    this._scope.destroy();
-    delete this._scope;
+    this._serviceScope.destroy();
+    delete this._serviceScope;
   }
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {

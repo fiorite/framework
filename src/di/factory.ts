@@ -1,4 +1,13 @@
-import { AbstractType, DecoratorRecorder, FunctionClass, MapCallback, MaybePromise, returnSelf, Type } from '../core';
+import {
+  AbstractType,
+  DecoratorRecorder,
+  FunctionClass,
+  isType,
+  MapCallback,
+  MaybePromise,
+  returnSelf,
+  Type
+} from '../core';
 import { ServiceFactoryFunction, ServiceFactoryReturnFunction } from './function';
 import { ServiceType } from './type';
 import { Provide } from './decorator';
@@ -14,6 +23,30 @@ export abstract class ServiceFactory<T> extends FunctionClass<ServiceFactoryFunc
   protected constructor(callback: ServiceFactoryFunction<T>, dependencies: readonly ServiceType[]) {
     super(callback);
     this._dependencies = dependencies;
+  }
+}
+
+/**
+ * @deprecated not implemented yet, only draft, only idea
+ */
+export class LateServiceFactory<T = unknown> extends ServiceFactory<[Type<T>, T]> {
+  private readonly _original: ServiceFactory<T>;
+
+  get original(): ServiceFactory<T> {
+    return this._original;
+  }
+
+  constructor(original: ServiceFactory<T>) {
+    super((provide, callback2) => {
+      return original(provide, result => {
+        if (typeof result === 'object' && null !== result && isType(result.constructor)) {
+          return callback2([result.constructor as Type, result]);
+        }
+
+        throw new Error('late factory failed. result ought to be object which constructor is gotten as a service type. actual: '+result);
+      });
+    }, original.dependencies);
+    this._original = original;
   }
 }
 

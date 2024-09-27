@@ -40,7 +40,7 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     super(object.callback);
     this._provider = object.provider;
     this._callback = object.callback;
-    if (this._provider.scoped) {
+    if (this._provider.hasScope) {
       throw new Error('unable to apply service provide with defined scope in http server.');
     }
   }

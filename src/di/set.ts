@@ -30,6 +30,12 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     this._behavioralMap = new Map(behavioralMap);
   }
 
+  /**
+   * @deprecated an issue regarding late factories.
+   * solution could be to create late types which resolves with late factories.
+   * if type is recognized in late factory, late type will be ignored.
+   * kinda cool approach.
+   */
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
     decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
       .filter(type => !this[CustomSet.data].has(type))
@@ -37,6 +43,9 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     return this;
   }
 
+  /**
+   * @deprecated an issue regarding late factories
+   */
   includeDependencies(): this {
     const queue = Array.from(this);
     while (queue.length) {
@@ -65,7 +74,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     return this;
   }
 
-  addType<T>(type: Type<T>): this;
+  addType(type: Type): this;
   addType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
   addType(...args: unknown[]): this {
     if (args.length === 1) {
@@ -96,6 +105,18 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     return this.add(descriptor);
   }
 
+  /**
+   * @deprecated not implemented yet, only draft, only idea
+   */
+  addLateFactory<T>(
+    factory: ServiceFactoryReturnFunction<T>,
+    dependencies: ServiceType[] = [],
+    behavior?: ServiceBehavior,
+  ): this {
+    const descriptor = ServiceDescriptor.fromLateFactory(factory, dependencies, behavior);
+    return this.add(descriptor);
+  }
+
   addValue(object: object): this;
   addValue<T extends object>(serviceType: ServiceType<T>, object: T): this;
   addValue(...args: unknown[]): this {
@@ -105,7 +126,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     );
   }
 
-  addInherited<T>(type: Type<T>): this;
+  addInherited(type: Type): this;
   addInherited<T>(type: AbstractType<T>, implementation: Type<T>): this;
   addInherited<T>(type: AbstractType<T>, factory: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addInherited(...args: unknown[]): this {
@@ -126,7 +147,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     );
   }
 
-  addSingleton<T>(type: Type<T>): this;
+  addSingleton(type: Type): this;
   addSingleton<T>(type: AbstractType<T>, implementation: Type<T>): this;
   addSingleton<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addSingleton(...args: unknown[]): this {
@@ -147,7 +168,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     );
   }
 
-  addScoped<T>(type: Type<T>): this;
+  addScoped(type: Type): this;
   addScoped<T>(type: AbstractType<T>, implementation: Type<T>): this;
   addScoped<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addScoped(...args: unknown[]): this {
@@ -168,7 +189,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     );
   }
 
-  addPrototype<T>(type: Type<T>): this;
+  addPrototype(type: Type): this;
   addPrototype<T>(type: AbstractType<T>, implementation: Type<T>): this;
   addPrototype<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
   addPrototype(...args: unknown[]): this {

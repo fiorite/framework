@@ -1,5 +1,5 @@
 import { DecoratorOuterFunction } from './function';
-import { DecoratorWithPayload } from './payload';
+import { DecoratorWithPayload } from './with-payload';
 
 export interface ParameterDecoratorWithPayload<TPayload> extends DecoratorWithPayload<TPayload, ParameterDecorator> {
   (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void;

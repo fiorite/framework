@@ -1,5 +1,5 @@
 import { DecoratorOuterFunction } from './function';
-import { DecoratorWithPayload } from './payload';
+import { DecoratorWithPayload } from './with-payload';
 
 export interface MethodDecoratorWithPayload<TPayload> extends DecoratorWithPayload<TPayload, MethodDecorator> {
   (target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor): void;

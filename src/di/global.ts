@@ -53,7 +53,7 @@ export function runProviderContext(provider: ServiceProvider, callback: (complet
       throw new Error(`Implementation has been busy (clients: ${callers}). Consider using this feature in single app.`);
     }
 
-    if (provider.scoped) {
+    if (provider.hasScope) {
       throw new Error('Unable to use Scoped provider implementation. To avoid sharing context of particular client.');
     }
 

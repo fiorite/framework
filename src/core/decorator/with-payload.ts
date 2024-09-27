@@ -16,10 +16,10 @@ export abstract class DecoratorWithPayload<TPayload, TDecorator extends Decorato
     return this._payload;
   }
 
-  private _callers: DecoratorOuterFunction<TDecorator>[] = [];
+  private _decoratorChain: DecoratorOuterFunction<TDecorator>[] = [];
 
-  get callers(): readonly DecoratorOuterFunction<TDecorator>[] {
-    return this._callers;
+  get decoratorChain(): readonly DecoratorOuterFunction<TDecorator>[] {
+    return this._decoratorChain;
   }
 
   constructor(decorator: DecoratorOuterFunction<TDecorator>, payload: TPayload, include: readonly TDecorator[] = []) {
@@ -34,7 +34,7 @@ export abstract class DecoratorWithPayload<TPayload, TDecorator extends Decorato
   }
 
   calledBy(decorator: DecoratorOuterFunction<TDecorator>): this {
-    this._callers.push(decorator);
+    this._decoratorChain.push(decorator);
     return this;
   }
 }
