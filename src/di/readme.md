@@ -1,208 +1,163 @@
-# Service Component (DRAFT)
+# Dependency Injection (DRAFT)
 
-Service component provides with Dependency Injection feature. `emitDecoratorMetadata: true` in `tsconfig.json` file makes possible to have automatic wiring based on emitted types.
+`emitDecoratorMetadata: true` in `tsconfig.json` is required.
 
-## Features
-
-- Different behaviours: 
-  - `Singleton` - stores single instance or a service.
-  - `Scoped` - instance belong to context. e.g. HTTP Request 
-  - `Prototype` - provide new instance every time.
-  - `Inherited` - inherits behaviour from own dependencies. If service depends on `Scoped`, it inherits the same time. Otherwise `Singleton` is applied.
-- Few decorators:
-  - `@Service()` - class decorator. Marks class as service. 
-  - `@Provide(ServiceKey)` - parameter decorator. Substitutes instance in parameters.
--  Whether service or substitute is `Promise<T>`, value from it resolves automatically. NEED EXAMPLE
-- Class which constructor does not have arguments, does not need a decorator, including `@Service()`
-- Decorated constructor argument makes class decorated. No need to use `@Service()` decorator. 
-
-## Getting started
+---
+**What are services?** - reusable parts which follow behavior patterns and can be projected by consumer code.
 
 ```typescript
-import { makeServiceProvider, OnScopeDestroy, Provide } from 'fiorite';
+import { Singleton } from 'fiorite';
 
-// 0. Add classes to create dependency
-
-class Flower {
-  constructor(readonly color: string) {
+@Singleton()
+export class Incrementor {
+  increment(i: number) {
+    return i + 1;
   }
 }
-
-class Garden {
-  constructor(
-    @Provide()
-    readonly flower: Flower
-  ) {
-  }
-}
-
-// 1. Initiate ServiceProvider
-
-const provide = makeServiceProvider([
-  new Flower('black'),
-  Garden,
-]);
-
-// 2. ServiceProvider is FunctionClass<ServiceProvideFunction> and can be invoked.
-
-console.log(provide(Garden).flower.color); // 'black'
-
-// 4. Introduce 1st class outside ServiceProvider and create its instance.
-
-class GardenKeeper {
-  constructor(@Provide() readonly garden: Garden) {
-  }
-}
-
-provide.instantiateType(GardenKeeper, keeper => {
-  console.log(keeper.garden.flower.color); // still 'black'
-});
-
-// 5. Add another outer class and call its object method
-
-class ColorPicker {
-  pickColor(@Provide() flower: Flower): string {
-    return flower.color;
-  }
-}
-
-const colorPicker = new ColorPicker();
-provider.callObjectMethod(colorPicker, 'pickColor', color => {
-  console.log(color); // 'black'
-});
-
-// 6. Add Scope experiment: new class is going to
-
-class GardenVisitor implements OnScopeDestroy  {
-  readonly visitHour = Math.floor(Math.random() * 23);
-
-  onScopeDestroy() {
-    console.log(`Goodbye at ${this.visitHour}!`);
-  }
-}
-
-class GardenGuide {
-  static readonly available: readonly string[] = ['John', 'Mike'];
-
-  constructor(readonly name: string) {
-  }
-}
-
-const provider2 = makeServiceProvider(configure => { // create another ServiceProvider
-  const gardenFactory = (visitor: GardenVisitor): GardenGuide => {
-    return new GardenGuide(GardenGuide.available[visitor.visitHour % GardenGuide.available.length]);
-  };
-
-  configure.addAll(provider)
-    .scoped(GardenVisitor)
-    .factory(GardenGuide, gardenFactory, [GardenVisitor]);
-});
-
-// ... handle 1st visit
-
-const visit1 = provider2.createScope();
-visit1(GardenGuide, guide => console.log(guide.name)); // Hour = 3, Guide = John
-visit1.destroyScope(); // Visitor logs 'Goodbye at 3!'
-
-// ... handle 2nd visit
-
-const visit2 = provider2.createScope();
-visit2(GardenGuide, guide => console.log(guide.name)); // Hour = 6, Guide = Mike
-visit2.destroyScope(); // Visitor logs 'Goodbye at 6!'
 ```
 
-### Class decorator `Service()`
+`Singleton` behavior is recommended for the best performance however, it has limitation. Let's, first, dive into other behavior patterns:
 
-Mark class as `Service` (and start using component features to auto-wire or redefine arguments). e.g.
+**There three main patterns of behavior** and their TypeScript decorators are:
+1. `Singleton` - provides the same instance every time it gets asked.
+2. `Scoped` - each, let's say, http request receives a copy of service and shares it within the request.
+3. `Prototype` - creates a new service each time it gets provided.
+
+`Singleton` limitation is that it cannot depend on `Scoped` service (e.g. `HttpContext`). 
+In that case, prefer using `Scoped` decorator instead.
+
+**There the fourth smart behavior pattern** which has not been mentioned, its name is `Inherited`.
+Service provider analyses dependencies and assign `Scoped` whether dependency tree includes another `Scoped` service, otherwise `Singleton` is applied.
+
+`Inherited` behaviour can be used as default one because it excludes the necessity of managing behaviour manually.
+Trust this moment to Fiorite and focus on development.
+---
+- How to use a service?
+
+In the following example `NumberService` injects `Incrementor` and its behavior is inherited from `Incrementor`.
 
 ```typescript
 import { Inherited } from 'fiorite';
+import { Incrementor } from './incrementor';
 
 @Inherited()
-class Garden {
-  constructor(/* ...arguments */) {
-  }
+export class NumberService {
+  constructor(readonly incrementor: Incrementor) { }
 }
 ```
+---
+- Can dependencies be manipulated?
 
-### Parameter decorator `Provide([ServiceKey[, MapCallback]])`
-
-Decorator designed for service substitution in constructor or method parameters.
-
-**`Provide` can substitute single service.** If you need to connect couple several services, consider creating a class.
-
-TypeScript interfaces get removed in runtime, they become `Object`.
-
-Next example shows how to keep interface dependency and substitute implementation:
+The answer is yes, with help of `Provide` decorator. 
+It allows to redefine source type and, optionally, project a new value from it by using map function `(value: T) => R`.
 
 ```typescript
-// flower.ts
-
-export interface Flower {
-  readonly color: string;
-}
-
-export class RedFlower implements Flower {
-  readonly color = 'red';
-}
-
-// ./garden.ts
-import { Flower, RedFlower } from './flower.ts';
-
-class Garden {
-  constructor(@Provide(RedFlower) flower: Flower) {
-    console.log(flower.color); // 'red'
-  }
-}
-```
-
-#### Add `MapCallback` to project unique value out of service instance.
-
-```typescript
-// ./garden.ts
 import { Provide } from 'fiorite';
-import { Flower, RedFlower } from './flower.ts';
+import { Incrementor } from './incrementor';
 
-class Garden {
-  constructor(@Provide(RedFlower, (x: Flower) => x.color) color: string) {
-    console.log(color); // 'red'
-  }
+type IncrementFunction = (i: number) => number;
+
+export class NumberService {
+  constructor(
+    @Provide(Incrementor, incrementor => (i: number) => incrementor.increment(i))
+    readonly incrementor: IncrementFunction,
+  ) { }
 }
 ```
 
-#### Redefine own decorator from `Provide()` and have more use of it.
+First argument points to service to source from and the second is map function. 
+It results into `IncrementFunction` as constructor parameter. 
+---
+- Is it possible to implement own decorator and reuse it later? 
+
+Yes, own decorator can be made like this:
 
 ```typescript
-// ./color-of.ts
-import { Provide, Type } from 'fiorite';
-import { Flower, RedFlower } from './flower';
-// ./garden.ts
-import { GetColor } from './color-of.ts';
+import { Provide } from 'fiorite';
+import { Incrementor } from './incrementor';
 
-export const ColorOf = (type: Type<Flower>) => {
-  return Provide(type, (flower: Flower) => flower.color).calledBy(ColorOf); // calledBy used to track callers (better debug)
+type IncrementFunction = (i: number) => number;
+
+const GetIncrementFunction = () => {
+  return Provide(Incrementor, incrementor => {
+    return (i: number) => incrementor.increment(i);
+  }).calledBy(GetIncrementFunction);
 };
 
-class Garden {
-  constructor(@GetColor(RedFlower) color: string) {
-    console.log(color); // 'red'
-  }
+export class NumberService {
+  constructor(
+    @GetIncrementFunction()
+    readonly incrementor: IncrementFunction,
+  ) { }
 }
-
 ```
 
-#### How to test `Provide()` decorator?
+This is built on `Provide` and can be reused elsewhere. 
 
-In case you make your own decorator using `Provide`, result include data bound to it.
+Unfamiliar `.calledBy()` is the way to point out that `GetIncrementFunction` is based on `Provide`. 
+Whether you decide to build more complex pipeline, tracking decorator chain it is recommended. 
+
+To access call chain, use:
 
 ```typescript
-import { ColorOf } from './color-of';
-import { Flower, RedFlower } from './flower';
-
-const {referTo, callback} = ColorOf(RedFlower).payload; // { referTo: RedFlower, callback: MapCallback<Flower, string> }
-assert(referTo === RedFlower); // true
-
-const flower = {color: 'white'} as Flower;
-const result = callback(flower);
-assert(result === 'white'); // true
+GetIncrementFunction().callers; // [Provide, GetIncrementFunction]
 ```
+---
+
+- What are `ServiceSet` and `ServiceProvider`?
+
+If there is no control over classes to use decorators, configuration can be done with help of `ServiceSet`.
+
+```typescript
+import { ServiceSet, ServiceProvider } from 'fiorite';
+
+const serviceSet = new ServiceSet();
+serviceSet.addValue(URL, new URL('http://localhost/'));
+```
+
+`addValue` is one of three ways of service binding. The other two are:
+ 
+- `addType` - is for class constructors. e.g. `serviceSet.addType(NumberService)`,
+- `addFactory` - uses callback to create an instance. Important to set dependencies. e.g.
+
+```typescript
+
+class StringUrlHost {
+  constructor(readonly value: string) { }
+}
+
+const localhost = new StringUrlHost('http://localhost/');
+
+serviceSet.addValue(localhost)
+  .addFactory(URL, (host: StringUrlHost) => new URL(host.value), [
+    StringUrlHost
+  ]);
+```
+
+There behavior-specific methods in `ServiceSet`:
+
+- `addSingleton`
+- `addScoped`
+- `addPrototype`
+- `addInherited`
+
+As well as two advanced ones:
+
+- `includeDependencies` - walks through service dependencies and adds missing ones.
+- `addDecoratedBy` - looks for classes marked by decorator in `DecoratorRecorder` and adds new ones.
+
+```typescript
+import { BehaveLike } from 'fiorite';
+
+serviceSet.addDecoratedBy(BehaveLike)
+  .includeDependencies();
+```
+
+`BehaveLike` is base for `Singleton`, `Scoped`, `Prototype` and `Inherited` decorators. 
+Basically, `addDecoratedBy` scans every class decorated by `BehaveLike` or its implementors and adds to the list.
+
+In case a specific decorator is made with the help of `makeClassDecorator`, it complies with `addDecoratedBy` and can add services automatically.
+
+What are left to mention:
+1. Synchronous and Asynchronous services.
+2. How to test.

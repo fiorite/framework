@@ -10,19 +10,19 @@ import {
 } from '../core';
 
 export class BehaveLikePayload {
-  private readonly _behaviour: ServiceBehavior;
+  private readonly _behavior: ServiceBehavior;
 
-  get behaviour(): ServiceBehavior {
-    return this._behaviour;
+  get behavior(): ServiceBehavior {
+    return this._behavior;
   }
 
-  constructor(behaviour: ServiceBehavior) {
-    this._behaviour = behaviour;
+  constructor(behavior: ServiceBehavior) {
+    this._behavior = behavior;
   }
 }
 
-export function BehaveLike(behaviour: ServiceBehavior): ClassDecoratorWithPayload<BehaveLikePayload, unknown> {
-  return makeClassDecorator(BehaveLike, new BehaveLikePayload(behaviour));
+export function BehaveLike(behavior: ServiceBehavior): ClassDecoratorWithPayload<BehaveLikePayload, unknown> {
+  return makeClassDecorator(BehaveLike, new BehaveLikePayload(behavior));
 }
 
 export type BehaveLikeDecorator<T> = ClassDecoratorWithPayload<BehaveLikePayload, T>;
@@ -32,15 +32,15 @@ export function Inherited<T>(): BehaveLikeDecorator<T> {
 }
 
 export function Singleton<T>(): BehaveLikeDecorator<T> {
-  return BehaveLike(ServiceBehavior.Inherited).calledBy(Inherited);
+  return BehaveLike(ServiceBehavior.Singleton).calledBy(Singleton);
 }
 
 export function Scoped<T>(): BehaveLikeDecorator<T> {
-  return BehaveLike(ServiceBehavior.Inherited).calledBy(Inherited);
+  return BehaveLike(ServiceBehavior.Scoped).calledBy(Scoped);
 }
 
 export function Prototype<T>(): BehaveLikeDecorator<T> {
-  return BehaveLike(ServiceBehavior.Inherited).calledBy(Inherited);
+  return BehaveLike(ServiceBehavior.Prototype).calledBy(Prototype);
 }
 
 export class ProvidePayload<T, R = unknown> {

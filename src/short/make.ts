@@ -5,6 +5,6 @@ import { makeServiceProvider } from '../di';
 
 export const make = Object.freeze({
   application: makeApplication,
-  provider: makeServiceProvider,
+  // provider: makeServiceProvider,
   router: addRouting,
 });

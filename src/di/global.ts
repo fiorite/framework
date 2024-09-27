@@ -43,7 +43,7 @@ export function runProviderContext(provider: ServiceProvider, callback: (complet
     }
   };
 
-  const implementation = provider.instant;
+  const implementation = provider.instantProvider;
 
   if (provideImplementation === implementation) {
     callers++;

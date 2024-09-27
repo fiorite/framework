@@ -12,8 +12,8 @@ export class ServicesFeature implements ApplicationFeature {
   }
 }
 
-export function addType<T>(type: Type<T>, behaviour?: ServiceBehavior): ServicesFeature;
-export function addType<T>(type: ServiceType<T>, actual: Type<T>, behaviour?: ServiceBehavior): ServicesFeature;
+export function addType<T>(type: Type<T>, behavior?: ServiceBehavior): ServicesFeature;
+export function addType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): ServicesFeature;
 export function addType(...args: unknown[]): ServicesFeature {
   return new ServicesFeature([(ServiceDescriptor.type as Function)(...args)]);
 }
@@ -28,9 +28,9 @@ export function addFactory<T>(
   type: ServiceType<T>,
   factory: ServiceFactoryReturnFunction<T>,
   dependencies: ServiceType[] = [],
-  behaviour?: ServiceBehavior,
+  behavior?: ServiceBehavior,
 ): ServicesFeature {
-  return new ServicesFeature([ServiceDescriptor.factory(type, factory, dependencies, behaviour)]);
+  return new ServicesFeature([ServiceDescriptor.factory(type, factory, dependencies, behavior)]);
 }
 
 // todo: add behavior ones

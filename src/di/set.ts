@@ -3,42 +3,51 @@ import { ServiceDescriptor } from './descriptor';
 import { ServiceType } from './type';
 import { BehaveLike } from './decorator';
 import { ServiceBehavior } from './behavior';
-import { AbstractType, CustomSet, DecoratorRecorder, FunctionClass, isType, Type, ValueCallback } from '../core';
+import {
+  AbstractType,
+  CustomSet,
+  DecoratorOuterFunction,
+  DecoratorRecorder,
+  isType,
+  Type,
+  ValueCallback
+} from '../core';
 import { ServiceFactoryReturnFunction } from './function';
-import { ServicePreDeclaration } from './pre-declaration';
 
 export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
   get [Symbol.toStringTag](): string {
     return 'ServiceSet';
   }
 
-  /**
-   * Decides whether all classes decorated with {@link Service} go into {@link ServiceProvider}.
-   * @private
-   */
-  private _includeGlobalMark = false;
+  private readonly _behavioralMap = new Map<Type, ServiceBehavior>();
 
-  /**
-   * Decides whether service dependencies should be included upon {@link ServiceProvider} creation.
-   * @private
-   */
-  private _includeDependenciesMark = true;
-
-  private _preDeclarations: readonly ServicePreDeclaration[] = [];
-
-  constructor(preDeclarations: readonly ServicePreDeclaration[] = []) {
+  constructor(
+    behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
+      .map(d => [d.path[0] as Type, d.payload.behavior])
+  ) {
     const getServiceType = (def: ServiceDescriptor) => def.type;
     super(getServiceType);
-    this._preDeclarations = preDeclarations;
+    this._behavioralMap = new Map(behavioralMap);
   }
 
-  markToIncludeGlobal(): this {
-    this._includeGlobalMark = true;
+  addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
+    decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
+      .filter(type => !this[CustomSet.data].has(type))
+      .forEach(type => this.addType(type as Type));
     return this;
   }
 
-  useProject(): void {
-    throw new Error('Not implemented.');
+  includeDependencies(): this {
+    const queue = Array.from(this);
+    while (queue.length) {
+      const descriptor = queue.shift()!;
+      descriptor.dependencies
+        .filter(dependency => !this[CustomSet.data].has(dependency) && dependency !== ServiceProvider)
+        .filter(isType)
+        .map(type => this._addType(type))
+        .forEach(descriptor2 => queue.push(descriptor2));
+    }
+    return this;
   }
 
   addAll(iterable: Iterable<Type | ServiceDescriptor | object>): this {
@@ -67,34 +76,14 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     return this;
   }
 
-  private _addType<T>(serviceType: Type<T>, serviceKey?: ServiceType<T>, behaviour?: ServiceBehavior): ServiceDescriptor {
-    if (!behaviour || !serviceKey) {
-      const result = this._preDeclarations
-        .filter(x => x.actualType === serviceType)
-        .reverse()
-        .reduce((result, preDef) => {
-          if (preDef.serviceType) {
-            result.key = preDef.serviceType;
-          }
-          if (preDef.behaviour) {
-            result.behaviour = preDef.behaviour;
-          }
-          return result;
-        }, {} as { key?: ServiceType, behaviour?: ServiceBehavior });
-
-      if (!serviceKey && result.key) { // todo: throw warning that service decorator is different
-        serviceKey = result.key as ServiceType<T>;
-      }
-
-      if (!behaviour && result.behaviour) {
-        behaviour = result.behaviour;
-      }
+  private _addType<T>(implementation: Type<T>, type: ServiceType<T> = implementation, behavior?: ServiceBehavior): ServiceDescriptor {
+    if (!behavior) {
+      behavior = this._behavioralMap.get(implementation) || ServiceBehavior.Inherited;
     }
 
-    const declaration = ServiceDescriptor.type(serviceKey || serviceType, serviceType, behaviour);
-
-    this.add(declaration);
-    return declaration;
+    const descriptor = ServiceDescriptor.type(type, implementation, behavior);
+    this.add(descriptor);
+    return descriptor;
   }
 
   addFactory<T>(
@@ -199,74 +188,17 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
       ServiceBehavior.Prototype
     );
   }
-
-  toProvider(): ServiceProvider {
-    if (this._includeGlobalMark) { // include @Service() decorated classes
-      this._preDeclarations.forEach(preDef => {
-        if (!this[CustomSet.data].has(preDef.serviceType)) {
-          this.addType(preDef.serviceType, preDef.actualType, preDef.behaviour);
-        }
-      });
-    }
-
-    if (this._includeDependenciesMark) {
-      const queue = Array.from(this);
-      while (queue.length) { // todo: probably get factual class and behaviour from decorator.
-        const declaration = queue.shift()!;
-        declaration.dependencies.filter(dependency => !this[CustomSet.data].has(dependency) && dependency !== ServiceProvider)
-          .filter(isType)
-          .forEach(dependency => {
-            const definition = this._addType(dependency);
-            queue.push(definition);
-          });
-      }
-    }
-
-    return new ServiceProvider(Array.from(this));
-  }
 }
 
-export function makeServiceProvider(
-  configure: Iterable<Type | ServiceDescriptor | object> | ValueCallback<ServiceSet>,
-  includeGlobal = false,
-): ServiceProvider {
-  const preDeclarations = DecoratorRecorder.classSearch(BehaveLike).map(decorator => {
-    const payload = decorator.payload;
-    const actualType = decorator.path[0] as Type;
-    const serviceType = actualType;
-    return new ServicePreDeclaration({
-      actualType, serviceType, behaviour: payload.behaviour,
-    });
-  });
-
-  // DecoratorRecorder.classSearch(Provide)
-  //   .filter(x => !preDeclarations.some(y => y.actualType === x.path[0]))
-  //   .forEach(decorator => {
-  //     return new ServicePreDeclaration({
-  //       actualType: decorator.path[0] as Type,
-  //       serviceType: decorator.path[0],
-  //       behaviour: ServiceBehavior.Inherited,
-  //     });
-  //   });
-
-  const configurator = new ServiceSet(preDeclarations);
-
-  if (includeGlobal) {
-    configurator.markToIncludeGlobal();
-  }
+/** @deprecated will be refactored */
+export function makeServiceProvider(configure: Iterable<Type | ServiceDescriptor | object> | ValueCallback<ServiceSet>): ServiceProvider {
+  const serviceSet = new ServiceSet();
 
   if ('function' === typeof configure) {
-    configure(configurator);
+    configure(serviceSet);
   } else {
-    configurator.addAll(configure);
+    serviceSet.addAll(configure);
   }
 
-  return configurator.toProvider();
-}
-
-/** @deprecated experimental API */
-export class ServiceExtension extends FunctionClass<ValueCallback<ServiceSet>> {
-  constructor(callback: ValueCallback<ServiceSet>) {
-    super(callback);
-  }
+  return new ServiceProvider(serviceSet);
 }

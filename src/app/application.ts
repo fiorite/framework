@@ -1,7 +1,7 @@
 import { ApplicationFeature } from './feature';
 import {
+  BehaveLike,
   InstantServiceProvideFunction,
-  makeServiceProvider,
   runProviderContext,
   ServiceBehavior,
   ServiceProvider,
@@ -22,7 +22,7 @@ export class Application {
   }
 
   get provide(): InstantServiceProvideFunction {
-    return this._provider.instant;
+    return this._provider.instantProvider;
   }
 
   get server(): HttpServer {
@@ -59,13 +59,16 @@ export class Application {
 export function makeApplication(...features: ApplicationFeature[]): Application {
   const serviceSet = new ServiceSet();
 
+  serviceSet.addDecoratedBy(BehaveLike);
+
   if (!features.some(x => x instanceof HttpServerFeature)) {  // should be by default.
     features.unshift(addHttpServer());
   }
 
   features.filter(x => x.configureServices).forEach(x => x.configureServices!(serviceSet));
 
-  const provider = makeServiceProvider(serviceSet, true);
+  serviceSet.includeDependencies();
+  const provider = new ServiceProvider(serviceSet);
   const preCacheSingleton = true;
 
   runProviderContext(provider, complete => {

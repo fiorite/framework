@@ -2,7 +2,7 @@ import { ServiceType } from './type';
 import { ServiceFactoryReturnFunction } from './function';
 import { ServiceBehavior } from './behavior';
 import { AnyCallback, FunctionClass, Type } from '../core';
-import { ServiceFactory, ServiceFactoryReturn, SingletonFactory, TypeFactory, ValueFactory } from './factory';
+import { ServiceFactory, ServiceFactoryReturn, TypeFactory, ValueFactory } from './factory';
 
 export class ServiceDescriptor<T = unknown> {
   private readonly _type: ServiceType<T>;
@@ -51,30 +51,30 @@ export class ServiceDescriptor<T = unknown> {
     type: ServiceType<T>,
     factory: ServiceFactoryReturnFunction<T>,
     dependencies: ServiceType[] = [],
-    behaviour?: ServiceBehavior,
+    behavior?: ServiceBehavior,
   ): ServiceDescriptor<T> {
     if (dependencies.length < factory.length) {
       throw new Error('Factory dependencies missing. Deps [' + dependencies.map(ServiceType.toString).join(', ') + ']. Function: ' + factory.toString());
     }
 
-    return new ServiceDescriptor(type, new ServiceFactoryReturn(factory, dependencies), dependencies, behaviour);
+    return new ServiceDescriptor(type, new ServiceFactoryReturn(factory, dependencies), dependencies, behavior);
   }
 
-  static type<T>(type: Type<T>, behaviour?: ServiceBehavior): ServiceDescriptor<T>;
-  static type<T>(type: ServiceType<T>, actual: Type<T>, behaviour?: ServiceBehavior): ServiceDescriptor<T>;
+  static type<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static type<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
   static type(...args: unknown[]): ServiceDescriptor {
-    let type: ServiceType, factory: TypeFactory, behaviour: ServiceBehavior | undefined;
+    let type: ServiceType, factory: TypeFactory, behavior: ServiceBehavior | undefined;
     if (1 === args.length || (2 === args.length && typeof args[1] === 'number')) {
       type = args[0] as Type;
-      behaviour = args[1] as ServiceBehavior | undefined;
+      behavior = args[1] as ServiceBehavior | undefined;
       factory = new TypeFactory(type as Type);
     } else {
       type = args[0] as ServiceType;
-      behaviour = args[2] as ServiceBehavior | undefined;
+      behavior = args[2] as ServiceBehavior | undefined;
       factory = new TypeFactory(args[1] as Type);
     }
 
-    return new ServiceDescriptor(type, factory, factory.dependencies, behaviour);
+    return new ServiceDescriptor(type, factory, factory.dependencies, behavior);
   }
 
   private constructor(
@@ -86,15 +86,19 @@ export class ServiceDescriptor<T = unknown> {
     this._type = type;
     this._dependencies = dependencies;
     this._behavior = behavior || ServiceBehavior.Inherited;
-    this._factory = ServiceBehavior.Singleton === this._behavior ?
-      new SingletonFactory(factory) : factory;
+    this._factory = factory;
   }
 
   inherit(behavior: ServiceBehavior.Scoped | ServiceBehavior.Singleton): ServiceDescriptor<T> {
     if (ServiceBehavior.Inherited !== this.behavior) {
-      throw new Error('Current behaviour does not allow behaviour inheritance');
+      throw new Error('Current behavior does not allow behavior inheritance');
     }
 
     return new ServiceDescriptor(this.type, this.factory, this.dependencies, behavior);
+  }
+
+  toString(): string {
+    // todo: provide extra information
+    return ServiceType.toString(this.type);
   }
 }

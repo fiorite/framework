@@ -4,14 +4,14 @@ import { ServiceCallbackQueue } from './_queue';
 
 export class ServiceScope {
   private _data = new Map<ServiceType, unknown>();
-  private _queue = new ServiceCallbackQueue();
+  private _resultShare = new ServiceCallbackQueue();
 
   provide<T>(type: ServiceType<T>, resolve: ValueCallback<T>, create: (callback: ValueCallback<T>) => void): void {
     if (this._data.has(type)) {
       return resolve(this._data.get(type) as T);
     }
 
-    this._queue.add([this, 'scopeFactory', type], callback2 => {
+    this._resultShare.add([this, 'scopeFactory', type], callback2 => {
       create(instance => {
         this._data.set(type, instance);
         callback2(instance);

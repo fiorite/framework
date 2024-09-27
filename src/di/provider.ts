@@ -1,24 +1,21 @@
-import { CustomSet, FunctionClass, ValueCallback } from '../core';
+import { CustomSet, FunctionClass, MapCallback, ValueCallback } from '../core';
 import { ServiceType } from './type';
 import { ServiceDescriptor } from './descriptor';
 import { ServiceBehavior } from './behavior';
 import { ServiceScope } from './scope';
-import { remapBehaviourInheritance, validateBehaviourDependency, validateCircularDependency } from './_procedure';
+import { remapBehaviorInheritance, validateBehaviorDependency, validateCircularDependency } from './_procedure';
 import { ServiceFactoryFunction, ServiceProvideFunction } from './function';
 import { InstantServiceProvideFunction, InstantServiceProvider } from './instant';
+import { ServiceCallbackQueue } from './_queue';
 
 export interface ServiceProvider extends InstantServiceProvideFunction {
   /**
    * @throws Error if service is asynchronous (promise like)
-   */
-
-  <T>(type: ServiceType<T>): T;
+   */<T>(type: ServiceType<T>): T;
 
   /**
    * Fallback to {@link ServiceProvideFunction}
-   */
-
-  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
 export class ServiceNotFoundError implements Error {
@@ -31,9 +28,45 @@ export class ServiceNotFoundError implements Error {
 }
 
 export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction> implements Iterable<ServiceDescriptor> {
-  static readonly symbol = Symbol('ServiceProvider');
+  private static _behaviorFactories: Record<ServiceBehavior, MapCallback<[ServiceProvider, ServiceDescriptor], ServiceFactoryFunction>> = {
+    [ServiceBehavior.Inherited]: () => {
+      return (_, descriptor): never => {
+        throw new Error('inherited service is not re-mapped: ' + descriptor.toString());
+      };
+    },
+    [ServiceBehavior.Singleton]: ([provider, descriptor]): ServiceFactoryFunction => {
+      return (provide, callback) => {
+        if (provider._singletons.has(descriptor.type)) {
+          return callback(provider._singletons.get(descriptor.type));
+        }
 
-  private readonly _set = new CustomSet<ServiceDescriptor, ServiceType>(x => x.type);
+        return provider._callbackShare.add([descriptor.type], resolve => {
+          descriptor.factory(provide, resolve);
+        }, value => {
+          provider._singletons.set(descriptor.type, value);
+          callback(value);
+        });
+      };
+    },
+    [ServiceBehavior.Scoped]: ([provider, descriptor]): ServiceFactoryFunction => {
+      return (provide, callback) => {
+        if (!provider._scope) {
+          throw new Error('Scope is not defined. Use #createScope()');
+        }
+
+        return provider._scope.provide(descriptor.type, callback, resolve => {
+          descriptor.factory(provide, resolve);
+        });
+      };
+    },
+    [ServiceBehavior.Prototype]: ([_, descriptor]): ServiceFactoryFunction => {
+      return descriptor.factory;
+    },
+  };
+
+  private readonly _descriptors = new CustomSet<ServiceDescriptor, ServiceType>(x => x.type);
+
+  private readonly _singletons = new Map<ServiceType, unknown>();
 
   private _scope?: ServiceScope;
 
@@ -41,58 +74,57 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     return !!this._scope;
   }
 
-  private _createdFrom?: ServiceProvider;
+  private _sourcedFrom?: ServiceProvider;
 
-  private readonly _instant: InstantServiceProvider;
+  private readonly _instantProvider: InstantServiceProvider;
 
-  get instant(): InstantServiceProvider {
-    return this._instant;
+  private readonly _callbackShare = new ServiceCallbackQueue();
+
+  get instantProvider(): InstantServiceProvider {
+    return this._instantProvider;
   }
 
   get provide(): InstantServiceProvideFunction {
-    return this._instant;
+    return this._instantProvider;
   }
 
-  constructor(descriptors: Iterable<ServiceDescriptor>, createdFrom?: ServiceProvider) {
+  private _runtimeMap = new Map<ServiceType, ServiceFactoryFunction<unknown>>;
+
+  constructor(descriptors: Iterable<ServiceDescriptor>, checkRules = true) {
     const instantProvider = new InstantServiceProvider((type, callback) => this._provide(type, callback));
     super(instantProvider);
-    this._instant = instantProvider;
-    const array = [
-      ServiceDescriptor.value(ServiceProvider, this),
-      ...descriptors,
-    ];
-    if (!createdFrom) { // todo: refactor in the future
-      const array2 = remapBehaviourInheritance(array);
-      array2.forEach(value => this._set.add(value));
-      validateCircularDependency(array2);
-      validateBehaviourDependency(array2);
+    this._instantProvider = instantProvider;
+    this._runtimeMap.set(ServiceProvider, (_, callback) => callback(this));
+
+    const addDescriptor = (descriptor: ServiceDescriptor) => {
+      this._descriptors.add(descriptor);
+      this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior]([this, descriptor]));
+    };
+
+    if (!(descriptors instanceof ServiceProvider)) { // todo: maybe refactor
+      const array = remapBehaviorInheritance(descriptors);
+      array.forEach(addDescriptor);
+      array.unshift(ServiceDescriptor.value(ServiceProvider, this));
+      validateCircularDependency(array);
+      validateBehaviorDependency(array);
     } else {
-      array.forEach(value => this._set.add(value));
-      this._createdFrom = createdFrom;
+      descriptors._descriptors.forEach(addDescriptor);
+      this._sourcedFrom = descriptors;
     }
   }
 
   /**
    * Raw implementation or {@link ServiceProvideFunction}.
+   * @private
    */
   private _provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
-    const descriptor = this._set[CustomSet.data].get(type) as ServiceDescriptor<T> | undefined;
+    const behaviorFactory = this._runtimeMap.get(type) as ServiceFactoryFunction<T> | undefined;
 
-    if (undefined === descriptor) {
+    if (undefined === behaviorFactory) {
       throw new ServiceNotFoundError(type);
     }
 
-    if (ServiceBehavior.Scoped === descriptor.behavior) {
-      if (!this._scope) {
-        throw new Error('Scope is not defined. Use #createScope()');
-      }
-
-      return this._scope.provide(type, callback, callback2 => {
-        descriptor.factory(this._provide.bind(this), callback2);
-      });
-    }
-
-    return descriptor.factory(this._provide.bind(this), callback);
+    return behaviorFactory(this._provide.bind(this), callback);
   }
 
   provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
@@ -100,7 +132,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   }
 
   has(type: ServiceType): boolean {
-    return this._set[CustomSet.data].has(type);
+    return this._descriptors[CustomSet.data].has(type);
   }
 
   // prepareTypeFactory<T>(type: Type<T>): ServiceFactoryFunction<T> {
@@ -144,9 +176,9 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
       throw new Error('Sub-scope is not supported');
     }
 
-    const scopeProvider = new ServiceProvider(this._set, this);
+    const scopeProvider = new ServiceProvider(this);
     scopeProvider._scope = new ServiceScope();
-    configure(scopeProvider._instant);
+    configure(scopeProvider._instantProvider);
     return scopeProvider;
   }
 
@@ -160,6 +192,6 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   }
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {
-    return this._set[Symbol.iterator]();
+    return this._descriptors[Symbol.iterator]();
   }
 }

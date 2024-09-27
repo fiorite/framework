@@ -1,6 +1,5 @@
 import { AbstractType, DecoratorRecorder, FunctionClass, MapCallback, MaybePromise, returnSelf, Type } from '../core';
 import { ServiceFactoryFunction, ServiceFactoryReturnFunction } from './function';
-import { ServiceCallbackQueue } from './_queue';
 import { ServiceType } from './type';
 import { Provide } from './decorator';
 import 'reflect-metadata';
@@ -28,31 +27,6 @@ export class ValueFactory<T> extends ServiceFactory<T> {
   constructor(value: T) {
     super((_, callback) => callback(value), []);
     this._value = value;
-  }
-}
-
-const callbackQueue = new ServiceCallbackQueue();
-
-export class SingletonFactory<T> extends ServiceFactory<T> {
-  private _value?: T;
-
-  get value(): T | undefined {
-    return this._value;
-  }
-
-  constructor(factory: ServiceFactory<T>) {
-    super((provide, callback) => {
-      if (!!this._value) {
-        return callback(this._value);
-      }
-
-      callbackQueue.add([this, 'singletonFactory'], callback2 => {
-        factory(provide, value => {
-          this._value = value;
-          callback2(value);
-        });
-      }, callback);
-    }, factory.dependencies);
   }
 }
 

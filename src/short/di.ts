@@ -20,9 +20,9 @@ export function factory<T>(
   type: ServiceType<T>,
   factory: ServiceFactoryReturnFunction<T>,
   dependencies: ServiceType[] = [],
-  behaviour?: ServiceBehavior,
+  behavior?: ServiceBehavior,
 ): ServicesFeature {
-  return addFactory(type, factory, dependencies, behaviour);
+  return addFactory(type, factory, dependencies, behavior);
 }
 
 /**

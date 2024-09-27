@@ -4,10 +4,10 @@ import { ServiceType } from './type';
 
 type IndexedValue<T> = [T, number];
 
-export function remapBehaviourInheritance(source: readonly ServiceDescriptor[]): readonly ServiceDescriptor[] {
-  const result: ServiceDescriptor[] = source.slice();
+export function remapBehaviorInheritance(source: Iterable<ServiceDescriptor>): ServiceDescriptor[] {
+  const result: ServiceDescriptor[] = Array.from(source);
 
-  const queue = source.map<IndexedValue<ServiceDescriptor>>((x, index) => [x, index])
+  const queue = Array.from(source).map<IndexedValue<ServiceDescriptor>>((x, index) => [x, index])
     .filter(x => ServiceBehavior.Inherited === x[0].behavior);
 
   while (queue.length) {
@@ -31,8 +31,8 @@ export function remapBehaviourInheritance(source: readonly ServiceDescriptor[]):
 
       queue.unshift(...inheritedDeps, entry);  // requeue
     } else {
-      const inheritScopeBehaviour = dependencies.some(entry2 => ServiceBehavior.Scoped === entry2[0].behavior);
-      result[entry[1]] = entry[0].inherit(inheritScopeBehaviour ? ServiceBehavior.Scoped : ServiceBehavior.Singleton);
+      const inheritScopebehavior = dependencies.some(entry2 => ServiceBehavior.Scoped === entry2[0].behavior);
+      result[entry[1]] = entry[0].inherit(inheritScopebehavior ? ServiceBehavior.Scoped : ServiceBehavior.Singleton);
     }
   }
 
@@ -67,7 +67,7 @@ export function validateCircularDependency(source: readonly ServiceDescriptor[])
   }
 }
 
-export function validateBehaviourDependency(source: readonly ServiceDescriptor[]): void {
+export function validateBehaviorDependency(source: readonly ServiceDescriptor[]): void {
   const queue = source.slice();
   while (queue.length) {
     const declaration = queue.shift()!;
@@ -76,14 +76,14 @@ export function validateBehaviourDependency(source: readonly ServiceDescriptor[]
     const index1 = dependencies.findIndex(x => ServiceBehavior.Inherited === x.behavior);
     if (index1 > -1) {
       const dependency1 = dependencies[index1];
-      throw new Error('Inherit behaviour is not resolved: '+ServiceType.toString(dependency1.type));
+      throw new Error('Inherit behavior is not resolved: '+ServiceType.toString(dependency1.type));
     }
 
     if (ServiceBehavior.Singleton === declaration.behavior) {
       const index2 = dependencies.findIndex(x => ServiceBehavior.Scoped === x.behavior);
       if (index2 > -1) {
         const dependency2 = dependencies[index2];
-        throw new Error(`Faulty behaviour dependency. Singleton (${ServiceType.toString(declaration.type)}) cannot depend on Scope (${ServiceType.toString(dependency2.type)}) behaviour.`);
+        throw new Error(`Faulty behavior dependency. Singleton (${ServiceType.toString(declaration.type)}) cannot depend on Scope (${ServiceType.toString(dependency2.type)}) behavior.`);
       }
     }
   }
