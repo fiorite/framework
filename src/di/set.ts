@@ -81,7 +81,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
       behavior = this._behavioralMap.get(implementation) || ServiceBehavior.Inherited;
     }
 
-    const descriptor = ServiceDescriptor.type(type, implementation, behavior);
+    const descriptor = ServiceDescriptor.fromType(type, implementation, behavior);
     this.add(descriptor);
     return descriptor;
   }
@@ -92,7 +92,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     dependencies: ServiceType[] = [],
     behavior?: ServiceBehavior,
   ): this {
-    const descriptor = ServiceDescriptor.factory(type, factory, dependencies, behavior);
+    const descriptor = ServiceDescriptor.fromFactory(type, factory, dependencies, behavior);
     return this.add(descriptor);
   }
 
@@ -100,8 +100,8 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
   addValue<T extends object>(serviceType: ServiceType<T>, object: T): this;
   addValue(...args: unknown[]): this {
     return this.add(
-      args.length === 1 ? ServiceDescriptor.value(args[0] as object) :
-        ServiceDescriptor.value(args[0] as ServiceType<object>, args[1] as object)
+      args.length === 1 ? ServiceDescriptor.fromValue(args[0] as object) :
+        ServiceDescriptor.fromValue(args[0] as ServiceType<object>, args[1] as object)
     );
   }
 

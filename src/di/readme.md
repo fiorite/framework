@@ -31,7 +31,9 @@ Service provider analyses dependencies and assign `Scoped` whether dependency tr
 
 `Inherited` behaviour can be used as default one because it excludes the necessity of managing behaviour manually.
 Trust this moment to Fiorite and focus on development.
+
 ---
+
 - How to use a service?
 
 In the following example `NumberService` injects `Incrementor` and its behavior is inherited from `Incrementor`.
@@ -45,7 +47,9 @@ export class NumberService {
   constructor(readonly incrementor: Incrementor) { }
 }
 ```
+
 ---
+
 - Can dependencies be manipulated?
 
 The answer is yes, with help of `Provide` decorator. 
@@ -67,7 +71,9 @@ export class NumberService {
 
 First argument points to service to source from and the second is map function. 
 It results into `IncrementFunction` as constructor parameter. 
+
 ---
+
 - Is it possible to implement own decorator and reuse it later? 
 
 Yes, own decorator can be made like this:
@@ -102,6 +108,7 @@ To access call chain, use:
 ```typescript
 GetIncrementFunction().callers; // [Provide, GetIncrementFunction]
 ```
+
 ---
 
 - What are `ServiceSet` and `ServiceProvider`?

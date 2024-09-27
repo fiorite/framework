@@ -1,4 +1,4 @@
-import { CustomSet, FunctionClass, MapCallback, ValueCallback } from '../core';
+import { CustomSet, FunctionClass, MapCallback, ValueCallback, VoidCallback } from '../core';
 import { ServiceType } from './type';
 import { ServiceDescriptor } from './descriptor';
 import { ServiceBehavior } from './behavior';
@@ -66,7 +66,9 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
   private readonly _descriptors = new CustomSet<ServiceDescriptor, ServiceType>(x => x.type);
 
-  private readonly _singletons = new Map<ServiceType, unknown>();
+  private readonly _singletons: Map<ServiceType, unknown>;
+
+  private readonly _callbackShare: ServiceCallbackQueue;
 
   private _scope?: ServiceScope;
 
@@ -77,8 +79,6 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   private _sourcedFrom?: ServiceProvider;
 
   private readonly _instantProvider: InstantServiceProvider;
-
-  private readonly _callbackShare = new ServiceCallbackQueue();
 
   get instantProvider(): InstantServiceProvider {
     return this._instantProvider;
@@ -104,12 +104,16 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     if (!(descriptors instanceof ServiceProvider)) { // todo: maybe refactor
       const array = remapBehaviorInheritance(descriptors);
       array.forEach(addDescriptor);
-      array.unshift(ServiceDescriptor.value(ServiceProvider, this));
+      array.unshift(ServiceDescriptor.fromValue(ServiceProvider, this));
       validateCircularDependency(array);
       validateBehaviorDependency(array);
+      this._singletons = new Map();
+      this._callbackShare = new ServiceCallbackQueue();
     } else {
       descriptors._descriptors.forEach(addDescriptor);
       this._sourcedFrom = descriptors;
+      this._singletons = descriptors._singletons;
+      this._callbackShare = descriptors._callbackShare;
     }
   }
 
@@ -170,6 +174,17 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
   // ): void {
   //   this.prepareMethodFactory(object.constructor as Type, propertyKey)(object, this._provide.bind(this), callback as any);
   // }
+
+  touchSingletons(callback: VoidCallback): void {
+    const descriptors: ServiceDescriptor[] = [];
+    this._descriptors.forEach(descriptor => {
+      if (ServiceBehavior.Singleton === descriptor.behavior && !this._singletons.has(descriptor.type)) {
+        descriptors.push(descriptor);
+      }
+    });
+
+    this.provideAll(descriptors.map(x => x.type), () => callback());
+  }
 
   createScope(configure: (provide: InstantServiceProvideFunction) => void = () => void 0): ServiceProvider {
     if (this._scope) {

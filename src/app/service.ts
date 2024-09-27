@@ -15,13 +15,13 @@ export class ServicesFeature implements ApplicationFeature {
 export function addType<T>(type: Type<T>, behavior?: ServiceBehavior): ServicesFeature;
 export function addType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): ServicesFeature;
 export function addType(...args: unknown[]): ServicesFeature {
-  return new ServicesFeature([(ServiceDescriptor.type as Function)(...args)]);
+  return new ServicesFeature([(ServiceDescriptor.fromType as Function)(...args)]);
 }
 
 export function addValue(value: object): ServicesFeature;
 export function addValue<T>(type: ServiceType<T>, value: T): ServicesFeature;
 export function addValue(...args: unknown[]): ServicesFeature {
-  return new ServicesFeature([(ServiceDescriptor.value as Function)(...args)]);
+  return new ServicesFeature([(ServiceDescriptor.fromValue as Function)(...args)]);
 }
 
 export function addFactory<T>(
@@ -30,7 +30,7 @@ export function addFactory<T>(
   dependencies: ServiceType[] = [],
   behavior?: ServiceBehavior,
 ): ServicesFeature {
-  return new ServicesFeature([ServiceDescriptor.factory(type, factory, dependencies, behavior)]);
+  return new ServicesFeature([ServiceDescriptor.fromFactory(type, factory, dependencies, behavior)]);
 }
 
 // todo: add behavior ones

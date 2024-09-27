@@ -29,9 +29,9 @@ export class ServiceDescriptor<T = unknown> {
     return this._behavior;
   }
 
-  static value<T extends object | FunctionClass<AnyCallback>>(value: T): ServiceDescriptor<T>;
-  static value<T>(type: ServiceType<T>, value: T): ServiceDescriptor<T>;
-  static value(...args: unknown[]): ServiceDescriptor {
+  static fromValue<T extends object | FunctionClass<AnyCallback>>(value: T): ServiceDescriptor<T>;
+  static fromValue<T>(type: ServiceType<T>, value: T): ServiceDescriptor<T>;
+  static fromValue(...args: unknown[]): ServiceDescriptor {
     let type: ServiceType, value: object;
 
     if (1 === args.length) {
@@ -47,7 +47,7 @@ export class ServiceDescriptor<T = unknown> {
     return new ServiceDescriptor(type!, new ValueFactory(value!), [], ServiceBehavior.Singleton);
   }
 
-  static factory<T>(
+  static fromFactory<T>(
     type: ServiceType<T>,
     factory: ServiceFactoryReturnFunction<T>,
     dependencies: ServiceType[] = [],
@@ -60,9 +60,9 @@ export class ServiceDescriptor<T = unknown> {
     return new ServiceDescriptor(type, new ServiceFactoryReturn(factory, dependencies), dependencies, behavior);
   }
 
-  static type<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
-  static type<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
-  static type(...args: unknown[]): ServiceDescriptor {
+  static fromType<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType(...args: unknown[]): ServiceDescriptor {
     let type: ServiceType, factory: TypeFactory, behavior: ServiceBehavior | undefined;
     if (1 === args.length || (2 === args.length && typeof args[1] === 'number')) {
       type = args[0] as Type;
@@ -98,7 +98,6 @@ export class ServiceDescriptor<T = unknown> {
   }
 
   toString(): string {
-    // todo: provide extra information
-    return ServiceType.toString(this.type);
+    return '[ServiceDescriptor: ' + ServiceType.toString(this.type) + ']'; // todo: provide extra information;
   }
 }

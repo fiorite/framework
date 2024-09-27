@@ -69,29 +69,24 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
 
   serviceSet.includeDependencies();
   const provider = new ServiceProvider(serviceSet);
-  const preCacheSingleton = true;
+  const touchSingletons = true;
 
   runProviderContext(provider, complete => {
-    let preCached = false;
+    let completed = false;
     let configured = false;
 
-    if (preCacheSingleton) {
-      provider.provideAll(
-        Array.from(provider)
-          .filter(x => ServiceBehavior.Singleton === x.behavior)
-          .map(x => x.type),
-        () => {
-          preCached = true;
-          if (configured) {
-            complete();
-          }
+    if (touchSingletons) {
+      provider.touchSingletons(() => {
+        completed = true;
+        if (configured) {
+          complete();
         }
-      );
+      });
     }
 
     features.filter(x => x.configure).forEach(x => x.configure!(provider));
     configured = true;
-    if (preCached) {
+    if (completed) {
       complete();
     }
   });
