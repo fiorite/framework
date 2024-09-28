@@ -1,8 +1,8 @@
-import { ServiceProvider } from './provider';
-import { ServiceDescriptor } from './descriptor';
-import { ServiceType } from './type';
-import { BehaveLike } from './decorator';
-import { ServiceBehavior } from './behavior';
+import { ServiceProvider } from './service-provider';
+import { ServiceDescriptor } from './service-descriptor';
+import { ServiceType } from './service-type';
+import { BehaveLike } from './decorators';
+import { ServiceBehavior } from './service-behavior';
 import {
   AbstractType,
   CustomSet,
@@ -12,7 +12,8 @@ import {
   Type,
   ValueCallback
 } from '../core';
-import { ServiceFactoryReturnFunction } from './function';
+import { forEach } from '../iterable';
+import { ServiceFactoryWithReturnFunction } from './service-factory';
 
 export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
   get [Symbol.toStringTag](): string {
@@ -51,7 +52,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
   }
 
   addAll(iterable: Iterable<Type | ServiceDescriptor | object>): this {
-    Array.from(iterable).forEach(item => {
+    forEach<Type | ServiceDescriptor | object>(item => {
       if (item instanceof ServiceDescriptor) {
         this.add(item);
       } else {
@@ -61,7 +62,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
           this.addValue(item);
         }
       }
-    });
+    })(iterable);
     return this;
   }
 
@@ -88,7 +89,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
   addFactory<T>(
     type: ServiceType<T>,
-    factory: ServiceFactoryReturnFunction<T>,
+    factory: ServiceFactoryWithReturnFunction<T>,
     dependencies: ServiceType[] = [],
     behavior?: ServiceBehavior,
   ): this {
@@ -107,7 +108,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
   addInherited(type: Type): this;
   addInherited<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addInherited<T>(type: AbstractType<T>, factory: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addInherited<T>(type: AbstractType<T>, factory: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addInherited(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
@@ -120,7 +121,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryReturnFunction<unknown>,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
       ServiceBehavior.Inherited
     );
@@ -128,7 +129,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
   addSingleton(type: Type): this;
   addSingleton<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addSingleton<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addSingleton<T>(type: AbstractType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addSingleton(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
@@ -141,7 +142,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryReturnFunction<unknown>,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
       ServiceBehavior.Singleton
     );
@@ -149,7 +150,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
   addScoped(type: Type): this;
   addScoped<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addScoped<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addScoped<T>(type: AbstractType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addScoped(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
@@ -162,7 +163,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryReturnFunction<unknown>,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
       ServiceBehavior.Scoped
     );
@@ -170,7 +171,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
   addPrototype(type: Type): this;
   addPrototype<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addPrototype<T>(type: AbstractType<T>, callback: ServiceFactoryReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addPrototype<T>(type: AbstractType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addPrototype(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
@@ -183,7 +184,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryReturnFunction<unknown>,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
       ServiceBehavior.Prototype
     );

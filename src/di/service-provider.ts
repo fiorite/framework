@@ -1,14 +1,99 @@
-import { CustomSet, FunctionClass, MapCallback, ValueCallback, VoidCallback } from '../core';
-import { ServiceType } from './type';
-import { ServiceDescriptor } from './descriptor';
-import { ServiceBehavior } from './behavior';
-import { ServiceScope } from './scope';
+import { CallbackShare, CustomSet, FunctionClass, MapCallback, ValueCallback, VoidCallback } from '../core';
+import { ServiceType } from './service-type';
+import { ServiceDescriptor } from './service-descriptor';
+import { ServiceBehavior } from './service-behavior';
+import { ServiceScope } from './service-scope';
 import { remapBehaviorInheritance, validateBehaviorDependency, validateCircularDependency } from './_procedure';
-import { ServiceFactoryFunction, ServiceProvideFunction } from './function';
-import { InstantServiceProvideFunction, InstantServiceProvider } from './instant';
-import { ServiceCallbackQueue } from './_queue';
+import { ServiceFactoryFunction } from './service-factory';
 
-export interface ServiceProvider extends InstantServiceProvideFunction {
+/**
+ * Service provider is build on callbacks.
+ * See {@link ServiceProviderWithReturnFunction} signature.
+ *
+ * Using {@link Promise} instead of callback (idea):
+ * @example ```typescript
+ *  const provideAsync = <T>(provide: ServiceProvideFunction, type: ServiceType<T>): Promise<T> => {
+ *    return new Promise((resolve, reject) => {
+ *      try {
+ *        provide(type, resolve);
+ *      } catch(err) {
+ *        reject(err);
+ *      }
+ *    });
+ *  };
+ * ```
+ */
+export interface ServiceProvideFunction {
+  /**
+   * Core function which accepts service {@link type} and resolves it with {@link callback}.
+   * @param type
+   * @param callback
+   */
+  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+}
+
+/**
+ * Provide with return is an attempt to catch a synchronous value out of provide callback.
+ * Side effect is {@link Error} throw when service is asynchronous.
+ */
+export interface ServiceProviderWithReturnFunction extends ServiceProvideFunction {
+  /**
+   * @throws Error when unable to catch a value, thus service considered to be asynchronous.
+   */
+  <T>(type: ServiceType<T>): T;
+}
+
+/**
+ * @mixin ServiceProviderWithReturn
+ */
+export interface ServiceProviderWithReturn extends ServiceProviderWithReturnFunction {
+  /**
+   * @inheritdoc
+   */
+  <T>(type: ServiceType<T>): T;
+
+  /**
+   * @inheritdoc
+   */
+  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+}
+
+/**
+ * Implementor of {@link ServiceProviderWithReturnFunction} which wraps raw {@link ServiceProvideFunction}.
+ */
+export class ServiceProviderWithReturn extends FunctionClass<ServiceProviderWithReturnFunction> {
+  /**
+   * Raw implementation of {@link ServiceProvideFunction}.
+   * @private
+   */
+  private readonly _provide: ServiceProvideFunction;
+
+  get provide(): ServiceProvideFunction {
+    return this._provide;
+  }
+
+  constructor(provide: ServiceProvideFunction) {
+    super(<T>(serviceType: ServiceType<T>, callback?: ValueCallback<T>): unknown => {
+      if (callback) {
+        return provide(serviceType, callback);
+      }
+
+      let done = false;
+      let value: T | undefined = undefined;
+      provide(serviceType, (value2) => {
+        done = true;
+        value = value2;
+      });
+      if (done) {
+        return value as T;
+      }
+      throw new Error(`Service(${ServiceType.toString(serviceType)}) is not synchronous. Add callback() to provide(..., callback) instead.`);
+    });
+    this._provide = provide;
+  }
+}
+
+export interface ServiceProvider extends ServiceProviderWithReturnFunction {
   /**
    * @throws Error if service is asynchronous (promise like)
    */<T>(type: ServiceType<T>): T;
@@ -27,7 +112,7 @@ export class ServiceNotFoundError implements Error {
   }
 }
 
-export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction> implements Iterable<ServiceDescriptor> {
+export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunction> implements Iterable<ServiceDescriptor> {
   private static _behaviorFactories: Record<ServiceBehavior, MapCallback<[ServiceProvider, ServiceDescriptor], ServiceFactoryFunction>> = {
     [ServiceBehavior.Inherited]: () => {
       return (_, descriptor): never => {
@@ -40,8 +125,8 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
           return callback(provider._singletons.get(descriptor.type));
         }
 
-        return provider._callbackShare.add([descriptor.type], resolve => {
-          descriptor.factory(provide, resolve);
+        return provider._callbackShare(ServiceType.toString(descriptor.type), fulfill => {
+          descriptor.factory(provide, fulfill);
         }, value => {
           provider._singletons.set(descriptor.type, value);
           callback(value);
@@ -54,9 +139,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
           throw new Error('Scope is not defined. Use #createScope()');
         }
 
-        return provider._serviceScope.provide(descriptor.type, callback, resolve => {
-          descriptor.factory(provide, resolve);
-        });
+        return provider._serviceScope.get(descriptor.type, resolve => descriptor.factory(provide, resolve), callback);
       };
     },
     [ServiceBehavior.Prototype]: ([_, descriptor]): ServiceFactoryFunction => {
@@ -68,7 +151,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
   private readonly _singletons: Map<ServiceType, unknown>;
 
-  private readonly _callbackShare: ServiceCallbackQueue;
+  private readonly _callbackShare: CallbackShare;
 
   private _serviceScope?: ServiceScope;
 
@@ -78,23 +161,19 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
   private _sourcedFrom?: ServiceProvider;
 
-  private readonly _instantProvider: InstantServiceProvider;
+  private readonly _withReturn: ServiceProviderWithReturn;
 
-  get instantProvider(): InstantServiceProvider {
-    return this._instantProvider;
-  }
-
-  get provide(): InstantServiceProvideFunction {
-    return this._instantProvider;
+  get withReturn(): ServiceProviderWithReturn {
+    return this._withReturn;
   }
 
   private _runtimeMap = new Map<ServiceType, ServiceFactoryFunction<unknown>>;
 
   constructor(descriptors: Iterable<ServiceDescriptor>, serviceScope?: ServiceScope) {
-    const instantProvider = new InstantServiceProvider((type, callback) => this._provide(type, callback));
-    super(instantProvider);
+    const withReturn = new ServiceProviderWithReturn((type, callback) => this.provide(type, callback));
+    super(withReturn);
     this._serviceScope = serviceScope;
-    this._instantProvider = instantProvider;
+    this._withReturn = withReturn;
     this._runtimeMap.set(ServiceProvider, (_, callback) => callback(this));
 
     const addDescriptor = (descriptor: ServiceDescriptor) => {
@@ -109,7 +188,7 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
       validateCircularDependency(array);
       validateBehaviorDependency(array);
       this._singletons = new Map();
-      this._callbackShare = new ServiceCallbackQueue();
+      this._callbackShare = new CallbackShare();
     } else {
       descriptors._descriptors.forEach(addDescriptor);
       this._sourcedFrom = descriptors;
@@ -120,20 +199,19 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
 
   /**
    * Raw implementation or {@link ServiceProvideFunction}.
-   * @private
    */
-  private _provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
+  provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
     const behaviorFactory = this._runtimeMap.get(type) as ServiceFactoryFunction<T> | undefined;
 
     if (undefined === behaviorFactory) {
       throw new ServiceNotFoundError(type);
     }
 
-    return behaviorFactory(this._provide.bind(this), callback);
+    return behaviorFactory(this.provide.bind(this), callback);
   }
 
   provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
-    return ServiceFactoryFunction.all(array)(this._provide.bind(this), callback);
+    return ServiceFactoryFunction.all(array)(this.provide.bind(this), callback);
   }
 
   has(type: ServiceType): boolean {
@@ -160,13 +238,13 @@ export class ServiceProvider extends FunctionClass<InstantServiceProvideFunction
     this.provideAll(descriptors.map(x => x.type), () => callback());
   }
 
-  createScope(configure: (provide: InstantServiceProvideFunction) => void = () => void 0): ServiceProvider {
+  createScope(configure: (provide: ServiceProviderWithReturnFunction) => void = () => void 0): ServiceProvider {
     if (this._serviceScope) {
       throw new Error('Sub-scope is not supported');
     }
 
     const scopeProvider = new ServiceProvider(this, new ServiceScope());
-    configure(scopeProvider._instantProvider);
+    configure(scopeProvider._withReturn);
     return scopeProvider;
   }
 

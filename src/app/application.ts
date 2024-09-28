@@ -1,16 +1,9 @@
 import { ApplicationFeature } from './feature';
-import {
-  BehaveLike,
-  InstantServiceProvideFunction,
-  runProviderContext,
-  ServiceBehavior,
-  ServiceProvider,
-  ServiceSet
-} from '../di';
+import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
 import { HttpServer } from '../http';
 import { RouteMatcher } from '../routing';
 import { Logger } from '../logging';
-import { MaybePromise, ValueCallback, VoidCallback } from '../core';
+import { MaybePromiseLike, ValueCallback, VoidCallback } from '../core';
 import { addHttpServer, HttpServerFeature } from './http-server';
 import { HttpServerListener } from '../http/server';
 
@@ -21,8 +14,8 @@ export class Application {
     return this._provider;
   }
 
-  get provide(): InstantServiceProvideFunction {
-    return this._provider.instantProvider;
+  get provide(): ServiceProviderWithReturnFunction {
+    return this._provider.withReturn;
   }
 
   get server(): HttpServer {
@@ -49,7 +42,7 @@ export class Application {
     let listener: HttpServerListener;
     runProviderContext(this._provider, complete => {
       listener = this._provider(HttpServer).listen(port, value => {
-        MaybePromise.then(() => callback(value), complete);
+        MaybePromiseLike.then(() => callback(value), complete);
       });
     });
     return listener!;

@@ -1,7 +1,3 @@
-export { ServiceBehavior } from './behavior';
-export { makeServiceProvider, ServiceSet } from './set';
-export { runProviderContext, provide } from './global';
-export { ServiceDescriptor } from './descriptor';
 export {
   BehaveLike,
   Singleton,
@@ -13,9 +9,28 @@ export {
   ProvidePayload,
   Provide,
   ProvideDecorator
-} from './decorator';
-export { ServiceFactoryFunction, ServiceProvideFunction } from './function';
-export { InstantServiceProvideFunction, InstantServiceProvider } from './instant';
-export { ServiceType } from './type';
-export { ServiceProvider, ServiceNotFoundError } from './provider';
-export { OnScopeDestroy } from './scope';
+} from './decorators';
+export { ServiceBehavior } from './service-behavior';
+export { ServiceDescriptor } from './service-descriptor';
+export { ServiceSet } from './service-set';
+export {
+  ServiceFactoryFunction,
+  ServiceFactory,
+  ServiceFactoryWithReturn,
+  ServiceFactoryWithReturnFunction,
+  ValueFactory,
+  TypeFactory,
+  TargetParametersFactory,
+  ObjectMethodFactory,
+} from './service-factory';
+export {
+  ServiceProvider,
+  ServiceNotFoundError,
+  ServiceProvideFunction,
+  ServiceProviderWithReturn,
+  ServiceProviderWithReturnFunction,
+} from './service-provider';
+export { ServiceType } from './service-type';
+export { ServiceScope, OnScopeDestroy } from './service-scope';
+
+export { runProviderContext, provide } from './global'; // will be moved away

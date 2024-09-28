@@ -1,4 +1,4 @@
-import { FunctionClass, MaybePromise } from '../core';
+import { FunctionClass, MaybePromiseLike } from '../core';
 import { HttpCallback } from '../http';
 import { RouteMatcher } from './matcher';
 import { RouteParams } from './params';
@@ -24,7 +24,7 @@ export class RoutingMiddleware extends FunctionClass<HttpCallback> {
           logger.warn('next is not added to main callback, auto-close after sync or promise will be applied');
         }
 
-        MaybePromise.then(() => { // todo: maybe allow all the matched handlers (middleware as part of routing?)
+        MaybePromiseLike.then(() => { // todo: maybe allow all the matched handlers (middleware as part of routing?)
           return result.data[0](context, next);
         }, () => {
           if (length < 2) {

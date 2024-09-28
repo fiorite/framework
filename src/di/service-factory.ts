@@ -2,16 +2,42 @@ import {
   AbstractType,
   DecoratorRecorder,
   FunctionClass,
-  isType,
   MapCallback,
-  MaybePromise,
+  MaybePromiseLike,
   returnSelf,
-  Type
+  Type,
+  ValueCallback
 } from '../core';
-import { ServiceFactoryFunction, ServiceFactoryReturnFunction } from './function';
-import { ServiceType } from './type';
-import { Provide } from './decorator';
+import { ServiceType } from './service-type';
+import { Provide } from './decorators';
+import type { ServiceProvideFunction } from './service-provider';
 import 'reflect-metadata';
+
+export type ServiceFactoryFunction<T = unknown> = (provide: ServiceProvideFunction, callback: ValueCallback<T>) => void;
+
+export type ServiceFactoryWithReturnFunction<R, P extends unknown[] = any[]> = (...args: P) => MaybePromiseLike<R>;
+
+export namespace ServiceFactoryFunction {
+  export function all(array: readonly ServiceType[]): ServiceFactoryFunction<unknown[]> {
+    return (provide: ServiceProvideFunction, callback: ValueCallback<unknown[]>) => {
+      if (!array.length) {
+        return callback([]);
+      }
+
+      const args = new Array(array.length);
+      let resolved = 0;
+      array.forEach((key, index) => {
+        provide(key, result => {
+          args[index] = result;
+          resolved++;
+          if (resolved >= args.length) {
+            callback(args);
+          }
+        });
+      });
+    };
+  }
+}
 
 export abstract class ServiceFactory<T> extends FunctionClass<ServiceFactoryFunction<T>> {
   private readonly _dependencies: readonly ServiceType[];
@@ -39,17 +65,17 @@ export class ValueFactory<T> extends ServiceFactory<T> {
   }
 }
 
-export class ServiceFactoryReturn<T> extends ServiceFactory<T> {
-  private readonly _original: ServiceFactoryReturnFunction<T>;
+export class ServiceFactoryWithReturn<T> extends ServiceFactory<T> {
+  private readonly _original: ServiceFactoryWithReturnFunction<T>;
 
-  get original(): ServiceFactoryReturnFunction<T> {
+  get original(): ServiceFactoryWithReturnFunction<T> {
     return this._original;
   }
 
-  constructor(factory: ServiceFactoryReturnFunction<T>, dependencies: readonly ServiceType[] = []) {
+  constructor(factory: ServiceFactoryWithReturnFunction<T>, dependencies: readonly ServiceType[] = []) {
     super((provide, callback) => {
       ServiceFactoryFunction.all(dependencies)(provide, args => {
-        MaybePromise.then(() => factory(...args), callback);
+        MaybePromiseLike.then(() => factory(...args), callback);
       });
     }, dependencies);
     this._original = factory;
@@ -59,7 +85,7 @@ export class ServiceFactoryReturn<T> extends ServiceFactory<T> {
 export interface TargetParameter<T = unknown> {
   readonly original: AbstractType;
   readonly type: ServiceType<T>;
-  readonly callback: MapCallback<T, MaybePromise<unknown>>;
+  readonly callback: MapCallback<T, MaybePromiseLike<unknown>>;
 }
 
 type Writeable<T> = { -readonly [P in keyof T]: T[P] }
@@ -111,7 +137,7 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
 
       factory = (provide, callback) => {
         ServiceFactoryFunction.all(parameters.map(x => x.type))(provide, args => {
-          MaybePromise.all(() => args.map((x, index) => parameters[index].callback(x)), args2 => {
+          MaybePromiseLike.all(() => args.map((x, index) => parameters[index].callback(x)), args2 => {
             args2.forEach((arg, index) => { // todo: refactor in a cool way
               if (!(arg instanceof parameters[index].original) && (arg as any).constructor !== parameters[index].original) {
                 console.warn(`Possibly type issue. ${type.name}#constructor([${index}]: ${parameters[index].original.name}). Actual: ${(arg as any).constructor.name}`);
@@ -138,8 +164,17 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
 }
 
 export class TypeFactory<T = unknown> extends ServiceFactory<T> {
-  private _type: Type<T>;
-  private _parameters: ServiceFactoryFunction<ConstructorParameters<Type<T>>>;
+  private readonly _type: Type<T>;
+
+  get type(): Type<T> {
+    return this._type;
+  }
+
+  private readonly _parameters: ServiceFactoryFunction<ConstructorParameters<Type<T>>>;
+
+  get parameters(): ServiceFactoryFunction<ConstructorParameters<Type<T>>> {
+    return this._parameters;
+  }
 
   constructor(type: Type<T>) {
     let parameters: ServiceFactory<ConstructorParameters<Type<T>>>;
@@ -160,9 +195,24 @@ export class TypeFactory<T = unknown> extends ServiceFactory<T> {
 }
 
 export class ObjectMethodFactory<T> extends ServiceFactory<unknown> {
-  private _type: Type<T>;
-  private _propertyKey: string | symbol;
-  private _parameters: ServiceFactoryFunction<ConstructorParameters<Type<T>>>;
+  private readonly _type: Type<T>;
+
+  get type(): Type<T> {
+    return this._type;
+  }
+
+  private readonly _propertyKey: string | symbol;
+
+  get propertyKey(): string | symbol {
+    return this._propertyKey;
+  }
+
+  // todo: refactor type
+  private readonly _parameters: ServiceFactoryFunction<ConstructorParameters<Type<T>>>;
+
+  get parameters(): ServiceFactoryFunction<ConstructorParameters<Type<T>>> {
+    return this._parameters;
+  }
 
   constructor(type: Type<T>, propertyKey: string | symbol) {
     const callback = (type.prototype as any)[propertyKey] as Function;
@@ -177,7 +227,7 @@ export class ObjectMethodFactory<T> extends ServiceFactory<unknown> {
     super((provide, callback) => {
       provide(type, object => {
         parameters(provide, args => {
-          MaybePromise.then(() => {
+          MaybePromiseLike.then(() => {
             return ((object as any)[propertyKey] as Function).apply(object, args);
           }, callback);
         });

@@ -1,5 +1,5 @@
 import { ApplicationFeature } from './feature';
-import { InstantServiceProvideFunction, ServiceSet } from '../di';
+import { ServiceProviderWithReturnFunction, ServiceSet } from '../di';
 import { RouteDescriptor, RouteMatcher, RouteParams, RouteSet, RoutingMiddleware } from '../routing';
 import { HttpPipeline } from '../http';
 
@@ -20,7 +20,7 @@ export class RoutingFeature implements ApplicationFeature {
       .addValue(RoutingMiddleware, this._middleware);
   }
 
-  configure(provide: InstantServiceProvideFunction) {
+  configure(provide: ServiceProviderWithReturnFunction) {
     provide(HttpPipeline).add(this._middleware);
   }
 }

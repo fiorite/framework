@@ -1,9 +1,8 @@
 import { DecoratorRecorder, FunctionClass, Type, ValueCallback, VoidCallback } from '../core';
 import { Route, RoutePrefix } from './decorator';
-import { ServiceFactoryFunction, ServiceNotFoundError, ServiceType } from '../di';
+import { ObjectMethodFactory, ServiceFactoryFunction, ServiceNotFoundError, ServiceType, TypeFactory } from '../di';
 import { RouteDescriptor } from './descriptor';
 import { HttpCallback, HttpContext } from '../http';
-import { ObjectMethodFactory, TypeFactory } from '../di/factory';
 
 export class ObjectMethodCallback<T = unknown> extends FunctionClass<HttpCallback> {
   private readonly _type: Type<T>;

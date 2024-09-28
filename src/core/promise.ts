@@ -1,12 +1,12 @@
 import { ValueCallback } from './callback';
 
-export type MaybePromise<T> = PromiseLike<T> | T;
+export type MaybePromiseLike<T> = PromiseLike<T> | T;
 
-export namespace MaybePromise {
-  function isPromiseLike<T>(object: unknown): object is PromiseLike<T> {
-    return null !== object && undefined !== object && typeof (object as PromiseLike<T>).then === 'function';
-  }
+export function isPromiseLike<T>(object: unknown): object is PromiseLike<T> {
+  return null !== object && undefined !== object && typeof (object as PromiseLike<T>).then === 'function';
+}
 
+export namespace MaybePromiseLike {
   const rethrowError: (err: unknown) => void = err => {
     throw err;
   };

@@ -1,11 +1,11 @@
-import { ServiceBehavior } from './behavior';
-import { ServiceType } from './type';
+import { ServiceBehavior } from './service-behavior';
+import { ServiceType } from './service-type';
 import {
   ClassDecoratorWithPayload,
   makeClassDecorator,
   makeParameterDecorator,
   MapCallback,
-  MaybePromise,
+  MaybePromiseLike,
   ParameterDecoratorWithPayload
 } from '../core';
 
@@ -50,22 +50,22 @@ export class ProvidePayload<T, R = unknown> {
     return this._referTo;
   }
 
-  private readonly _callback: MapCallback<T, MaybePromise<R>>;
+  private readonly _callback: MapCallback<T, MaybePromiseLike<R>>;
 
-  get callback(): MapCallback<T, MaybePromise<R>> {
+  get callback(): MapCallback<T, MaybePromiseLike<R>> {
     return this._callback;
   }
 
-  constructor(serviceKey?: ServiceType<T>, callback?: MapCallback<T, MaybePromise<R>>) {
+  constructor(serviceKey?: ServiceType<T>, callback?: MapCallback<T, MaybePromiseLike<R>>) {
     this._referTo = serviceKey;
-    this._callback = callback || ((x: T) => x) as unknown as MapCallback<T, MaybePromise<R>>;
+    this._callback = callback || ((x: T) => x) as unknown as MapCallback<T, MaybePromiseLike<R>>;
   }
 }
 
 export type ProvideDecorator<T, R = unknown> = ParameterDecoratorWithPayload<ProvidePayload<T, R>>;
 
 export function Provide<T>(type: ServiceType<T>): ProvideDecorator<T>;
-export function Provide<T, R>(type: ServiceType<T>, callback: MapCallback<T, MaybePromise<R>>): ProvideDecorator<T, R>;
+export function Provide<T, R>(type: ServiceType<T>, callback: MapCallback<T, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
 export function Provide(...args: unknown[]): unknown {
   const payload = new ProvidePayload(args[0] as ServiceType, args[1] as MapCallback<unknown, unknown>);
   return makeParameterDecorator(Provide, payload);

@@ -1,8 +1,13 @@
-import { ServiceType } from './type';
-import { ServiceFactoryReturnFunction } from './function';
-import { ServiceBehavior } from './behavior';
+import { ServiceType } from './service-type';
+import { ServiceBehavior } from './service-behavior';
 import { AnyCallback, FunctionClass, Type } from '../core';
-import { ServiceFactory, ServiceFactoryReturn, TypeFactory, ValueFactory } from './factory';
+import {
+  ServiceFactory,
+  ServiceFactoryWithReturnFunction,
+  ServiceFactoryWithReturn,
+  TypeFactory,
+  ValueFactory
+} from './service-factory';
 
 export class ServiceDescriptor<T = unknown> {
   private readonly _type: ServiceType<T>;
@@ -47,7 +52,7 @@ export class ServiceDescriptor<T = unknown> {
 
   static fromFactory<T>(
     type: ServiceType<T>,
-    factory: ServiceFactoryReturnFunction<T>,
+    factory: ServiceFactoryWithReturnFunction<T>,
     dependencies: ServiceType[] = [],
     behavior?: ServiceBehavior,
   ): ServiceDescriptor<T> {
@@ -55,7 +60,7 @@ export class ServiceDescriptor<T = unknown> {
       throw new Error('Factory dependencies missing. Deps [' + dependencies.map(ServiceType.toString).join(', ') + ']. Function: ' + factory.toString());
     }
 
-    return new ServiceDescriptor(type, new ServiceFactoryReturn(factory, dependencies), behavior);
+    return new ServiceDescriptor(type, new ServiceFactoryWithReturn(factory, dependencies), behavior);
   }
 
   static fromType<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;

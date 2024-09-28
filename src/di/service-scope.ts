@@ -1,22 +1,23 @@
-import { ServiceType } from './type';
-import { ValueCallback } from '../core';
-import { ServiceCallbackQueue } from './_queue';
+import { ServiceType } from './service-type';
+import { CallbackShare, ListenableFunction, ValueCallback } from '../core';
 
 export class ServiceScope {
   private _data = new Map<ServiceType, unknown>();
-  private _resultShare = new ServiceCallbackQueue();
+  private _resultShare = new CallbackShare();
 
-  provide<T>(type: ServiceType<T>, resolve: ValueCallback<T>, create: (callback: ValueCallback<T>) => void): void {
+  // private _destroy: ListenableFunction<any, any>
+
+  get<T>(type: ServiceType<T>, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void {
     if (this._data.has(type)) {
-      return resolve(this._data.get(type) as T);
+      return then(this._data.get(type) as T);
     }
 
-    this._resultShare.add([this, 'scopeFactory', type], callback2 => {
-      create(instance => {
+    this._resultShare(ServiceType.toString(type), callback => {
+      fulfill(instance => {
         this._data.set(type, instance);
-        callback2(instance);
+        callback(instance);
       });
-    }, resolve);
+    }, then);
   }
 
   destroy(): void {

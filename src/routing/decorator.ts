@@ -4,7 +4,7 @@ import {
   makeClassDecorator,
   makeMethodDecorator,
   MapCallback,
-  MaybePromise,
+  MaybePromiseLike,
   MethodDecoratorWithPayload
 } from '../core';
 import { HttpMethod } from '../http';
@@ -86,8 +86,8 @@ export const HttpPatch = (path?: string) => {
 };
 
 export function FromParam(key: string): ProvideDecorator<RouteParams, string | number | boolean | undefined>;
-export function FromParam<R>(key: string, callback: MapCallback<string | number | boolean | undefined, MaybePromise<R>>): ProvideDecorator<RouteParams, MaybePromise<R>>;
-export function FromParam<R>(callback: MapCallback<RouteParams, R>): ProvideDecorator<RouteParams, MaybePromise<R>>;
+export function FromParam<R>(key: string, callback: MapCallback<string | number | boolean | undefined, MaybePromiseLike<R>>): ProvideDecorator<RouteParams, MaybePromiseLike<R>>;
+export function FromParam<R>(callback: MapCallback<RouteParams, R>): ProvideDecorator<RouteParams, MaybePromiseLike<R>>;
 export function FromParam(...args: unknown[]) {
   let callback: MapCallback<RouteParams, unknown>;
   if (1 === args.length) {

@@ -13,6 +13,9 @@ export enum HttpServerState {
   Stopping,
 }
 
+/**
+ * ERR_SERVER_ALREADY_LISTEN
+ */
 export class HttpServer extends FunctionClass<HttpCallback> {
   /** @deprecated will be moved to listener */
   private _original?: Server;
@@ -116,7 +119,18 @@ export class HttpServer extends FunctionClass<HttpCallback> {
 }
 
 export class HttpServerListener {
-  close(): void {
+  private _server: Server;
 
+  get server(): Server {
+    return this._server;
+  }
+
+  constructor(server: Server) {
+    this._server = server;
+  }
+
+  close(callback: ValueCallback<Error | undefined> = doNothing): void {
+    // this._server.close();
+    // originalServer.closeAllConnections();
   }
 }

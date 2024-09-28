@@ -1,7 +1,7 @@
 import { addFactory, addType, addValue, ServicesFeature } from '../app';
 import { ServiceBehavior, ServiceType } from '../di';
 import { Type, ValueCallback } from '../core';
-import { ServiceFactoryReturnFunction } from '../di/function';
+import { ServiceFactoryWithReturn } from '../di';
 import { HttpContext } from '../http';
 
 export function add(value: object): ServicesFeature;
@@ -18,7 +18,7 @@ export function type(...args: unknown[]): ServicesFeature {
 
 export function factory<T>(
   type: ServiceType<T>,
-  factory: ServiceFactoryReturnFunction<T>,
+  factory: ServiceFactoryWithReturn<T>,
   dependencies: ServiceType[] = [],
   behavior?: ServiceBehavior,
 ): ServicesFeature {

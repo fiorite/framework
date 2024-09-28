@@ -1,11 +1,15 @@
-import { ServiceDescriptor } from './descriptor';
-import { ServiceBehavior } from './behavior';
-import { ServiceType } from './type';
+import { ServiceDescriptor } from './service-descriptor';
+import { ServiceBehavior } from './service-behavior';
+import { ServiceType } from './service-type';
+import { map } from '../iterable';
 
 type IndexedValue<T> = [T, number];
 
 export function remapBehaviorInheritance(source: Iterable<ServiceDescriptor>): ServiceDescriptor[] {
   const result: ServiceDescriptor[] = Array.from(source);
+
+  let index = 0;
+  map(x => [x, index++])(source);
 
   const queue = Array.from(source).map<IndexedValue<ServiceDescriptor>>((x, index) => [x, index])
     .filter(x => ServiceBehavior.Inherited === x[0].behavior);

@@ -1,4 +1,4 @@
-import { InstantServiceProvideFunction } from '../di';
+import { ServiceProviderWithReturnFunction } from '../di';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
 
@@ -15,13 +15,13 @@ export class HttpContext {
     return this._response;
   }
 
-  private readonly _provide: InstantServiceProvideFunction;
+  private readonly _provide: ServiceProviderWithReturnFunction;
 
-  get provide(): InstantServiceProvideFunction {
+  get provide(): ServiceProviderWithReturnFunction {
     return this._provide;
   }
 
-  constructor(request: HttpRequest, response: HttpResponse, provide: InstantServiceProvideFunction) {
+  constructor(request: HttpRequest, response: HttpResponse, provide: ServiceProviderWithReturnFunction) {
     this._request = request;
     this._response = response;
     this._provide = provide;

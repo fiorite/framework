@@ -8,7 +8,7 @@ import {
   HttpStatusCode
 } from '../http';
 import { ApplicationFeature } from './feature';
-import { InstantServiceProvideFunction, ServiceSet } from '../di';
+import { ServiceProviderWithReturnFunction, ServiceSet } from '../di';
 
 export class CorsMiddleware extends FunctionClass<HttpCallback> {
   constructor() {
@@ -45,7 +45,7 @@ export class CorsFeature implements ApplicationFeature {
     serviceSet.addValue(CorsMiddleware, this._middleware);
   }
 
-  configure(provide: InstantServiceProvideFunction) {
+  configure(provide: ServiceProviderWithReturnFunction) {
     provide(HttpPipeline).add(this._middleware);
   }
 }

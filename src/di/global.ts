@@ -12,18 +12,18 @@
  * - Test cases will become more complex, use on your consideration.
  * There a chance, in the future, to get a better understanding on improvements.
  */
-import type { ServiceProvider } from './provider';
-import type { InstantServiceProvideFunction } from './instant';
+import type { ServiceProvider } from './service-provider';
+import type { ServiceProviderWithReturnFunction } from './service-provider';
 
-const defaultImplementation: InstantServiceProvideFunction = () => {
+const defaultImplementation: ServiceProviderWithReturnFunction = () => {
   throw new Error('provide() implementation not defined in this context.');
 };
 
-let provideImplementation: InstantServiceProvideFunction = defaultImplementation;
+let provideImplementation: ServiceProviderWithReturnFunction = defaultImplementation;
 
 export const provide = ((provide, callback) => {
   return provideImplementation(provide, callback);
-}) as InstantServiceProvideFunction;
+}) as ServiceProviderWithReturnFunction;
 
 let callers = 0;
 
@@ -43,7 +43,7 @@ export function runProviderContext(provider: ServiceProvider, callback: (complet
     }
   };
 
-  const implementation = provider.instantProvider;
+  const implementation = provider.withReturn;
 
   if (provideImplementation === implementation) {
     callers++;

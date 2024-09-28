@@ -1,6 +1,6 @@
 import { HttpContext } from '../http';
-import { MaybePromise, VoidCallback } from '../core';
+import { MaybePromiseLike, VoidCallback } from '../core';
 import { RouteResult } from './result';
 
-export type RouteCallback = (context: HttpContext, next: VoidCallback) => MaybePromise<RouteResult | unknown>;
+export type RouteCallback = (context: HttpContext, next: VoidCallback) => MaybePromiseLike<RouteResult | unknown>;
 

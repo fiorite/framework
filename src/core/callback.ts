@@ -1,3 +1,5 @@
+import { FunctionClass } from './function';
+
 export type AnyCallback = (...args: any[]) => any;
 
 export type ValueCallback<T> = (value: T) => void;
@@ -11,3 +13,32 @@ export type PredicateCallback<T> = (value: T) => unknown;
 export type VoidCallback = () => void;
 
 export const doNothing = () => void 0;
+
+export type CallbackShareFunction = <T>(key: string | symbol, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>) => void;
+
+export interface CallbackShare {
+  <T>(key: string | symbol, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void;
+}
+
+/**
+ * Uses to connect concurrent callbacks and yet with the same request.
+ * Initial call runs and resolve any other subscriptions at the time.
+ */
+export class CallbackShare extends FunctionClass<CallbackShareFunction> {
+  private _queue = new Map<string | symbol, ValueCallback<unknown>[]>();
+
+  constructor() {
+    super((key, fulfill, then) => {
+      if (this._queue.has(key)) {
+        this._queue.get(key)!.push(then as ValueCallback<unknown>);
+      } else {
+        this._queue.set(key, [then as ValueCallback<unknown>]);
+        fulfill(value => {
+          const array = (this._queue.get(key) || []);
+          this._queue.delete(key);
+          array.forEach(callback2 => callback2(value));
+        });
+      }
+    });
+  }
+}
