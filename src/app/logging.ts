@@ -6,7 +6,7 @@ export class ConsoleLoggerFeature implements ApplicationFeature {
   constructor(readonly level?: LogLevel) {
   }
 
-  configureServices(serviceSet: ServiceSet) {
+  registerServices(serviceSet: ServiceSet) {
     let logger: Logger = new ConsoleLogger();
     if (this.level) {
       logger = new LevelFilter(logger, this.level!);

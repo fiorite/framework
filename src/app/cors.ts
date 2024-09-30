@@ -41,7 +41,7 @@ export class CorsFeature implements ApplicationFeature {
     this._middleware = middleware;
   }
 
-  configureServices(serviceSet: ServiceSet) {
+  registerServices(serviceSet: ServiceSet) {
     serviceSet.addValue(CorsMiddleware, this._middleware);
   }
 

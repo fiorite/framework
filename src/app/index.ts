@@ -13,10 +13,10 @@ export {
 } from './di';
 export {
   ApplicationFeature,
-  ApplicationConfigureServicesFunction,
+  ApplicationRegisterServicesFunction,
   ApplicationConfigureFunction,
   applicationFeature,
-  configureServices
+  registerServices
 } from './feature';
 export { addJsonParser, JsonParserMiddleware, JsonParserFeature } from './json-parser';
 export { addConsoleLogger, ConsoleLoggerFeature } from './logging';

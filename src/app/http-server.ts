@@ -4,7 +4,7 @@ import { ApplicationFeature } from './feature';
 import { HttpServer } from '../http/server';
 
 export class HttpServerFeature implements ApplicationFeature {
-  configureServices(serviceSet: ServiceSet) {
+  registerServices(serviceSet: ServiceSet) {
     const pipeline = new HttpPipeline();
 
     serviceSet.addValue(HttpPipeline, pipeline)

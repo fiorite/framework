@@ -128,8 +128,8 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
   }
 
   addSingleton(type: Type): this;
-  addSingleton<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addSingleton<T>(type: AbstractType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addSingleton<T>(type: ServiceType<T>, implementation: Type<T>): this;
+  addSingleton<T>(type: ServiceType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addSingleton(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
@@ -149,8 +149,8 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
   }
 
   addScoped(type: Type): this;
-  addScoped<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addScoped<T>(type: AbstractType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addScoped<T>(type: ServiceType<T>, implementation: Type<T>): this;
+  addScoped<T>(type: ServiceType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addScoped(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;
@@ -170,8 +170,8 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
   }
 
   addPrototype(type: Type): this;
-  addPrototype<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addPrototype<T>(type: AbstractType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addPrototype<T>(type: ServiceType<T>, implementation: Type<T>): this;
+  addPrototype<T>(type: ServiceType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addPrototype(...args: unknown[]): this {
     if (args.length === 1) {
       const type = args[0] as Type;

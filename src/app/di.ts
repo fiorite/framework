@@ -1,19 +1,19 @@
-import { ApplicationConfigureServicesFunction, ApplicationFeature } from './feature';
+import { ApplicationRegisterServicesFunction, ApplicationFeature } from './feature';
 import { ServiceBehavior, ServiceFactoryWithReturnFunction, ServiceSet, ServiceType } from '../di';
 import { AbstractType, DecoratorOuterFunction, Type } from '../core';
 
 export class ServiceAddFeature implements ApplicationFeature {
-  private readonly _callback: ApplicationConfigureServicesFunction;
+  private readonly _callback: ApplicationRegisterServicesFunction;
 
-  get callback(): ApplicationConfigureServicesFunction {
+  get callback(): ApplicationRegisterServicesFunction {
     return this._callback;
   }
 
-  constructor(callback: ApplicationConfigureServicesFunction) {
+  constructor(callback: ApplicationRegisterServicesFunction) {
     this._callback = callback;
   }
 
-  configureServices(serviceSet: ServiceSet) {
+  registerServices(serviceSet: ServiceSet) {
     this.callback(serviceSet);
   }
 }

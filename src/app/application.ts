@@ -118,7 +118,7 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     features.unshift(addHttpServer());
   }
 
-  features.filter(x => x.configureServices).forEach(x => x.configureServices!(serviceSet));
+  features.filter(x => x.registerServices).forEach(x => x.registerServices!(serviceSet));
   serviceSet.includeDependencies();
 
   const provider = new ServiceProvider(serviceSet);

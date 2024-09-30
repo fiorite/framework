@@ -50,7 +50,7 @@ export class JsonParserFeature implements ApplicationFeature {
     this._middleware = new JsonParserMiddleware();
   }
 
-  configureServices(serviceSet: ServiceSet) {
+  registerServices(serviceSet: ServiceSet) {
     serviceSet.addScoped(HttpBodyResult)
       .addValue(JsonParserMiddleware, this._middleware);
   }

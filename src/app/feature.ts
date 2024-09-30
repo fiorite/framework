@@ -1,29 +1,29 @@
 import { ServiceProvider, ServiceSet } from '../di';
 import { doNothing } from '../core';
 
-export type ApplicationConfigureServicesFunction = (serviceSet: ServiceSet) => void;
+export type ApplicationRegisterServicesFunction = (serviceSet: ServiceSet) => void;
 
 export type ApplicationConfigureFunction = (provider: ServiceProvider) => void;
 
 export interface ApplicationFeature {
-  configureServices?: ApplicationConfigureServicesFunction;
+  registerServices?: ApplicationRegisterServicesFunction;
   configure?: ApplicationConfigureFunction;
 }
 
 export function applicationFeature(
-  configureServices: ApplicationConfigureServicesFunction,
+  registerServices: ApplicationRegisterServicesFunction,
   configure: ApplicationConfigureFunction,
 ): ApplicationFeature {
-  return { configure, configureServices };
+  return { configure, registerServices: registerServices };
 }
 
 export namespace applicationFeature {
-  /** @deprecated use {@link configureServices} */
-  export function servicesOnly(configure: ApplicationConfigureServicesFunction): ApplicationFeature {
+  /** @deprecated use {@link registerServices} */
+  export function servicesOnly(configure: ApplicationRegisterServicesFunction): ApplicationFeature {
     return applicationFeature(configure, doNothing);
   }
 }
 
-export function configureServices(configure: ApplicationConfigureServicesFunction): ApplicationFeature {
+export function registerServices(configure: ApplicationRegisterServicesFunction): ApplicationFeature {
   return applicationFeature(configure, doNothing);
 }

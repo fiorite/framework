@@ -13,7 +13,7 @@ export class RoutingFeature implements ApplicationFeature {
     this._middleware = new RoutingMiddleware(this._routeMatcher, handleResult);
   }
 
-  configureServices(serviceSet: ServiceSet) {
+  registerServices(serviceSet: ServiceSet) {
     serviceSet.addScoped(RouteParams)
       .addValue(RouteMatcher, this._routeMatcher)
       .addValue(RoutingMiddleware, this._middleware);
