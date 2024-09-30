@@ -1,8 +1,8 @@
-import { segmentRoutePath, } from './segment';
+import { RoutePath } from './path';
 import { RadixMap } from './radix';
 import { HttpCallback, HttpMethod, HttpRequest } from '../http';
 import { RouteDescriptor } from './descriptor';
-import { NullRouteComponent, ParameterRouteComponent, RouteComponent, StaticRouteComponent } from './component';
+import { NullPathSegment, DynamicPathSegment, RoutePathSegment, StaticPathSegment, CatchAllPathSegment } from './segment';
 import { RouteCallback } from './callback';
 
 interface RouteMatchResult {
@@ -67,7 +67,7 @@ export class RadixRouteComponentMatcher implements RoutePathMatcher {
 
   constructor(array: StaticRouteComponentMatcher[]) {
     for (const staticMatcher of array) {
-      this._data.set(staticMatcher.component.original, staticMatcher);
+      this._data.set(staticMatcher.component.value, staticMatcher);
     }
   }
 
@@ -83,17 +83,17 @@ export class RadixRouteComponentMatcher implements RoutePathMatcher {
 }
 
 export class StaticRouteComponentMatcher implements RoutePathMatcher {
-  get component(): StaticRouteComponent {
+  get component(): StaticPathSegment {
     return this._component;
   }
 
-  constructor(private _component: StaticRouteComponent, readonly payload: RouteCallback[]) {
+  constructor(private _component: StaticPathSegment, readonly payload: RouteCallback[]) {
   }
 
   match(path: string): RouteMatchResult | undefined {
-    if (path.startsWith(this._component.original)) {
+    if (path.startsWith(this._component.value)) {
       return {
-        path: path.substring(this._component.original.length),
+        path: path.substring(this._component.value.length),
         params: {},
         data: [...this.payload],
       };
@@ -103,7 +103,7 @@ export class StaticRouteComponentMatcher implements RoutePathMatcher {
 }
 
 export class DynamicRouteComponentMatcher implements RoutePathMatcher {
-  constructor(private _component: ParameterRouteComponent, readonly payload: RouteCallback[]) {
+  constructor(private _component: DynamicPathSegment, readonly payload: RouteCallback[]) {
   }
 
   match(path: string): RouteMatchResult | undefined {
@@ -135,7 +135,7 @@ class ComponentNode {
   private _data: RouteCallback[] = [];
 
   constructor(
-    readonly component: RouteComponent,
+    readonly component: RoutePathSegment,
     readonly children: ComponentNode[] = []
   ) {
   }
@@ -161,11 +161,11 @@ class ComponentNode {
     }
     const composite = new CompositeRoutePathMatcher(array);
     let matcher: RoutePathMatcher;
-    if (this.component instanceof StaticRouteComponent) {
+    if (this.component instanceof StaticPathSegment) {
       matcher = new StaticRouteComponentMatcher(this.component, this._data);
-    } else if (this.component instanceof ParameterRouteComponent) {
+    } else if (this.component instanceof DynamicPathSegment) {
       matcher = new DynamicRouteComponentMatcher(this.component, this._data);
-    } else if (this.component instanceof NullRouteComponent) {
+    } else if (this.component instanceof NullPathSegment) {
       return composite;
     } else {
       throw new Error('the rest is not implemented');
@@ -177,35 +177,46 @@ class ComponentNode {
 
 interface InnerRouteDeclaration {
   readonly original: string;
-  readonly path: RouteComponent[];
+  readonly path: RoutePath;
   readonly method?: HttpMethod | string;
   readonly callback: RouteCallback;
 }
 
 /** todo: rewrite to make it mutable */
 export class RouteMatcher {
-  private _methodMatcher: Map<HttpMethod | string | undefined, RoutePathMatcher>;
+  private _methodMatcher!: Map<HttpMethod | string | undefined, RoutePathMatcher>;
 
   constructor(descriptors: Iterable<RouteDescriptor>) {
+    this._mapMatcher(descriptors);
+  }
+
+  rebuild(descriptors: Iterable<RouteDescriptor>): void {
+    this._mapMatcher(descriptors);
+  }
+
+  private _mapMatcher(descriptors: Iterable<RouteDescriptor>): void {
     const routes: InnerRouteDeclaration[] = Array.from(descriptors).map(x => {
-      const path = segmentRoutePath(x.path).reduce((result, segment) => {
-        const slash = new StaticRouteComponent('/');
-        const queue = [slash, ...segment];
-        while (queue.length) {
-          const component = queue.shift()!;
-          if (
-            component instanceof StaticRouteComponent &&
-            result.length &&
-            result[result.length - 1] instanceof StaticRouteComponent
-          ) {
-            const merged = new StaticRouteComponent([result[result.length - 1].original, component.original].join(''));
-            result.splice(result.length - 1, 1, merged);
-          } else {
-            result.push(component);
-          }
-        }
-        return result;
-      }, [] as RouteComponent[]);
+      // const components = segmentRoutePath(x.path);
+
+      const path = new RoutePath(x.path);
+      // const path = components.length ? segmentRoutePath(x.path).reduce((result, segment) => {
+      //   const slash = new StaticRouteComponent('/');
+      //   const queue = [slash, ...segment];
+      //   while (queue.length) {
+      //     const component = queue.shift()!;
+      //     if (
+      //       component instanceof StaticRouteComponent &&
+      //       result.length &&
+      //       result[result.length - 1] instanceof StaticRouteComponent
+      //     ) {
+      //       const merged = new StaticRouteComponent([result[result.length - 1].original, component.original].join(''));
+      //       result.splice(result.length - 1, 1, merged);
+      //     } else {
+      //       result.push(component);
+      //     }
+      //   }
+      //   return result;
+      // }, [] as RouteComponent[]) : [new StaticRouteComponent('/')];
 
       return {
         original: x.path,
@@ -225,10 +236,9 @@ export class RouteMatcher {
       return result;
     }, new Map<HttpMethod | string | undefined, InnerRouteDeclaration[]>);
 
-
     this._methodMatcher = new Map(
       Array.from(methodMap.entries()).map(([method, routes]) => {
-        const root = new ComponentNode(new NullRouteComponent());
+        const root = new ComponentNode(NullPathSegment.instance);
 
         const queue = [...routes];
         while (queue.length) {

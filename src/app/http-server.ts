@@ -9,9 +9,8 @@ export class HttpServerFeature implements ApplicationFeature {
     serviceSet.addValue(HttpPipeline, pipeline)
       .addSingleton(HttpServer, (provider: ServiceProvider) => {
         return new HttpServer({ callback: pipeline, provider, });
-      }, [ServiceProvider]);
-
-    serviceSet.addScoped(HttpContextHost)
+      }, [ServiceProvider])
+      .addScoped(HttpContextHost)
       .addInherited(HttpContext, (host: HttpContextHost) => {
         if (!host.context) {
           throw new Error('HttpContext is missing');

@@ -1,6 +1,7 @@
 import { ServiceProviderWithReturnFunction } from '../di';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
+import { ValueCallback, VoidCallback } from '../core';
 
 export class HttpContext {
   private readonly _request: HttpRequest;
@@ -25,6 +26,18 @@ export class HttpContext {
     this._request = request;
     this._response = response;
     this._provide = provide;
+  }
+
+  read(callback: ValueCallback<Uint8Array | undefined>): void {
+    this.request.read(callback);
+  }
+
+  /**
+   * @param chunk
+   * @param callback called on flush
+   */
+  write(chunk: Uint8Array | string, callback?: VoidCallback): void {
+    this.response.write(chunk, callback);
   }
 }
 

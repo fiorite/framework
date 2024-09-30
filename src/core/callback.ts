@@ -14,10 +14,10 @@ export type VoidCallback = () => void;
 
 export const doNothing = () => void 0;
 
-export type CallbackShareFunction = <T>(key: string | symbol, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>) => void;
+export type CallbackShareFunction = <T>(key: string | symbol | number, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>) => void;
 
 export interface CallbackShare {
-  <T>(key: string | symbol, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void;
+  <T>(key: string | symbol | number, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void;
 }
 
 /**
@@ -25,7 +25,7 @@ export interface CallbackShare {
  * Initial call runs and resolve any other subscriptions at the time.
  */
 export class CallbackShare extends FunctionClass<CallbackShareFunction> {
-  private _queue = new Map<string | symbol, ValueCallback<unknown>[]>();
+  private _queue = new Map<string | symbol | number, ValueCallback<unknown>[]>();
 
   constructor() {
     super((key, fulfill, then) => {

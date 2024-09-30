@@ -17,4 +17,3 @@ export namespace ServiceType {
     return (object as AbstractType).name;
   }
 }
-

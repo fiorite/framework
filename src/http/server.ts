@@ -43,7 +43,7 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     super(object.callback);
     this._provider = object.provider;
     this._callback = object.callback;
-    if (this._provider.hasScope) {
+    if (this._provider.scope) {
       throw new Error('unable to apply service provide with defined scope in http server.');
     }
   }
@@ -54,7 +54,7 @@ export class HttpServer extends FunctionClass<HttpCallback> {
   // }
 
   handleOriginal(req: IncomingMessage, res: ServerResponse): void {
-    const provider = this._provider.createScope();
+    const provider = this._provider.makeScopedProvider();
     const context = new HttpContext(
       new NodeServerRequest(req),
       new NodeServerResponse(res),

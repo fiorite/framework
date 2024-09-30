@@ -1,81 +1,42 @@
-export class MapWithKeyComparer<K, V> implements Map<K, V>, Iterable<[K, V]> {
-  private _data: [K, V][] = [];
-  private readonly _keyComparer: (x: K, y: K) => unknown;
+export class ReadonlyMapView<K, V> implements ReadonlyMap<K, V> {
+  static readonly innerMap = Symbol('ReadonlyMapView.innerMap');
 
-  get length(): number {
-    return this._data.length;
-  }
-
-  constructor(keyComparer: (x: K, y: K) => unknown) {
-    this._keyComparer = keyComparer;
-  }
+  // @ts-ignore
+  [ReadonlyMapView.innerMap]: ReadonlyMap<K, V>;
 
   get size(): number {
-    return this._data.length;
+    return this[ReadonlyMapView.innerMap].size;
   }
 
-  entries(): IterableIterator<[K, V]> {
-    return this._data[Symbol.iterator]();
+  constructor(innerMap: ReadonlyMap<K, V>) {
+    this[ReadonlyMapView.innerMap] = innerMap;
   }
 
-  keys(): IterableIterator<K> {
-    return this._data.map(entry => entry[0])[Symbol.iterator]();
+  forEach(callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: any): void {
+    return this[ReadonlyMapView.innerMap].forEach(callbackfn, thisArg);
   }
 
-  values(): IterableIterator<V> {
-    return this._data.map(entry => entry[1])[Symbol.iterator]();
-  }
-
-  get [Symbol.toStringTag](): string {
-    return 'MapWithComparer';
-  }
-
-  readonly [n: number]: [K, V];
-
-  private _indexOf(key: K): number {
-    return this._data.findIndex(([x]) => this._keyComparer(x, key));
+  get(key: K): V | undefined {
+    return this[ReadonlyMapView.innerMap].get(key);
   }
 
   has(key: K): boolean {
-    return this._indexOf(key) > -1;
+    return this[ReadonlyMapView.innerMap].has(key);
   }
 
-  get(key: K): V {
-    const index = this._indexOf(key);
-    if (index < 0) {
-      throw new Error('not found');
-    }
-    return this._data[index][1];
+  entries(): IterableIterator<[K, V]> {
+    return this[ReadonlyMapView.innerMap].entries();
   }
 
-  set(key: K, value: V): this {
-    const index = this._indexOf(key);
-    if (index > -1) {
-      this._data[index][1] = value;
-    } else {
-      this._data.push([key, value]);
-    }
-    return this;
+  keys(): IterableIterator<K> {
+    return this[ReadonlyMapView.innerMap].keys();
   }
 
-  delete(key: K): boolean {
-    const index = this._indexOf(key);
-    if (index > -1) {
-      this._data.splice(index, 1);
-      return true;
-    }
-    return false;
-  }
-
-  clear(): void {
-    this._data.splice(0, -1);
-  }
-
-  forEach(callback: (value: V, key: K, map: Map<K, V>) => void): void {
-    this._data.forEach(([key, value]) => callback(value, key, this));
+  values(): IterableIterator<V> {
+    return this[ReadonlyMapView.innerMap].values();
   }
 
   [Symbol.iterator](): IterableIterator<[K, V]> {
-    return this._data[Symbol.iterator]();
+    return this[ReadonlyMapView.innerMap][Symbol.iterator]();
   }
 }

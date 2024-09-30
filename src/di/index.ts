@@ -29,8 +29,9 @@ export {
   ServiceProvideFunction,
   ServiceProviderWithReturn,
   ServiceProviderWithReturnFunction,
+  OnScopeDestroy,
 } from './service-provider';
 export { ServiceType } from './service-type';
-export { ServiceScope, OnScopeDestroy } from './service-scope';
+export { ServiceScope } from './service-scope';
 
-export { runProviderContext, provide } from './global'; // will be moved away
+export { runProviderContext, provide } from './global'; // todo: will be moved away

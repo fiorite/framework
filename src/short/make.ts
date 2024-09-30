@@ -4,5 +4,5 @@ import { addRouting, makeApplication } from '../app';
 
 export const make = Object.freeze({
   application: makeApplication,
-  router: addRouting,
+  // router: addRouting,
 });

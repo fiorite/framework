@@ -1,27 +1,26 @@
-import { addFactory, addType, addValue, ServicesFeature } from '../app';
-import { ServiceBehavior, ServiceType } from '../di';
+import { addFactory, addType, addValue, ServiceAddFeature } from '../app';
+import { ServiceBehavior, ServiceFactoryWithReturnFunction, ServiceType } from '../di';
 import { Type, ValueCallback } from '../core';
-import { ServiceFactoryWithReturn } from '../di';
 import { HttpContext } from '../http';
 
-export function add(value: object): ServicesFeature;
-export function add<T>(type: ServiceType<T>, value: T): ServicesFeature;
-export function add(...args: unknown[]): ServicesFeature {
+export function add(value: object): ServiceAddFeature;
+export function add<T>(type: ServiceType<T>, value: T): ServiceAddFeature;
+export function add(...args: unknown[]): ServiceAddFeature {
   return (addValue as Function)(...args);
 }
 
-export function type<T>(type: Type<T>, behavior?: ServiceBehavior): ServicesFeature;
-export function type<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): ServicesFeature;
-export function type(...args: unknown[]): ServicesFeature {
+export function type<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceAddFeature;
+export function type<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): ServiceAddFeature;
+export function type(...args: unknown[]): ServiceAddFeature {
   return (addType as Function)(...args);
 }
 
 export function factory<T>(
   type: ServiceType<T>,
-  factory: ServiceFactoryWithReturn<T>,
+  factory: ServiceFactoryWithReturnFunction<T>,
   dependencies: ServiceType[] = [],
   behavior?: ServiceBehavior,
-): ServicesFeature {
+): ServiceAddFeature {
   return addFactory(type, factory, dependencies, behavior);
 }
 

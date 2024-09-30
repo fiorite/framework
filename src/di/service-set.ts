@@ -5,7 +5,7 @@ import { BehaveLike } from './decorators';
 import { ServiceBehavior } from './service-behavior';
 import {
   AbstractType,
-  CustomSet,
+  SetWithInnerKey,
   DecoratorOuterFunction,
   DecoratorRecorder,
   isType,
@@ -15,7 +15,7 @@ import {
 import { forEach } from '../iterable';
 import { ServiceFactoryWithReturnFunction } from './service-factory';
 
-export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
+export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> {
   get [Symbol.toStringTag](): string {
     return 'ServiceSet';
   }
@@ -33,7 +33,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
 
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
     decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
-      .filter(type => !this[CustomSet.data].has(type))
+      .filter(type => !this[SetWithInnerKey.innerMap].has(type))
       .forEach(type => this.addType(type as Type));
     return this;
   }
@@ -43,7 +43,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
     while (queue.length) {
       const descriptor = queue.shift()!;
       descriptor.dependencies
-        .filter(dependency => !this[CustomSet.data].has(dependency) && dependency !== ServiceProvider)
+        .filter(dependency => !this[SetWithInnerKey.innerMap].has(dependency) && dependency !== ServiceProvider)
         .filter(isType)
         .map(type => this._addType(type))
         .forEach(descriptor2 => queue.push(descriptor2));
@@ -98,7 +98,7 @@ export class ServiceSet extends CustomSet<ServiceDescriptor, ServiceType> {
   }
 
   addValue(object: object): this;
-  addValue<T extends object>(serviceType: ServiceType<T>, object: T): this;
+  addValue<T>(serviceType: ServiceType<T>, object: T): this;
   addValue(...args: unknown[]): this {
     return this.add(
       args.length === 1 ? ServiceDescriptor.fromValue(args[0] as object) :

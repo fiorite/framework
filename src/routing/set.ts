@@ -1,8 +1,8 @@
-import { CustomSet } from '../core';
+import { SetWithInnerKey } from '../core';
 import { RouteDescriptor } from './descriptor';
 import { HttpCallback, HttpMethod } from '../http';
 
-export class RouteSet extends CustomSet<RouteDescriptor, string> {
+export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
   get [Symbol.toStringTag](): string {
     return 'RouteSet';
   }
@@ -18,11 +18,6 @@ export class RouteSet extends CustomSet<RouteDescriptor, string> {
       throw new Error('route "' + value.toString() + '" is already added.');
     }
     return super.add(value);
-  }
-
-  mapProject(): void {
-    throw new Error('not implemented however, should be all from current project');
-    // todo: read
   }
 
   map(path: string, callback: HttpCallback): this;

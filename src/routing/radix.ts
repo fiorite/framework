@@ -7,7 +7,7 @@ interface RadixNode<T> {
 
 const emptyNode = () => ({ path: '', set: false, children: [] });
 
-interface WalkResult<T> {
+export interface RadixWalkResult<T> {
   readonly path: string;
   readonly payload: T;
   readonly fullMatch: boolean;
@@ -131,8 +131,8 @@ export class RadixMap<T> implements Map<string, T> {
     return false;
   }
 
-  walk(key: string): readonly WalkResult<T>[] {
-    const result: WalkResult<T>[] = [];
+  walk(key: string): readonly RadixWalkResult<T>[] {
+    const result: RadixWalkResult<T>[] = [];
 
     let node = this._node;
     let pointer = node.path.length;

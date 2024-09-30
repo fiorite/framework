@@ -1,4 +1,4 @@
-import { ApplicationFeature } from './feature';
+import { ApplicationFeature, LateConfiguration } from './feature';
 import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
 import { HttpServer } from '../http';
 import { RouteMatcher } from '../routing';
@@ -52,15 +52,17 @@ export class Application {
 export function makeApplication(...features: ApplicationFeature[]): Application {
   const serviceSet = new ServiceSet();
 
-  serviceSet.addDecoratedBy(BehaveLike);
+  const lateConfiguration = new LateConfiguration();
+  serviceSet.addValue(LateConfiguration, lateConfiguration)
+    .addDecoratedBy(BehaveLike);
 
   if (!features.some(x => x instanceof HttpServerFeature)) {  // should be by default.
     features.unshift(addHttpServer());
   }
 
   features.filter(x => x.configureServices).forEach(x => x.configureServices!(serviceSet));
-
   serviceSet.includeDependencies();
+
   const provider = new ServiceProvider(serviceSet);
   const touchSingletons = true;
 
@@ -78,6 +80,8 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     }
 
     features.filter(x => x.configure).forEach(x => x.configure!(provider));
+    lateConfiguration.forEach(callback => callback(provider)); // run all late configuration
+
     configured = true;
     if (completed) {
       complete();

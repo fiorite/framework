@@ -102,4 +102,3 @@ export class ServiceDescriptor<T = unknown> {
     return '[ServiceDescriptor: ' + ServiceType.toString(this.type) + ']'; // todo: provide extra information;
   }
 }
-

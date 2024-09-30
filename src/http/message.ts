@@ -32,10 +32,10 @@ export abstract class HttpMessage {
   abstract read(callback: ValueCallback<Uint8Array | undefined>): void;
 
   /**
-   * @param buffer
+   * @param chunk
    * @param callback called on flush
    */
-  abstract write(buffer: Uint8Array | string, callback?: VoidCallback): void;
+  abstract write(chunk: Uint8Array | string, callback?: VoidCallback): void;
 }
 
 export class HttpMessageCloseFunction extends ListenableFunction<VoidCallback, void> {

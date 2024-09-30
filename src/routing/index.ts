@@ -2,9 +2,6 @@ export {
   RouteCallback,
 } from './callback';
 export {
-  RouteComponent, StaticRouteComponent, ParameterRouteComponent, NullRouteComponent, CatchAllRouteComponent
-} from './component';
-export {
   RouteParameterConstraint,
   NumberParameterConstraint,
   DigitParameterConstraint,
@@ -60,4 +57,7 @@ export {
 } from './route';
 export { RouteDescriptor } from './descriptor';
 export { RouteSet } from './set';
-export { segmentRoutePath } from './segment';
+export { RoutePath } from './path';
+export {
+  RoutePathSegment, StaticPathSegment, DynamicPathSegment, NullPathSegment, CatchAllPathSegment
+} from './segment';
