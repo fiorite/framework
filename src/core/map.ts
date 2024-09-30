@@ -1,42 +1,43 @@
 export class ReadonlyMapView<K, V> implements ReadonlyMap<K, V> {
-  static readonly innerMap = Symbol('ReadonlyMapView.innerMap');
+  private readonly _innerMap: ReadonlyMap<K, V>;
 
-  // @ts-ignore
-  [ReadonlyMapView.innerMap]: ReadonlyMap<K, V>;
+  get innerMap(): ReadonlyMap<K, V> {
+    return this._innerMap;
+  }
 
   get size(): number {
-    return this[ReadonlyMapView.innerMap].size;
+    return this.innerMap.size;
   }
 
   constructor(innerMap: ReadonlyMap<K, V>) {
-    this[ReadonlyMapView.innerMap] = innerMap;
+    this._innerMap = innerMap;
   }
 
   forEach(callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: any): void {
-    return this[ReadonlyMapView.innerMap].forEach(callbackfn, thisArg);
+    return this.innerMap.forEach(callbackfn, thisArg);
   }
 
   get(key: K): V | undefined {
-    return this[ReadonlyMapView.innerMap].get(key);
+    return this.innerMap.get(key);
   }
 
   has(key: K): boolean {
-    return this[ReadonlyMapView.innerMap].has(key);
+    return this.innerMap.has(key);
   }
 
   entries(): IterableIterator<[K, V]> {
-    return this[ReadonlyMapView.innerMap].entries();
+    return this.innerMap.entries();
   }
 
   keys(): IterableIterator<K> {
-    return this[ReadonlyMapView.innerMap].keys();
+    return this.innerMap.keys();
   }
 
   values(): IterableIterator<V> {
-    return this[ReadonlyMapView.innerMap].values();
+    return this.innerMap.values();
   }
 
   [Symbol.iterator](): IterableIterator<[K, V]> {
-    return this[ReadonlyMapView.innerMap][Symbol.iterator]();
+    return this.innerMap[Symbol.iterator]();
   }
 }

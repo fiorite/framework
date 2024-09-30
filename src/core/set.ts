@@ -1,64 +1,63 @@
 import { MapCallback, returnSelf } from './callback';
 
 /**
- * Custom set designed to provide the same signature and the way to configure comparison flow using {@link keyCallback}
+ * Custom set designed to provide the same signature and the way to configure comparison flow using {@link _keyCallback}
  */
-export class SetWithInnerKey<T, K = unknown> implements Set<T> {
-  static readonly innerMap: unique symbol = Symbol('CustomSet.data');
-
-  static readonly keyCallback: unique symbol = Symbol('CustomSet.callback');
-
+export class SetWithInnerKey<T, K = T> implements Set<T> {
   get [Symbol.toStringTag](): string {
     return 'CustomSet';
   }
 
   // @ts-ignore
-  readonly [SetWithInnerKey.innerMap] = new Map<R, T>();
+  private readonly _innerMap = new Map<K, T>();
 
-  // @ts-ignore
-  readonly [SetWithInnerKey.keyCallback]: MapCallback<T, K>;
+  get innerMap(): ReadonlyMap<K, T> {
+    return this._innerMap;
+  }
+
+  private readonly _keyCallback: MapCallback<T, K>;
 
   get size(): number {
-    return this[SetWithInnerKey.innerMap].size;
+    return this._innerMap.size;
   }
 
   constructor(keyCallback?: MapCallback<T, K>) {
-    this[SetWithInnerKey.keyCallback] = keyCallback || returnSelf as any;
+    this._keyCallback = keyCallback || returnSelf as any;
   }
 
   add(value: T): this {
-    const key = this[SetWithInnerKey.keyCallback](value);
-    if (!this[SetWithInnerKey.innerMap].has(key)) {
-      this[SetWithInnerKey.innerMap].set(key, value);
+    const key = this._keyCallback(value);
+    if (!this._innerMap.has(key)) {
+      this._innerMap.set(key, value);
     }
     return this;
   }
 
-  // addAll(values: Iterable<T>): this {
-  //   for (let value of values) {
-  //     this.add(value);
-  //   }
-  //   return this;
-  // }
+  addAll(values: Iterable<T>): this {
+    for (let value of values) {
+      this.add(value);
+    }
+    return this;
+  }
 
   clear(): void {
-    this[SetWithInnerKey.innerMap].clear();
+    this._innerMap.clear();
   }
 
   delete(value: T): boolean {
-    return this[SetWithInnerKey.innerMap].delete(this[SetWithInnerKey.keyCallback](value));
+    return this._innerMap.delete(this._keyCallback(value));
   }
 
   forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void { // todo: handle thisArg?
-    return this[SetWithInnerKey.innerMap].forEach(value => callbackfn(value, value, this));
+    return this._innerMap.forEach(value => callbackfn(value, value, this));
   }
 
   has(value: T): boolean {
-    return this[SetWithInnerKey.innerMap].has(this[SetWithInnerKey.keyCallback](value));
+    return this._innerMap.has(this._keyCallback(value));
   }
 
   entries(): IterableIterator<[T, T]> {
-    const iterator = this[SetWithInnerKey.innerMap].values()[Symbol.iterator]();
+    const iterator = this._innerMap.values()[Symbol.iterator]();
     const result: IterableIterator<[T, T]> = {
       next(): IteratorResult<[T, T]> {
         const result = iterator.next();
@@ -72,14 +71,14 @@ export class SetWithInnerKey<T, K = unknown> implements Set<T> {
   }
 
   keys(): IterableIterator<T> {
-    return this[SetWithInnerKey.innerMap].values();
+    return this._innerMap.values();
   }
 
   values(): IterableIterator<T> {
-    return this[SetWithInnerKey.innerMap].values();
+    return this._innerMap.values();
   }
 
   [Symbol.iterator](): IterableIterator<T> {
-    return this[SetWithInnerKey.innerMap].values();
+    return this._innerMap.values();
   }
 }

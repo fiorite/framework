@@ -1,11 +1,11 @@
-import { ApplicationFeature, LateConfiguration } from './feature';
+import { ApplicationFeature } from './feature';
 import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
-import { HttpServer } from '../http';
-import { RouteMatcher } from '../routing';
+import { HttpCallback, HttpMethod } from '../http';
+import { RouteDescriptor, RouteMatcher } from '../routing';
 import { Logger } from '../logging';
 import { MaybePromiseLike, ValueCallback, VoidCallback } from '../core';
 import { addHttpServer, HttpServerFeature } from './http-server';
-import { HttpServerListener } from '../http/server';
+import { HttpServer, HttpServerListener } from '../http/server';
 
 export class Application {
   private readonly _provider: ServiceProvider;
@@ -22,7 +22,7 @@ export class Application {
     return this._provider(HttpServer);
   }
 
-  get router(): RouteMatcher {
+  get routes(): RouteMatcher {
     return this._provider(RouteMatcher);
   }
 
@@ -47,14 +47,72 @@ export class Application {
     });
     return listener!;
   }
+
+  // region routes
+
+  map(path: string, callback: HttpCallback): this;
+  map(method: HttpMethod | string, path: string, callback: HttpCallback): this;
+  map(...args: unknown[]): this {
+    if (args.length === 2) {
+      const [path, callback] = args as [string, HttpCallback];
+      const route = new RouteDescriptor({ path, callback });
+      this.routes.add(route);
+      return this;
+    }
+
+    if (args.length === 3) {
+      const [method, path, callback] = args as [HttpMethod | string, string, HttpCallback];
+      const route = new RouteDescriptor({ path, method, callback });
+      this.routes.add(route);
+      return this;
+    }
+
+    throw new Error('wrong number of args. see overloads.');
+  }
+
+  mapGet(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Get, path, callback);
+  }
+
+  mapHead(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Head, path, callback);
+  }
+
+  mapPost(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Post, path, callback);
+  }
+
+  mapPut(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Put, path, callback);
+  }
+
+  mapDelete(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Delete, path, callback);
+  }
+
+  mapConnect(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Connect, path, callback);
+  }
+
+  mapOptions(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Options, path, callback);
+  }
+
+  mapTrace(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Trace, path, callback);
+  }
+
+  mapPatch(path: string, callback: HttpCallback): this {
+    return this.map(HttpMethod.Patch, path, callback);
+  }
+
+  // endregion
 }
 
 export function makeApplication(...features: ApplicationFeature[]): Application {
   const serviceSet = new ServiceSet();
 
-  const lateConfiguration = new LateConfiguration();
-  serviceSet.addValue(LateConfiguration, lateConfiguration)
-    .addDecoratedBy(BehaveLike);
+  serviceSet.addDecoratedBy(BehaveLike);
 
   if (!features.some(x => x instanceof HttpServerFeature)) {  // should be by default.
     features.unshift(addHttpServer());
@@ -80,7 +138,6 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     }
 
     features.filter(x => x.configure).forEach(x => x.configure!(provider));
-    lateConfiguration.forEach(callback => callback(provider)); // run all late configuration
 
     configured = true;
     if (completed) {

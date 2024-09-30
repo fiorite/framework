@@ -1,7 +1,7 @@
-import { utf16, Utf16Sequence } from '../core';
+import { Equatable, utf16, Utf16Sequence } from '../core';
 import { RouteParameterConstraint } from './constraint';
 
-export abstract class RoutePathSegment {
+export abstract class RoutePathSegment implements Equatable {
   private readonly _value: string;
 
   get value(): string {
@@ -74,6 +74,9 @@ export class DynamicPathSegment extends RoutePathSegment {
   private readonly _charList?: Utf16Sequence;
   private readonly _minLength: number = -1;
   private readonly _maxLength: number = -1;
+
+  // private _constraintDelimited: ':' | '=';
+  // private _catchSyntax: ':;' | '{}' = '{}';
 
   constructor(
     value: string,

@@ -1,6 +1,7 @@
 import { ServiceProvider, ServiceSet } from '../di';
-import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse, HttpServer } from '../http';
+import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse } from '../http';
 import { ApplicationFeature } from './feature';
+import { HttpServer } from '../http/server';
 
 export class HttpServerFeature implements ApplicationFeature {
   configureServices(serviceSet: ServiceSet) {

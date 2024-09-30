@@ -1,22 +1,22 @@
 import { FunctionClass, MaybePromiseLike } from '../core';
 import { HttpCallback } from '../http';
-import { RouteMatcher } from './matcher';
-import { RouteParams } from './params';
+import { RouteMatcher } from './route-matcher';
+import { RouteParams } from './route-params';
 import { Logger } from '../logging';
 
 export class RoutingMiddleware extends FunctionClass<HttpCallback> {
   constructor(routeMatcher: RouteMatcher) {
     super((context, next) => {
-      const result = routeMatcher.match(context.request);
-      if (undefined !== result && result.data.length) {
+      const result = routeMatcher.match(context.request.url!.pathname, context.request.method);
+      if (undefined !== result) {
         const params = context.provide(RouteParams);
 
         params.clear();
         Object.entries(result.params).forEach((x) => params.set(x[0], x[1] as any));
 
-        const length = result.data[0] instanceof FunctionClass ?
-          result.data[0][FunctionClass.callback].length :
-          result.data[0].length;
+        const length = result.descriptor.callback instanceof FunctionClass ?
+          result.descriptor.callback[FunctionClass.callback].length :
+          result.descriptor.callback.length;
 
         if (length < 2) {
           // next is not bound to route callback.
@@ -25,7 +25,7 @@ export class RoutingMiddleware extends FunctionClass<HttpCallback> {
         }
 
         MaybePromiseLike.then(() => { // todo: maybe allow all the matched handlers (middleware as part of routing?)
-          return result.data[0](context, next);
+          return result.descriptor.callback(context, next);
         }, () => {
           if (length < 2) {
             next();

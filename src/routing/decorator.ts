@@ -8,7 +8,7 @@ import {
   MethodDecoratorWithPayload
 } from '../core';
 import { HttpMethod } from '../http';
-import { RouteParams } from './params';
+import { RouteParams } from './route-params';
 
 export class RoutePrefixPayload {
   private readonly _path?: string;

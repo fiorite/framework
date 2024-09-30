@@ -31,17 +31,7 @@ export {
   HttpPost,
   HttpPut,
 } from './decorator';
-export {
-  RoutePathMatcher,
-  RadixRouteComponentMatcher,
-  RouteMatcher,
-  StaticRouteComponentMatcher,
-  DynamicRouteComponentMatcher,
-  CompositeRoutePathMatcher,
-  RouteComponentChainMatcher
-} from './matcher';
 export { RoutingMiddleware } from './middlware';
-export { RouteParams } from './params';
 export { RadixMap } from './radix';
 export {
   StatusCodeResult,
@@ -55,9 +45,22 @@ export {
   TypeRoutes,
   ObjectMethodCallback,
 } from './route';
-export { RouteDescriptor } from './descriptor';
-export { RouteSet } from './set';
-export { RoutePath } from './path';
+export {
+  RouteMatcher,
+  RouteMatchResult,
+} from './route-matcher';
+export { RouteDescriptor } from './route-descriptor';
+export { RouteParams } from './route-params';
+export { RoutePath } from './route-path';
+export {
+  RoutePathMatcher,
+  RadixRouteComponentMatcher,
+  StaticRouteComponentMatcher,
+  DynamicRouteComponentMatcher,
+  RouteComponentChainMatcher,
+  CompositeRoutePathMatcher,
+  RoutePathMatchResult
+} from './route-path-matcher';
 export {
   RoutePathSegment, StaticPathSegment, DynamicPathSegment, NullPathSegment, CatchAllPathSegment
-} from './segment';
+} from './route-path-segment';

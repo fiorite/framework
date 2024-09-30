@@ -234,7 +234,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
   }
 
   has(type: ServiceType): boolean {
-    return this._services[SetWithInnerKey.innerMap].has(type);
+    return this._services.innerMap.has(type);
   }
 
   // validateDependencies<T extends object, K extends keyof T>(type: Type<T>, propertyKey: K): void {

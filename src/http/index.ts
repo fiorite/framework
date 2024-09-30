@@ -9,5 +9,5 @@ export { HttpPipeline } from './pipeline';
 export { HttpRequestHeader, HttpRequest, HttpQuery } from './request';
 export { HttpResponseHeader, HttpResponse } from './response';
 export { HttpBodyResult } from './result';
-export { HttpServer, HttpServerState } from './server';
+// export { HttpServer, HttpServerState } from './server';
 export { HttpStatusCode } from './status-code';

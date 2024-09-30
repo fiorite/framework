@@ -33,7 +33,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
 
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
     decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
-      .filter(type => !this[SetWithInnerKey.innerMap].has(type))
+      .filter(type => !this.innerMap.has(type))
       .forEach(type => this.addType(type as Type));
     return this;
   }
@@ -43,7 +43,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
     while (queue.length) {
       const descriptor = queue.shift()!;
       descriptor.dependencies
-        .filter(dependency => !this[SetWithInnerKey.innerMap].has(dependency) && dependency !== ServiceProvider)
+        .filter(dependency => !this.innerMap.has(dependency) && dependency !== ServiceProvider)
         .filter(isType)
         .map(type => this._addType(type))
         .forEach(descriptor2 => queue.push(descriptor2));
@@ -51,7 +51,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
     return this;
   }
 
-  addAll(iterable: Iterable<Type | ServiceDescriptor | object>): this {
+  override addAll(iterable: Iterable<Type | ServiceDescriptor | object>): this {
     forEach<Type | ServiceDescriptor | object>(item => {
       if (item instanceof ServiceDescriptor) {
         this.add(item);

@@ -10,6 +10,7 @@ export {
   CallbackShare,
   CallbackShareFunction,
 } from './callback';
+export { Equatable } from './equal';
 export { Utf16Sequence, utf16 } from './utf16';
 export * from './decorator';
 export * from './error';

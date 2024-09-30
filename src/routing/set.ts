@@ -1,7 +1,8 @@
 import { SetWithInnerKey } from '../core';
-import { RouteDescriptor } from './descriptor';
+import { RouteDescriptor } from './route-descriptor';
 import { HttpCallback, HttpMethod } from '../http';
 
+/** @deprecated will be moved to {@link RouteMatcher} */
 export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
   get [Symbol.toStringTag](): string {
     return 'RouteSet';

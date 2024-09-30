@@ -11,6 +11,13 @@ export {
   addScoped,
   addInherited
 } from './di';
+export {
+  ApplicationFeature,
+  ApplicationConfigureServicesFunction,
+  ApplicationConfigureFunction,
+  applicationFeature,
+  configureServices
+} from './feature';
 export { addJsonParser, JsonParserMiddleware, JsonParserFeature } from './json-parser';
 export { addConsoleLogger, ConsoleLoggerFeature } from './logging';
 export { addMiddleware, MiddlewareFeature } from './middleware';

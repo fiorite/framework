@@ -1,6 +1,7 @@
-import { Type, utf16, Utf16Sequence } from '../core';
-import { CatchAllPathSegment, DynamicPathSegment, RoutePathSegment, StaticPathSegment } from './segment';
+import { Equatable, Type, utf16, Utf16Sequence } from '../core';
+import { CatchAllPathSegment, DynamicPathSegment, RoutePathSegment, StaticPathSegment } from './route-path-segment';
 import { routeParameterConstrains } from './constraint';
+import { RouteParams } from './route-params';
 
 // * or ** = catch all in aspnet core. catch-all is last param, cannot have anything in front of it.
 // other than that
@@ -39,14 +40,6 @@ import { routeParameterConstrains } from './constraint';
  *
  */
 
-const kchar = new Utf16Sequence([
-  utf16.ascii[':'], // angular/express like routing
-  utf16.ascii['{'], // laravel/asp.net like routing
-  utf16.ascii['*'], // catch-all
-]);
-
-// ? or # are break
-
 const isDigitString = (value: unknown): value is string => {
   if (typeof value !== 'string') {
     return false;
@@ -62,7 +55,20 @@ const isDigitString = (value: unknown): value is string => {
   return true;
 };
 
-export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePathSegment> {
+// ? or # are break
+export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePathSegment>, Equatable {
+  private static _kchar = new Utf16Sequence([
+    utf16.ascii[':'], // angular/express like routing
+    utf16.ascii['@'], // same as ":"
+    utf16.ascii['{'], // laravel/asp.net like routing
+    utf16.ascii['*'], // catch-all
+  ]);
+
+  private static _gens = new Utf16Sequence([
+      ':', '/', '?', '#', '[', ']', '@' //
+    ].map(c => utf16.ascii[c])
+  );
+
   private readonly _value: string;
 
   get value(): string {
@@ -73,12 +79,12 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
     return 'RoutePath';
   }
 
-  private _data: RoutePathSegment[] = [];
+  private _segments: RoutePathSegment[] = [];
 
   readonly [n: number]: RoutePathSegment;
 
   get length(): number {
-    return this._data.length;
+    return this._segments.length;
   }
 
   constructor(path: string) {
@@ -101,7 +107,7 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
     const flush = () => {
       if (buffer.length) {
         const component = new StaticPathSegment(buffer);
-        this._data.push(component);
+        this._segments.push(component);
         buffer = '';
       }
     };
@@ -138,11 +144,11 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
           throw new Error('backslash cannot be the last character in path.');
         }
         length++;
-        if (!kchar.includes(path, 1)) { // replace
+        if (!RoutePath._kchar.includes(path, 1)) { // replace
           throw new Error('character isolation works for ":", "{" and "+" only. not "' + path[1] + '"');
         }
         buffer += path[1];
-      } else if (utf16.ascii[':'] === char) { // express, angular like param logic
+      } else if (utf16.ascii[':'] === char || utf16.ascii['@'] === char) { // express, angular like param logic
         flush(); // flush text segment
         let i = clear(1);
         if (i >= path.length) {
@@ -217,7 +223,7 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
           }
         }
         length += i;
-        this._data.push(new DynamicPathSegment(path.substring(0, length), paramname, constraint));
+        this._segments.push(new DynamicPathSegment(path.substring(0, length), paramname, constraint));
       } else if (utf16.ascii['{'] === char) { // laravel/asp.net like routing param
         flush(); // flush text segment
         let i = clear(1); // skip whitespace after "{"
@@ -239,7 +245,7 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
             throw new Error('catch is always the last component. revise the path.');
           }
           length += i;
-          this._data.push(new CatchAllPathSegment(path.substring(0, length), paramname.length ? paramname : undefined));
+          this._segments.push(new CatchAllPathSegment(path.substring(0, length), paramname.length ? paramname : undefined));
         } else { // regular parameter
           let paramname = varname(path, i);
           if (!paramname.length) {
@@ -303,7 +309,7 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
             throw new Error('curly bracket should be closed after parameter definition "{param}".');
           }
           length += i;
-          this._data.push(new DynamicPathSegment(path.substring(0, length), paramname, constraint));
+          this._segments.push(new DynamicPathSegment(path.substring(0, length), paramname, constraint));
         }
       } else if (char === utf16.ascii['*']) { // catch-all
         flush(); // flush text segment
@@ -318,8 +324,10 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
           throw new Error('catch is always the last component. revise the path.');
         }
         length += i;
-        this._data.push(new CatchAllPathSegment(path.substring(0, length), paramname.length ? paramname : undefined));
-      } else { // add to segment
+        this._segments.push(new CatchAllPathSegment(path.substring(0, length), paramname.length ? paramname : undefined));
+      } else if (RoutePath._gens.includes(char)) { // add to segment
+        throw new Error('general delimiter is not allowed in route path (rfc intel). forbidden: ":" / "/" / "?" / "#" / "[" / "]" / "@"');
+      } else {
         buffer += path[0];
       }
 
@@ -328,20 +336,28 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
 
     flush(); // flush text segment
 
-    this._value = this._data.reduce((result, component) => result + component.value, '');
+    this._value = this._segments.reduce((result, component) => result + component.value, '');
 
     return new Proxy(this, {
       get: (target: RoutePath, p: string | symbol): any => {
-        return isDigitString(p) ? (target._data as any)[Number(p)] : (target as any)[p];
+        return isDigitString(p) ? (target._segments as any)[Number(p)] : (target as any)[p];
       }
     });
   }
 
-  [Symbol.iterator](): Iterator<RoutePathSegment> {
-    return this._data[Symbol.iterator]();
+  equals(other: unknown): other is this {
+    return other instanceof RoutePath &&
+      other._segments.length === this._segments.length &&
+      other._segments.every((segment, index) => {
+        return segment.equals(this._segments[index]);
+      });
   }
 
   toString(): string {
-    return this._data.reduce((result, component) => result + component.value, '');
+    return this._value;
+  }
+
+  [Symbol.iterator](): Iterator<RoutePathSegment> {
+    return this._segments[Symbol.iterator]();
   }
 }
