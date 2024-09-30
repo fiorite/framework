@@ -1,5 +1,13 @@
 # Routing Component
 
+TODO:
+```
+[x] RouteMatcher.match returns Iterable<RouteDescriptor>.
+[ ] Try to decouple http from routing in order to apply it to console api.
+[ ] Update readme, many things are not here.
+[ ] Improve constraint to provide custom ones.
+```
+
 Routing inspired by ASP.NET primarily.
 
 Features:
@@ -44,18 +52,18 @@ ASP.NET inspired feature. Any route parameter can be validated on router level.
 ## RouteSet to build
 
 ```typescript
-import { RouteSet } from 'fiorite';
+import { RouteMatcher } from 'fiorite';
 
-const routes = new RouteSet();
+const routes = new RouteMatcher();
 routes.map('/foo', () => 'foo');
 routes.map('get', '/foo2', () => 'foo2'); 
 routes.mapGet('/foo3', () => 'foo3');
-routes.mapProject(); // read 
+match('/foo'); // => result or undefined
 ```
 
 ## Decorators
 
-### Class `@Controller(routePrefix?: string)`
+### ~~Class `@Controller(routePrefix?: string)`~~
 
 - `@RoutePrefix(path: string)`
 

@@ -1,5 +1,5 @@
 import { Equatable, utf16, Utf16Sequence } from '../core';
-import { RouteParameterConstraint } from './constraint';
+import { RouteParameterConstraint } from './constraints';
 
 export abstract class RoutePathSegment implements Equatable {
   private readonly _value: string;

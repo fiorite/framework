@@ -16,7 +16,7 @@ export {
   MaxParameterConstraint,
   RangeParameterConstraint,
   RegexpParameterConstraint,
-} from './constraint';
+} from './constraints';
 export {
   RoutePrefix,
   Route,
@@ -30,9 +30,8 @@ export {
   HttpDelete,
   HttpPost,
   HttpPut,
-} from './decorator';
+} from './decorators';
 export { RoutingMiddleware } from './middlware';
-export { RadixMap } from './radix';
 export {
   StatusCodeResult,
   RouteResult,

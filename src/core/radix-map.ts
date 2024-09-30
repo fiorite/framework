@@ -1,14 +1,14 @@
 interface RadixNode<T> {
-  readonly path: string;
+  readonly value: string;
   readonly payload?: T;
-  readonly set: boolean;
+  readonly isSet: boolean;
   readonly children: readonly RadixNode<T>[];
 }
 
-const emptyNode = () => ({ path: '', set: false, children: [] });
+const emptyNode = () => ({ value: '', isSet: false, children: [] });
 
 export interface RadixWalkResult<T> {
-  readonly path: string;
+  readonly value: string;
   readonly payload: T;
   readonly fullMatch: boolean;
 }
@@ -32,46 +32,46 @@ export class RadixMap<T> implements Map<string, T> {
   set(path: string, payload: T): this {
     let node = this._node;
     main: while (node) {
-      path = path.substring(node.path.length);
+      path = path.substring(node.value.length);
       if (!path.length) {
         Object.assign(node, { payload, assigned: true });
         return this;
       }
 
-      const children = node.children.filter(x => x.path[0] === path[0]);
+      const children = node.children.filter(x => x.value[0] === path[0]);
       for (const child of children) {
-        const min = Math.min(child.path.length, path.length);
+        const min = Math.min(child.value.length, path.length);
         let pointer = 0;
 
-        while (pointer < min && path[pointer] === child.path[pointer]) {
+        while (pointer < min && path[pointer] === child.value[pointer]) {
           pointer++;
         }
 
-        if (pointer >= child.path.length) { // enter the child node
+        if (pointer >= child.value.length) { // enter the child node
           node = child;
           continue main;
         }
 
         if (pointer >= path.length) {
-          Object.assign(child, { path: child.path.substring(path.length), }); // change child's #path
+          Object.assign(child, { path: child.value.substring(path.length), }); // change child's #path
           (node.children as RadixNode<T>[]).splice(node.children.indexOf(child), 1); // remove child from current node
 
-          const intermediate: RadixNode<T> = { path, payload, set: true, children: [child] }; // add child to a new node
+          const intermediate: RadixNode<T> = { value: path, payload, isSet: true, children: [child] }; // add child to a new node
           (node.children as RadixNode<T>[]).push(intermediate); // add intermediate to the node
           return this;
         }
 
         if (pointer > 0) {
-          Object.assign(child, { path: child.path.substring(pointer), }); // change child's #path
+          Object.assign(child, { path: child.value.substring(pointer), }); // change child's #path
           (node.children as RadixNode<T>[]).splice(node.children.indexOf(child), 1); // remove child from current node
 
-          const intermediate: RadixNode<T> = { path: path.substring(0, pointer), set: false, children: [child] }; // add child to a new node
+          const intermediate: RadixNode<T> = { value: path.substring(0, pointer), isSet: false, children: [child] }; // add child to a new node
           (node.children as RadixNode<T>[]).push(intermediate); // add intermediate to the node
           continue main;
         }
       }
 
-      (node.children as RadixNode<T>[]).push({ path, payload, set: true, children: [], });
+      (node.children as RadixNode<T>[]).push({ value: path, payload, isSet: true, children: [], });
       this._size++;
     }
     return this;
@@ -87,7 +87,7 @@ export class RadixMap<T> implements Map<string, T> {
 
   get(key: string): T | undefined {
     let node = this._node;
-    let pointer = node.path.length;
+    let pointer = node.value.length;
 
     while (node) {
       if (key.length === pointer) {
@@ -95,13 +95,13 @@ export class RadixMap<T> implements Map<string, T> {
       }
 
       const index = node.children.findIndex(child => {
-        return key[pointer] === child.path[0] &&
-          key.indexOf(child.path, pointer) === pointer;
+        return key[pointer] === child.value[0] &&
+          key.indexOf(child.value, pointer) === pointer;
       });
 
       if (index > -1) {
         node = node.children[index];
-        pointer += node.path.length;
+        pointer += node.value.length;
       }
     }
 
@@ -110,7 +110,7 @@ export class RadixMap<T> implements Map<string, T> {
 
   has(key: string): boolean {
     let node = this._node;
-    let pointer = node.path.length;
+    let pointer = node.value.length;
 
     while (node) {
       if (key.length === pointer) {
@@ -118,13 +118,13 @@ export class RadixMap<T> implements Map<string, T> {
       }
 
       const index = node.children.findIndex(child => {
-        return key[pointer] === child.path[0] &&
-          key.indexOf(child.path, pointer) === pointer;
+        return key[pointer] === child.value[0] &&
+          key.indexOf(child.value, pointer) === pointer;
       });
 
       if (index > -1) {
         node = node.children[index];
-        pointer += node.path.length;
+        pointer += node.value.length;
       }
     }
 
@@ -135,27 +135,27 @@ export class RadixMap<T> implements Map<string, T> {
     const result: RadixWalkResult<T>[] = [];
 
     let node = this._node;
-    let pointer = node.path.length;
+    let pointer = node.value.length;
 
     while (node) {
       if (key.length === pointer) {
-        if (node.set) {
-          result.push({ path: key, fullMatch: true, payload: node.payload! });
+        if (node.isSet) {
+          result.push({ value: key, fullMatch: true, payload: node.payload! });
         }
         break;
       }
 
       const index = node.children.findIndex(child => {
-        return key[pointer] === child.path[0] &&
-          key.indexOf(child.path, pointer) === pointer;
+        return key[pointer] === child.value[0] &&
+          key.indexOf(child.value, pointer) === pointer;
       });
 
       if (index > -1) {
         node = node.children[index];
-        pointer += node.path.length;
+        pointer += node.value.length;
 
-        if (key.length !== pointer && node.set) {
-          result.push({ path: key, fullMatch: false, payload: node.payload! });
+        if (key.length !== pointer && node.isSet) {
+          result.push({ value: key, fullMatch: false, payload: node.payload! });
         }
       }
     }

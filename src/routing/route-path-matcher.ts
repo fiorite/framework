@@ -1,5 +1,5 @@
-import { RadixMap } from './radix';
 import { DynamicPathSegment, StaticPathSegment } from './route-path-segment';
+import { RadixMap } from '../core';
 
 export interface RoutePathMatchResult<TPayload> {
   readonly params: Record<string, unknown>;
@@ -12,25 +12,19 @@ export interface RoutePathMatchResult<TPayload> {
 }
 
 export interface RoutePathMatcher<TPayload> {
-  match(path: string): RoutePathMatchResult<TPayload> | undefined;
+  match(path: string): Iterable<RoutePathMatchResult<TPayload>>;
 }
 
 export class CompositeRoutePathMatcher<TPayload> implements RoutePathMatcher<TPayload> {
-  get size(): number {
-    return this.array.length;
-  }
-
   constructor(readonly array: RoutePathMatcher<TPayload>[]) {
   }
 
-  match(path: string): RoutePathMatchResult<TPayload> | undefined {
+  * match(path: string): Iterable<RoutePathMatchResult<TPayload>> {
     for (const matcher of this.array) {
-      const result = matcher.match(path);
-      if (undefined !== result) {
-        return result;
+      for (const result of matcher.match(path)) {
+        yield result;
       }
     }
-    return;
   }
 }
 
@@ -38,26 +32,26 @@ export class RouteComponentChainMatcher<TPayload> implements RoutePathMatcher<TP
   constructor(readonly x: RoutePathMatcher<TPayload>, readonly y: CompositeRoutePathMatcher<TPayload>) {
   }
 
-  match(path: string): RoutePathMatchResult<TPayload> | undefined {
-    const resultX = this.x.match(path);
-    if (undefined === resultX) {
-      return undefined;
+  * match(path: string): Iterable<RoutePathMatchResult<TPayload>> {
+    for (const resultX of this.x.match(path)) {
+      // if (!this.y.size && !resultX.substring.length) {
+      //   yield resultX;
+      // }
+      if (resultX.substring.length) {
+        for (const resultY of this.y.match(resultX.substring)) {
+          yield {
+            substring: resultY.substring,
+            params: {
+              ...resultX.params,
+              ...resultY.params,
+            },
+            payload: resultY.payload,
+          };
+        }
+      } else {
+        yield resultX;
+      }
     }
-    if (!this.y.size && !resultX.substring.length) {
-      return resultX;
-    }
-    const resultY = this.y.match(resultX.substring);
-    if (undefined === resultY) {
-      return undefined;
-    }
-    return {
-      substring: resultY.substring,
-      params: {
-        ...resultX.params,
-        ...resultY.params,
-      },
-      payload: resultY.payload,
-    };
   }
 }
 
@@ -70,14 +64,12 @@ export class RadixRouteComponentMatcher<TPayload> implements RoutePathMatcher<TP
     }
   }
 
-  match(path: string): RoutePathMatchResult<TPayload> | undefined {
+  * match(path: string): Iterable<RoutePathMatchResult<TPayload>> {
     for (const result of this._data.walk(path)) {
-      const match = result.payload.match(path);
-      if (undefined !== match) {
-        return match;
+      for (const result2 of result.payload.match(path)) {
+        yield result2;
       }
     }
-    return undefined;
   }
 }
 
@@ -89,15 +81,14 @@ export class StaticRouteComponentMatcher<TPayload> implements RoutePathMatcher<T
   constructor(private _component: StaticPathSegment, readonly payload?: TPayload) {
   }
 
-  match(path: string):  RoutePathMatchResult<TPayload> | undefined {
+  * match(path: string): Iterable<RoutePathMatchResult<TPayload>> {
     if (path.startsWith(this._component.value)) {
-      return {
+      yield {
         substring: path.substring(this._component.value.length),
         params: {},
         payload: this.payload,
       };
     }
-    return;
   }
 }
 
@@ -105,7 +96,7 @@ export class DynamicRouteComponentMatcher<TPayload> implements RoutePathMatcher<
   constructor(private _component: DynamicPathSegment, readonly payload?: TPayload) {
   }
 
-  match(path: string): RoutePathMatchResult<TPayload> | undefined {
+  * match(path: string): Iterable<RoutePathMatchResult<TPayload>> {
     let substring = path;
     const slash = path.indexOf('/');
     if (slash > -1) {
@@ -118,14 +109,14 @@ export class DynamicRouteComponentMatcher<TPayload> implements RoutePathMatcher<
       const term = path.substring(0, length);
       const value = this._component.match(term);
       if (undefined === value) {
-        return undefined;
+        return;
       }
-      return {
+
+      yield {
         substring: path.substring(length),
         params: { [this._component.name]: value },
         payload: this.payload,
       };
     }
-    return undefined;
   }
 }

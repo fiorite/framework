@@ -11,14 +11,16 @@ export {
   CallbackShareFunction,
 } from './callback';
 export { Equatable } from './equal';
-export { Utf16Sequence, utf16 } from './utf16';
 export * from './decorator';
 export * from './error';
 export { FunctionClass } from './function';
 export { ReadonlyMapView } from './map';
 export { isObject, isObjectMethod } from './object';
 export { MaybePromiseLike, isPromiseLike } from './promise';
-export { AbstractType, Type, isType } from './type';
-export { ListenableFunction, ListenableFunctionListener } from './listener';
+export { RadixMap, RadixWalkResult } from './radix-map';
+export { range } from './range';
 export { binarySearch } from './search';
 export { SetWithInnerKey } from './set';
+export { ListenableFunction, ListenableFunctionListener } from './listener';
+export { AbstractType, Type, isType } from './type';
+export { Utf16Sequence, utf16 } from './utf16';

@@ -1,5 +1,5 @@
 import { DecoratorRecorder, FunctionClass, Type, ValueCallback, VoidCallback } from '../core';
-import { Route, RoutePrefix } from './decorator';
+import { Route, RoutePrefix } from './decorators';
 import { ObjectMethodFactory, ServiceFactoryFunction, ServiceNotFoundError, ServiceType, TypeFactory } from '../di';
 import { RouteDescriptor } from './route-descriptor';
 import { HttpCallback, HttpContext } from '../http';

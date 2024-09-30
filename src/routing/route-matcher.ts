@@ -65,7 +65,7 @@ export interface RouteMatchResult {
 
 /** todo: optimize matcher builder */
 export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
-  private _methodMatcher!: Map<HttpMethod | string | undefined, RoutePathMatcher<RouteDescriptor>>;
+  private _pathMatcher!: RoutePathMatcher<RouteDescriptor>;
 
   constructor(descriptors: Iterable<RouteDescriptor>) {
     const routeToString = (route: RouteDescriptor) => route.toString();
@@ -75,46 +75,31 @@ export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
   }
 
   private _mapMatcher(routes: Iterable<RouteDescriptor> = this): void {
-    const methodMap = Array.from(routes).reduce((result, route) => {
-      if (result.has(route.method)) {
-        result.get(route.method)!.push(route);
-      } else {
-        result.set(route.method, [route]);
-      }
+    const root = new ComponentNode(NullPathSegment.instance);
 
-      return result;
-    }, new Map<HttpMethod | string | undefined, RouteDescriptor[]>);
+    const queue = [...routes];
+    while (queue.length) {
+      const route = queue.shift()!;
 
-    this._methodMatcher = new Map(
-      Array.from(methodMap.entries()).map(([method, routes]) => {
-        const root = new ComponentNode(NullPathSegment.instance);
-
-        const queue = [...routes];
-        while (queue.length) {
-          const route = queue.shift()!;
-
-          let node: ComponentNode | undefined = undefined;
-          let depth = 0;
-          while (depth < route.path.length) {
-            const array: ComponentNode[] = (node ? node.children : root.children);
-            const index: number = array.findIndex(x => x.component.equals(route.path[depth]));
-            if (index > -1) {
-              node = array[index];
-            } else {
-              node = new ComponentNode(route.path[depth]);
-              array.push(node);
-            }
-            depth++;
-            if (depth >= route.path.length) {
-              node.push(route);
-            }
-          }
+      let node: ComponentNode | undefined = undefined;
+      let depth = 0;
+      while (depth < route.path.length) {
+        const array: ComponentNode[] = (node ? node.children : root.children);
+        const index: number = array.findIndex(x => x.component.equals(route.path[depth]));
+        if (index > -1) {
+          node = array[index];
+        } else {
+          node = new ComponentNode(route.path[depth]);
+          array.push(node);
         }
+        depth++;
+        if (depth >= route.path.length) {
+          node.push(route);
+        }
+      }
+    }
 
-
-        return [method, root.wrap()];
-      }),
-    );
+    this._pathMatcher = root.wrap();
   }
 
   override add(value: RouteDescriptor): this {
@@ -141,22 +126,12 @@ export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
     return false;
   }
 
-  match(path: string, method?: HttpMethod | string): RouteMatchResult | undefined {
-    if (this._methodMatcher.has(method)) {
-      const result = this._methodMatcher.get(method)!.match(path);
-      if (undefined !== result && !result.substring.length && undefined !== result.payload) { // if path has not processed part
-        return { params: result.params, descriptor: result.payload };
+  *match(path: string): Iterable<RouteMatchResult> {
+    for (const result of this._pathMatcher.match(path)) {
+      if (!result.substring.length && undefined !== result.payload) { // if path has not processed part
+        yield { params: result.params, descriptor: result.payload };
       }
     }
-
-    if (this._methodMatcher.has(undefined)) {
-      const result = this._methodMatcher.get(undefined)!.match(path);
-      if (undefined !== result && !result.substring.length && undefined !== result.payload) { // if path has not processed part
-        return { params: result.params, descriptor: result.payload };
-      }
-    }
-
-    return undefined;
   }
 
   map(path: string, callback: HttpCallback): this;
