@@ -9,8 +9,10 @@ import {
   RoutePathMatcher,
   StaticRouteComponentMatcher
 } from './route-path-matcher';
-import { SetWithInnerKey } from '../core';
+import { DecoratorOuterFunction, DecoratorRecorder, isType, SetWithInnerKey, Type } from '../core';
 import { forEach } from '../iterable';
+import { RouteCallback } from './callback';
+import { TypeRoutes } from './route';
 
 export class ComponentNode {
   // private _data: RouteCallback[] = [];
@@ -134,17 +136,50 @@ export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
     }
   }
 
-  map(path: string, callback: HttpCallback): this;
-  map(method: HttpMethod | string, path: string, callback: HttpCallback): this;
+  /**
+   * @deprecated experimental
+   */
+  mapDecoratedBy(...decorators: DecoratorOuterFunction<MethodDecorator>[]): this {
+    // todo: refactor since corners been cut
+    const types = decorators.flatMap(decorator => DecoratorRecorder.methodSearch(decorator).map(x => x.path[0].constructor))
+      .reduce((result, current) => {
+        if (result.includes(current)) {
+          result.push(current);
+        }
+        return result;
+      }, [] as Function[]);
+    for (const type of types) {
+      for (const route of new TypeRoutes(type as Type)) {
+        this.add(route);
+      }
+    }
+    return this;
+  }
+
+  map(path: string, callback: RouteCallback): this;
+  map(method: HttpMethod | string, path: string, callback: RouteCallback): this;
+  /**
+   * @deprecated experimental
+   */
+  map(...types: Type[]): this;
   map(...args: unknown[]): this {
+    if (isType(args[0])) {
+      for (const type of args) {
+        for (const route of new TypeRoutes(type as Type)) {
+          this.add(route);
+        }
+      }
+      return this;
+    }
+
     if (args.length === 2) {
-      const [path, callback] = args as [string, HttpCallback];
+      const [path, callback] = args as [string, RouteCallback];
       const route = new RouteDescriptor({ path, callback });
       return this.add(route);
     }
 
     if (args.length === 3) {
-      const [method, path, callback] = args as [HttpMethod | string, string, HttpCallback];
+      const [method, path, callback] = args as [HttpMethod | string, string, RouteCallback];
       const route = new RouteDescriptor({ path, method, callback });
       return this.add(route);
     }
@@ -152,39 +187,39 @@ export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
     throw new Error('wrong number of args. see overloads.');
   }
 
-  mapGet(path: string, callback: HttpCallback): this {
+  mapGet(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Get, path, callback);
   }
 
-  mapHead(path: string, callback: HttpCallback): this {
+  mapHead(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Head, path, callback);
   }
 
-  mapPost(path: string, callback: HttpCallback): this {
+  mapPost(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Post, path, callback);
   }
 
-  mapPut(path: string, callback: HttpCallback): this {
+  mapPut(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Put, path, callback);
   }
 
-  mapDelete(path: string, callback: HttpCallback): this {
+  mapDelete(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Delete, path, callback);
   }
 
-  mapConnect(path: string, callback: HttpCallback): this {
+  mapConnect(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Connect, path, callback);
   }
 
-  mapOptions(path: string, callback: HttpCallback): this {
+  mapOptions(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Options, path, callback);
   }
 
-  mapTrace(path: string, callback: HttpCallback): this {
+  mapTrace(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Trace, path, callback);
   }
 
-  mapPatch(path: string, callback: HttpCallback): this {
+  mapPatch(path: string, callback: RouteCallback): this {
     return this.map(HttpMethod.Patch, path, callback);
   }
 }

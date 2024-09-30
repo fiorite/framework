@@ -1,20 +1,16 @@
-import { DecoratorRecorder, FunctionClass, Type, ValueCallback, VoidCallback } from '../core';
+import { DecoratorRecorder, FunctionClass, Type, ValueCallback } from '../core';
 import { Route, RoutePrefix } from './decorators';
 import { ObjectMethodFactory, ServiceFactoryFunction, ServiceNotFoundError, ServiceType, TypeFactory } from '../di';
 import { RouteDescriptor } from './route-descriptor';
-import { HttpCallback, HttpContext } from '../http';
+import { RouteCallback } from './callback';
 
-export class ObjectMethodCallback<T = unknown> extends FunctionClass<HttpCallback> {
-  private readonly _type: Type<T>;
+export class ObjectMethodCallback<T = unknown> extends FunctionClass<RouteCallback> {
   private readonly _typeFactory: TypeFactory<T>;
-  private readonly _propertyKey: string | symbol;
   private readonly _objectMethodFactory: ObjectMethodFactory<T>;
-  private readonly _callback: (context: HttpContext, result: unknown, next: VoidCallback) => void;
 
   constructor(
     type: Type,
     propertyKey: string | symbol,
-    callback: (context: HttpContext, result: unknown, next: VoidCallback) => void
   ) {
     const typeFactory = new TypeFactory<T>(type);
     const methodFactory = new ObjectMethodFactory(type, propertyKey);
@@ -43,24 +39,19 @@ export class ObjectMethodCallback<T = unknown> extends FunctionClass<HttpCallbac
           }
 
           return context.provide(type2, callback2);
-        }, result => callback(context, result, next));
+        }, next);
       });
     });
-    this._type = type;
+
     this._typeFactory = typeFactory;
-    this._propertyKey = propertyKey;
     this._objectMethodFactory = methodFactory;
-    this._callback = callback;
   }
 }
 
 export class TypeRoutes implements Iterable<RouteDescriptor> {
   private readonly _array: readonly RouteDescriptor[] = [];
 
-  constructor(
-    type: Type,
-    resultCallback: (context: HttpContext, result: unknown | undefined, next: VoidCallback) => void
-  ) {
+  constructor(type: Type) {
     const routePrefix = DecoratorRecorder.classSearch(RoutePrefix, type)
       .map(x => x.payload.path)
       .filter(x => !!x && x.trim().length)
@@ -73,7 +64,7 @@ export class TypeRoutes implements Iterable<RouteDescriptor> {
       return new RouteDescriptor({
         path: routePath,
         method: httpMethod,
-        callback: new ObjectMethodCallback(type, methodRecord.path[1], resultCallback),
+        callback: new ObjectMethodCallback(type, methodRecord.path[1]),
       });
     });
   }
@@ -86,3 +77,4 @@ export class TypeRoutes implements Iterable<RouteDescriptor> {
     return this._array[Symbol.iterator]();
   }
 }
+

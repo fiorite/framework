@@ -31,7 +31,7 @@ export {
   HttpPost,
   HttpPut,
 } from './decorators';
-export { RoutingMiddleware } from './middlware';
+export { RoutingMiddleware, ResultHandleCallback } from './middlware';
 export {
   StatusCodeResult,
   RouteResult,

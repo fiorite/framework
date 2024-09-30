@@ -1,6 +1,6 @@
 import { ApplicationFeature } from './feature';
 import { ServiceProviderWithReturnFunction, ServiceSet } from '../di';
-import { RouteDescriptor, RouteMatcher, RouteParams, RoutingMiddleware } from '../routing';
+import { ResultHandleCallback, RouteDescriptor, RouteMatcher, RouteParams, RoutingMiddleware } from '../routing';
 import { HttpCallback, HttpMethod, HttpPipeline } from '../http';
 import { ValueCallback } from '../core';
 
@@ -8,9 +8,9 @@ export class RoutingFeature implements ApplicationFeature {
   private readonly _routeMatcher: RouteMatcher;
   private readonly _middleware: RoutingMiddleware;
 
-  constructor(routes: Iterable<RouteDescriptor> = []) {
-    this._routeMatcher = new RouteMatcher(routes);
-    this._middleware = new RoutingMiddleware(this._routeMatcher);
+  constructor(handleResult: ResultHandleCallback) {
+    this._routeMatcher = new RouteMatcher([]);
+    this._middleware = new RoutingMiddleware(this._routeMatcher, handleResult);
   }
 
   configureServices(serviceSet: ServiceSet) {
@@ -40,8 +40,8 @@ export class RouteAddFeature implements ApplicationFeature {
   }
 }
 
-export function addRouting(routes: Iterable<RouteDescriptor> = []): RoutingFeature {
-  return new RoutingFeature(routes);
+export function addRouting(handleResult: ResultHandleCallback = (_context, _value, next) => next()): RoutingFeature {
+  return new RoutingFeature(handleResult);
 }
 
 export function addRoute(descriptor: RouteDescriptor): RouteAddFeature;
