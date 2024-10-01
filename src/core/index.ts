@@ -16,7 +16,7 @@ export * from './error';
 export { FunctionClass } from './function';
 export { ReadonlyMapView } from './map';
 export { isObject, isObjectMethod } from './object';
-export { MaybePromiseLike, isPromiseLike } from './promise';
+export { MaybePromiseLike, isPromiseLike, PromiseAlike } from './promise';
 export { RadixMap, RadixWalkResult } from './radix-map';
 export { range } from './range';
 export { binarySearch } from './search';
