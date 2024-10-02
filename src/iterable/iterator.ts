@@ -1,10 +1,12 @@
+import { AsyncLikeIterable, AsyncLikeIterator } from './async-like';
+
 export const getIterator = <T, TReturn = any>(iterable: Iterable<T>): Iterator<T, TReturn> => {
   return iterable[Symbol.iterator]();
 };
 
-// export const getAsyncIterator = <T, TReturn = any>(iterable: AsyncIterable<T>): AsyncIterator<T, TReturn> => {
-//   return iterable[Symbol.asyncIterator]();
-// }
+export const getAsyncIterator = <T, TReturn = any>(iterable: AsyncLikeIterable<T>): AsyncLikeIterator<T> => {
+  return iterable[Symbol.asyncIterator]();
+}
 
 export type IteratorNextFunction<T> = () => IteratorResult<T>;
 

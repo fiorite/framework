@@ -1,7 +1,6 @@
 import { Equatable, Type, utf16, Utf16Sequence } from '../core';
 import { CatchAllPathSegment, DynamicPathSegment, RoutePathSegment, StaticPathSegment } from './route-path-segment';
 import { routeParameterConstrains } from './constraints';
-import { RouteParams } from './route-params';
 
 // * or ** = catch all in aspnet core. catch-all is last param, cannot have anything in front of it.
 // other than that

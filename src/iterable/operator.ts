@@ -1,4 +1,8 @@
+import { AsyncLikeIterable } from './async-like';
+
 export type IterableOperatorFunction<T, R> = (iterable: Iterable<T>) => R;
+
+export type AsyncIterableOperatorFunction<T, R> = (iterable: AsyncLikeIterable<T>) => R;
 
 export namespace IterableOperator {
   export function all<T, A>(

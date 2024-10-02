@@ -28,6 +28,8 @@ export class HttpContext {
     this._provide = provide;
   }
 
+  // direction => request <- response
+
   read(callback: ValueCallback<Uint8Array | undefined>): void {
     this.request.read(callback);
   }

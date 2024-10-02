@@ -1,4 +1,4 @@
-import { MapCallback, ValueCallback } from './callback';
+import { MapCallback, ValueCallback, VoidCallback } from './callback';
 
 export type MaybePromiseLike<T> = PromiseLike<T> | T;
 
@@ -63,68 +63,147 @@ export namespace MaybePromiseLike {
   }
 }
 
+export class PromiseAlikeCanceledError implements Error {
+  readonly name = 'PromiseAlikeCanceledError';
+  readonly message = 'PromiseAlike was canceled.';
+}
+
+export class PromiseAlikeFulfilledError implements Error {
+  readonly name = 'PromiseAlikeFulfilledError';
+  readonly message = 'PromiseAlike was fulfilled.';
+}
+
+export class PromiseAlikeProtectedError implements Error {
+  readonly name = 'PromiseAlikeProtectedError';
+  readonly message = 'PromiseAlike is protected. Unable to #fulfill() it twice.';
+}
+
 /**
  * experimental alternative to {@link Promise} in order to connect callbacks.
  */
 export class PromiseAlike<T> implements PromiseLike<T> {
-  private _protected = false;
+  /**
+   * lock functional, blocks another call of {@link fulfill}.
+   * @private
+   */
+  #protected?: boolean;
 
-  private _fulfilled = false;
+  #fulfilled?: boolean;
 
-  get fulfilled(): boolean {
-    return this._fulfilled;
+  /**
+   * tells whether instance is completed.
+   */
+  get fulfilled(): boolean | undefined {
+    return this.#fulfilled;
   }
 
-  private _value?: T;
+  #value?: T;
 
+  /**
+   * provides a value which become shared after
+   */
   get value(): T | undefined {
-    return this._value;
+    return this.#value;
   }
 
-  private _listeners: ValueCallback<T>[] = [];
+  #canceled?: boolean;
 
-  get callback(): ValueCallback<T> {
-    return this.fulfill.bind(this);
+  get canceled(): boolean | undefined {
+    return this.#canceled;
   }
+
+  #listeners?: Set<ValueCallback<T | undefined>>;
 
   static value<T>(value: T): PromiseAlike<T> {
-    const future = new PromiseAlike<T>();
-    future.fulfill(value);
-    return future;
+    return new PromiseAlike<T>(fulfill => fulfill(value));
   }
 
-  constructor(callback?: (fulfill: ValueCallback<T | PromiseLike<T>>) => void) {
+  constructor(callback?: (this: PromiseAlike<T>, fulfill: ValueCallback<T | PromiseLike<T>>) => void) {
     if (callback) {
-      callback(this.fulfill.bind(this));
+      callback.call(this, this.fulfill.bind(this));
+    }
+  }
+
+  #ensureNotCanceled(): void {
+    if (this.#canceled) {
+      throw new PromiseAlikeCanceledError();
     }
   }
 
   fulfill(value: T | PromiseLike<T>): void {
-    if (this._protected) {
-      throw new Error('unable to fulfill twice the same PromiseAlike');
+    this.#ensureNotCanceled();
+    if (this.#protected) {
+      throw new PromiseAlikeProtectedError();
     }
 
-    this._protected = true;
-    const resolve = (value2: T) => {
-      this._fulfilled = true;
-      this._value = value2;
-      while (this._listeners.length) {
-        this._listeners.shift()!(value2);
-      }
-    };
+    this.#protected = true;
 
-    isPromiseLike(value) ? value.then(resolve) : resolve(value);
+    return MaybePromiseLike.then(() => value, resolved => {
+      this.#ensureNotCanceled();
+      this.#fulfilled = true;
+      this.#value = resolved;
+      this.#completeListeners(resolved);
+    });
   }
 
-  then<R = T>(callback?: MapCallback<T, MaybePromiseLike<R>>): PromiseLike<R> {
+  #ensureNotFulfilled(): void {
+    if (this.#fulfilled) {
+      throw new PromiseAlikeFulfilledError();
+    }
+  }
+
+  cancel(): void {
+    this.#ensureNotFulfilled();
+    this.#canceled = true;
+    this.#completeListeners(void 0);
+  }
+
+  #addListener(callback: ValueCallback<T | undefined>): void {
+    if (!this.#listeners) {
+      this.#listeners = new Set();
+    }
+    this.#listeners.add(callback);
+  }
+
+  #completeListeners(value?: T): void {
+    if (this.#listeners) {
+      this.#listeners.forEach(callback => callback(value));
+      this.#listeners.clear();
+      this.#listeners = undefined;
+    }
+  }
+
+  then<R = T>(callback?: MapCallback<T, MaybePromiseLike<R>>): PromiseLike<R>;
+  then<R = T>(callback?: MapCallback<T, MaybePromiseLike<R>>, onrejected?: ValueCallback<unknown>): PromiseLike<R> {
+    this.#ensureNotCanceled();
+
     if (!callback) {
-      return this as unknown as PromiseLike<R>;
+      return this as PromiseLike<R>;
     }
 
-    if (this._fulfilled) {
-      return PromiseAlike.value(this._value as R);
+    if (this.#fulfilled) {
+      return new PromiseAlike(fulfill => fulfill(callback(this.value!)));
     }
 
-    return new PromiseAlike<R>(fulfill => this._listeners.push(value => fulfill(callback(value) as R)));
+    if (onrejected) {
+      const source = this;
+      return new PromiseAlike(function (this) {
+        source.#addListener(value => {
+          if (source.canceled) {
+            onrejected(new PromiseAlikeCanceledError());
+            this.cancel();
+            return;
+          }
+          this.fulfill(callback(value as T));
+        });
+      });
+    }
+
+    return new Promise((resolve, reject) => { // fallback to Promise to handle #cancel()
+      this.#addListener(value => {
+        this.canceled ? reject(new PromiseAlikeCanceledError()) :
+          resolve(callback(value!));
+      });
+    });
   }
 }
