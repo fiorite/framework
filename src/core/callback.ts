@@ -14,7 +14,7 @@ export type VoidCallback = () => void;
 
 export const doNothing = () => void 0;
 
-export type CallbackShareFunction = <T>(key: string | symbol | number, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>) => void;
+export type CallbackShareFunction = <T>(key: string | symbol | number, fulfill: (callback: ValueCallback<T>) => void, done: ValueCallback<T>) => void;
 
 export interface CallbackShare {
   <T>(key: string | symbol | number, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void;
@@ -28,11 +28,11 @@ export class CallbackShare extends FunctionClass<CallbackShareFunction> {
   private _queue = new Map<string | symbol | number, ValueCallback<unknown>[]>();
 
   constructor() {
-    super((key, fulfill, then) => {
+    super((key, fulfill, done) => {
       if (this._queue.has(key)) {
-        this._queue.get(key)!.push(then as ValueCallback<unknown>);
+        this._queue.get(key)!.push(done as ValueCallback<unknown>);
       } else {
-        this._queue.set(key, [then as ValueCallback<unknown>]);
+        this._queue.set(key, [done as ValueCallback<unknown>]);
         fulfill(value => {
           const array = (this._queue.get(key) || []);
           this._queue.delete(key);

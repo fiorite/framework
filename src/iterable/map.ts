@@ -36,7 +36,7 @@ export function mapAsync<T, R>(callback: MapCallback<T, MaybePromiseLike<R>>): A
           return(value?: MaybePromiseLike<unknown>): PromiseLike<IteratorResult<R, unknown>> {
             return new PromiseAlike(fulfill => {
               if (iterator.return) {
-                iterator.return(iterator.return(value)).then(result => fulfill(result as IteratorResult<R, unknown>));
+                iterator.return(value).then(result => fulfill(result as IteratorResult<R, unknown>));
               } else {
                 fulfill({ done: true, value });
               }

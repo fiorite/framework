@@ -24,7 +24,9 @@ export function forEachAsync<T, TReturn = unknown>(
         return promiseLike.then(result => {
           if (result.done) {
             done(result.value);
-            this.fulfill();
+            if (!this.canceled) {
+              this.fulfill();
+            }
             return;
           } else {
             const mapped = callback(result.value);

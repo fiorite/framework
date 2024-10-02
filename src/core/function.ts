@@ -5,18 +5,20 @@ export interface FunctionClass<TCallback extends AnyCallback> extends Function {
 }
 
 export abstract class FunctionClass<TCallback extends AnyCallback> extends Function {
-  static readonly callback: unique symbol = Symbol('FunctionClass.callback');
-  // @ts-ignore
-  readonly [FunctionClass.callback]!: TCallback;
+  static lengthOf(object: Function): number {
+    // noinspection SuspiciousTypeOfGuard
+    return object instanceof FunctionClass ? object.#callback.length : object.length;
+  }
+
+  readonly #callback: TCallback;
 
   protected constructor(callback: TCallback) {
     super();
-    this[FunctionClass.callback] = callback;
+    this.#callback = callback;
     return new Proxy(this, {
       apply: (target, _, args: Parameters<TCallback>) => {
-        return callback.apply(target, args);
+        return this.#callback.apply(target, args);
       }
     });
   }
 }
-
