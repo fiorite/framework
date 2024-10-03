@@ -10,26 +10,26 @@ import {
 } from './service-factory';
 
 export class ServiceDescriptor<T = unknown> {
-  private readonly _type: ServiceType<T>;
+  readonly #type: ServiceType<T>;
 
   get type(): ServiceType<T> {
-    return this._type;
+    return this.#type;
   }
 
-  private readonly _factory: ServiceFactory<T>;
+  readonly #factory: ServiceFactory<T>;
 
   get factory(): ServiceFactory<T> {
-    return this._factory;
+    return this.#factory;
   }
 
   get dependencies(): readonly ServiceType[] {
-    return this._factory.dependencies;
+    return this.#factory.dependencies;
   }
 
-  private readonly _behavior: ServiceBehavior;
+  readonly #behavior: ServiceBehavior;
 
   get behavior(): ServiceBehavior {
-    return this._behavior;
+    return this.#behavior;
   }
 
   static fromValue<T extends object | FunctionClass<AnyCallback>>(value: T): ServiceDescriptor<T>;
@@ -85,9 +85,9 @@ export class ServiceDescriptor<T = unknown> {
     factory: ServiceFactory<T>,
     behavior?: ServiceBehavior
   ) {
-    this._type = type;
-    this._behavior = behavior || ServiceBehavior.Inherited;
-    this._factory = factory;
+    this.#type = type;
+    this.#behavior = behavior || ServiceBehavior.Inherited;
+    this.#factory = factory;
   }
 
   inherit(behavior: ServiceBehavior.Scoped | ServiceBehavior.Singleton): ServiceDescriptor<T> {

@@ -40,28 +40,28 @@ export namespace ServiceFactoryFunction {
 }
 
 export abstract class ServiceFactory<T> extends FunctionClass<ServiceFactoryFunction<T>> {
-  private readonly _dependencies: readonly ServiceType[];
+  readonly #dependencies: readonly ServiceType[];
 
   get dependencies(): readonly ServiceType[] {
-    return this._dependencies;
+    return this.#dependencies;
   }
 
   protected constructor(callback: ServiceFactoryFunction<T>, dependencies: readonly ServiceType[]) {
     super(callback);
-    this._dependencies = dependencies;
+    this.#dependencies = dependencies;
   }
 }
 
 export class ValueFactory<T> extends ServiceFactory<T> {
-  private readonly _value: T;
+  readonly #value: T;
 
   get value(): T {
-    return this._value;
+    return this.#value;
   }
 
   constructor(value: T) {
     super((_, callback) => callback(value), []);
-    this._value = value;
+    this.#value = value;
   }
 }
 

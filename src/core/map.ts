@@ -1,8 +1,8 @@
 export class ReadonlyMapView<K, V> implements ReadonlyMap<K, V> {
-  private readonly _innerMap: ReadonlyMap<K, V>;
+  readonly #innerMap: ReadonlyMap<K, V>;
 
   get innerMap(): ReadonlyMap<K, V> {
-    return this._innerMap;
+    return this.#innerMap;
   }
 
   get size(): number {
@@ -10,7 +10,7 @@ export class ReadonlyMapView<K, V> implements ReadonlyMap<K, V> {
   }
 
   constructor(innerMap: ReadonlyMap<K, V>) {
-    this._innerMap = innerMap;
+    this.#innerMap = innerMap;
   }
 
   forEach(callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: any): void {

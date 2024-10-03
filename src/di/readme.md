@@ -1,5 +1,11 @@
 # Dependency Injection (DRAFT)
 
+```text
+todo:
+[ ] NotSynchronousServiceError add then resolver
+[ ] Add service alias (Prototype with dependency on main service)  
+```
+
 `emitDecoratorMetadata: true` in `tsconfig.json` is required.
 
 ---

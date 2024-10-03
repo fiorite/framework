@@ -1,9 +1,9 @@
 # Fiorite Concept
-It is TypeScript powered server framework which includes sugar from other big things: asp.net core, spring, express etc.
+It is TypeScript powered server framework done on callbacks which includes sugar from other big things: asp.net core, spring, express etc.
 
 Currently, work in progress, maybe release will happen. 
 
-## Getting started
+## Getting started (need an update)
 
 You decide the style of your app. It could be simple as:
 

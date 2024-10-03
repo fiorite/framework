@@ -8,32 +8,34 @@ export type MapCallback<T, R> = (value: T) => R;
 
 export const returnSelf: MapCallback<unknown, unknown> = value => value;
 
+/** @deprecated no use, could be deleted */
 export type PredicateCallback<T> = (value: T) => unknown;
 
 export type VoidCallback = () => void;
 
 export const doNothing = () => void 0;
 
-export type CallbackShareFunction = <T>(key: string | symbol | number, fulfill: (callback: ValueCallback<T>) => void, done: ValueCallback<T>) => void;
+export type CallbackShareFunction = <T>(key: string | symbol | number, complete: (callback: ValueCallback<T>) => void, then: ValueCallback<T>) => void;
 
 export interface CallbackShare {
-  <T>(key: string | symbol | number, fulfill: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void;
+  <T>(key: string | symbol | number, complete: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void;
 }
 
 /**
- * Uses to connect concurrent callbacks and yet with the same request.
- * Initial call runs and resolve any other subscriptions at the time.
+ * Enqueue concurrent callbacks. In case there a pending {@link key} callback,
+ * only the first {@link complete} is applied and
+ * result is shared among all {@link then} up until callback completes.
  */
 export class CallbackShare extends FunctionClass<CallbackShareFunction> {
   private _queue = new Map<string | symbol | number, ValueCallback<unknown>[]>();
 
   constructor() {
-    super((key, fulfill, done) => {
+    super((key, complete, then) => {
       if (this._queue.has(key)) {
-        this._queue.get(key)!.push(done as ValueCallback<unknown>);
+        this._queue.get(key)!.push(then as ValueCallback<unknown>);
       } else {
-        this._queue.set(key, [done as ValueCallback<unknown>]);
-        fulfill(value => {
+        this._queue.set(key, [then as ValueCallback<unknown>]);
+        complete(value => {
           const array = (this._queue.get(key) || []);
           this._queue.delete(key);
           array.forEach(callback2 => callback2(value));
@@ -43,15 +45,24 @@ export class CallbackShare extends FunctionClass<CallbackShareFunction> {
   }
 }
 
-export const forceValue = <T>(callback: (catcher: ValueCallback<T>) => void): T => {
+export class CallbackForceValueError {
+  readonly name = 'CallbackForceValueError';
+  readonly message = 'Unable to force synchronous value.';
+  // todo: provide then() alternative
+}
+
+/**
+ * @throws CallbackForceValueError
+ */
+export const forceCallbackValue = <T>(callback: (catchValue: ValueCallback<T>) => void): T => {
   let caught: boolean | undefined;
   let value: T | undefined;
-  callback(inner => {
+  callback(innerValue => {
     caught = true;
-    value = inner;
+    value = innerValue;
   });
   if (!caught) {
-    throw new Error('result has not been caught');
+    throw new CallbackForceValueError();
   }
   return value!;
-}
+};

@@ -9,7 +9,8 @@ export {
   AnyCallback,
   CallbackShare,
   CallbackShareFunction,
-  forceValue,
+  forceCallbackValue,
+  CallbackForceValueError,
 } from './callback';
 export { Equatable } from './equal';
 export * from './decorator';

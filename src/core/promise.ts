@@ -1,6 +1,4 @@
 import { ValueCallback } from './callback';
-import { on } from 'ws';
-import { NotImplementedError } from './error';
 import { EventEmitter } from './event-emitter';
 import { Type } from './type';
 
@@ -214,10 +212,10 @@ export class PromiseAlikeProtectedError implements Error {
 //   }
 // }
 
-export class Promise2<T> extends Promise<T> {
-  override catch<TResult2 = never>(onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise2<T | TResult2>;
-  override catch<T extends Error, R = never>(type: Type<T>, onrejected: (reason: T) => R | PromiseLike<R>): Promise2<R>
-  override catch<TResult2 = never>(...args: unknown[]): Promise2<T | TResult2> {
+export class PromiseBeingExtra<T> extends Promise<T> {
+  override catch<TResult2 = never>(onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseBeingExtra<T | TResult2>;
+  override catch<T extends Error, R = never>(type: Type<T>, onrejected: (reason: T) => R | PromiseLike<R>): PromiseBeingExtra<R>
+  override catch<TResult2 = never>(...args: unknown[]): PromiseBeingExtra<T | TResult2> {
     if (args.length === 2) {
       return this.then(undefined, error => {
         if (error instanceof (args[0] as Type)) {
@@ -230,8 +228,8 @@ export class Promise2<T> extends Promise<T> {
     return this.then(undefined, args[0] as any);
   }
 
-  override then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null, onrejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null): Promise2<TResult1 | TResult2> {
-    return new Promise2((resolve, reject) => {
+  override then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null, onrejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null): PromiseBeingExtra<TResult1 | TResult2> {
+    return new PromiseBeingExtra((resolve, reject) => {
       super.then(value => {
         try {
           resolve((onfulfilled ? onfulfilled(value) : value) as any);
@@ -291,6 +289,7 @@ export class PromiseAlike<T> implements PromiseLike<T> {
   #value?: T;
   #error?: unknown;
   #events = new EventEmitter();
+
   // #listeners?: Set<{ complete: ValueCallback<T | PromiseLike<T>>, fail: ValueCallback<unknown | void> }>;
 
   constructor(callback?: (this: PromiseAlike<T>, complete: ValueCallback<T | PromiseLike<T>>, fail: ValueCallback<unknown | void>) => void) {
@@ -367,9 +366,9 @@ export class PromiseAlike<T> implements PromiseLike<T> {
     this.#events.emit('cancel');
   }
 
-  catch<TResult2 = never>(onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise2<T | TResult2>;
-  catch<T extends Error, R = never>(type: Type<T>, onrejected: (reason: T) => R | PromiseLike<R>): Promise2<R>
-  catch<TResult2 = never>(...args: unknown[]): Promise2<T | TResult2> {
+  catch<TResult2 = never>(onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseBeingExtra<T | TResult2>;
+  catch<T extends Error, R = never>(type: Type<T>, onrejected: (reason: T) => R | PromiseLike<R>): PromiseBeingExtra<R>
+  catch<TResult2 = never>(...args: unknown[]): PromiseBeingExtra<T | TResult2> {
 
     if (args.length === 2) {
       return this.then(undefined, error => {
@@ -383,8 +382,8 @@ export class PromiseAlike<T> implements PromiseLike<T> {
     return this.then(undefined, args[0] as any);
   }
 
-  then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise2<TResult1 | TResult2> {
-    return new Promise2((resolve, reject) => {
+  then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseBeingExtra<TResult1 | TResult2> {
+    return new PromiseBeingExtra((resolve, reject) => {
       if ('completed' === this.#state) {
         return resolve(this.#value);
       }

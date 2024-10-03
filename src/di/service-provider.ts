@@ -1,5 +1,6 @@
 import {
-  CallbackShare,
+  CallbackForceValueError,
+  CallbackShare, forceCallbackValue,
   FunctionClass,
   isObjectMethod,
   MapCallback,
@@ -64,6 +65,14 @@ export interface ServiceProviderWithReturn extends ServiceProviderWithReturnFunc
   <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
+export class NotSynchronousServiceError {
+  readonly name = 'AsynchronousServiceError';
+  readonly message: string;
+  constructor(type: ServiceType) {
+    this.message = `Service(${ServiceType.toString(type)}) is not synchronous. Add callback() to provide(..., callback) instead.`;
+  }
+}
+
 /**
  * Implementor of {@link ServiceProviderWithReturnFunction} which wraps raw {@link ServiceProvideFunction}.
  */
@@ -79,21 +88,19 @@ export class ServiceProviderWithReturn extends FunctionClass<ServiceProviderWith
   }
 
   constructor(provide: ServiceProvideFunction) {
-    super(<T>(serviceType: ServiceType<T>, callback?: ValueCallback<T>): unknown => {
+    super(<T>(type: ServiceType<T>, callback?: ValueCallback<T>): unknown => {
       if (callback) {
-        return provide(serviceType, callback);
+        return provide(type, callback);
       }
 
-      let done = false;
-      let value: T | undefined = undefined;
-      provide(serviceType, (value2) => {
-        done = true;
-        value = value2;
-      });
-      if (done) {
-        return value as T;
+      try {
+        return forceCallbackValue(catcher => provide(type, catcher));
+      } catch (error) {
+        if (error instanceof CallbackForceValueError) {
+          throw new NotSynchronousServiceError(type);
+        }
+        throw error;
       }
-      throw new Error(`Service(${ServiceType.toString(serviceType)}) is not synchronous. Add callback() to provide(..., callback) instead.`);
     });
     this._original = provide;
   }
