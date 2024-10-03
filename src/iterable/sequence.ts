@@ -7,6 +7,7 @@ import { getAsyncIterator } from './iterator';
 import { takeAsync } from './take';
 import { skipAsync } from './skip';
 import { AsyncIterableOperatorFunction } from './operator';
+import { firstAsync } from './first';
 
 export class AsyncSequence<T> implements AsyncLikeIterable<T> {
   readonly #iterable: AsyncLikeIterable<T>;
@@ -17,6 +18,10 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
 
   #withOperator<R>(operator: AsyncIterableOperatorFunction<T, AsyncLikeIterable<R>>): AsyncSequence<R> {
     return new AsyncSequence(operator(this));
+  }
+
+  first(): PromiseLike<T> {
+    return firstAsync<T>()(this);
   }
 
   forEach(callback: ValueCallback<T>, done: VoidCallback): void;

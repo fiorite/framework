@@ -25,7 +25,7 @@ export function forEachAsync<T, TReturn = unknown>(
           if (result.done) {
             done(result.value);
             if (!this.canceled) {
-              this.fulfill();
+              this.complete();
             }
             return;
           } else {

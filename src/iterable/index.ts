@@ -1,4 +1,5 @@
 export { AsyncLikeIterable, AsyncLikeIterator, AsyncLikeIterableIterator } from './async-like';
+export { firstAsync } from './first';
 export { forEach, forEachAsync } from './for-each';
 export { isIterable } from './iterable';
 export { map, mapAsync } from './map';

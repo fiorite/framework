@@ -252,7 +252,7 @@ export class RoutePath implements ArrayLike<RoutePathSegment>, Iterable<RoutePat
           }
           i = clear(i + paramname.length);
           let constraint;
-          if (i < path.length || (utf16.ascii[':'] === utf16.at(path, i) || utf16.ascii['='] === utf16.at(path, i))) { // constraint definition
+          if (utf16.ascii[':'] === utf16.at(path, i) || utf16.ascii['='] === utf16.at(path, i)) { // constraint definition
             i++;
             if (i >= path.length) {
               throw new Error('constraint is empty in the end of the line "{param:". revise the path.');

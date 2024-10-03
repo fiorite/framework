@@ -16,7 +16,7 @@ export function toArrayAsync<T>(): AsyncIterableOperatorFunction<T, PromiseAlike
         return promiseLike.then(result => {
           if (result.done) {
             if (!this.canceled) {
-              this.fulfill(buffer);
+              this.complete(buffer);
             }
             return;
           } else {
