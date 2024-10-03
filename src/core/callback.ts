@@ -42,3 +42,16 @@ export class CallbackShare extends FunctionClass<CallbackShareFunction> {
     });
   }
 }
+
+export const forceValue = <T>(callback: (catcher: ValueCallback<T>) => void): T => {
+  let caught: boolean | undefined;
+  let value: T | undefined;
+  callback(inner => {
+    caught = true;
+    value = inner;
+  });
+  if (!caught) {
+    throw new Error('result has not been caught');
+  }
+  return value!;
+}

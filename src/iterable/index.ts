@@ -1,10 +1,11 @@
 export { AsyncLikeIterable, AsyncLikeIterator, AsyncLikeIterableIterator } from './async-like';
-export { firstAsync } from './first';
-export { forEach, forEachAsync } from './for-each';
+export { count } from './count';
+export { first } from './first';
+export { forEach } from './for-each';
 export { isIterable } from './iterable';
 export { map, mapAsync } from './map';
-export { IterableOperatorFunction, IterableOperator } from './operator';
+export { SyncIterableOperatorFunction, SyncIterableOperator } from './operator';
 export { AsyncSequence } from './sequence';
 export { skipAsync } from './skip';
 export { takeAsync } from './take';
-export { toArray, toArrayAsync } from './to-array';
+export { toArray } from './to-array';

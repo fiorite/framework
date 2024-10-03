@@ -252,6 +252,19 @@ export class Promise2<T> extends Promise<T> {
   }
 }
 
+export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void): PromiseLike<T>;
+export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback: ValueCallback<T>): void;
+export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback?: ValueCallback<T>): unknown;
+export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback?: ValueCallback<T>): unknown {
+  return callback ? handler(callback) : new PromiseAlike((complete, fail) => {
+    try {
+      handler(complete);
+    } catch (error) {
+      fail(error);
+    }
+  });
+}
+
 export class PromiseAlike<T> implements PromiseLike<T> {
   static value<T>(value: T): PromiseAlike<T> {
     return new PromiseAlike(complete => complete(value));
@@ -417,4 +430,25 @@ export class PromiseAlike<T> implements PromiseLike<T> {
   }
 }
 
+/** @deprecated will be used for universal iterable */
+export class ValuePromiseLike<T> implements PromiseLike<T> {
+  readonly #value: T;
 
+  get value(): T {
+    return this.#value;
+  }
+
+  constructor(value: T) {
+    this.#value = value;
+  }
+
+  then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseLike<TResult1 | TResult2> {
+    if (onfulfilled) {
+      const result = onfulfilled(this.#value);
+      return isPromiseLike(result) ? result :
+        new ValuePromiseLike(result);
+    }
+
+    return this as unknown as PromiseLike<TResult1>;
+  }
+}

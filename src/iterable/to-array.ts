@@ -1,39 +1,27 @@
-import { AsyncIterableOperatorFunction, IterableOperatorFunction } from './operator';
-import { PromiseAlike } from '../core';
+import { ValueCallback } from '../core';
 import { getAsyncIterator } from './iterator';
+import { isIterable } from './iterable';
+import { IterableOperatorFunction } from './operator';
 
-export function toArray<T>(): IterableOperatorFunction<T, T[]> {
-  return iterable => Array.from(iterable);
-}
-
-export function toArrayAsync<T>(): AsyncIterableOperatorFunction<T, PromiseAlike<T[]>> {
+export function toArray<T>(callback: ValueCallback<T[]>): IterableOperatorFunction<T, void> {
   return iterable => {
-    return new PromiseAlike<T[]>(function (this) {
-      const buffer: T[] = [];
-
+    if (isIterable(iterable)) {
+      callback(Array.from(iterable));
+    } else {
+      const array: T[] = [];
       const iterator = getAsyncIterator(iterable);
-      const handler = ((promiseLike: PromiseLike<IteratorResult<T>>) => {
-        return promiseLike.then(result => {
+      const next = (source: PromiseLike<IteratorResult<T>> = iterator.next()) => {
+        source.then(result => {
           if (result.done) {
-            if (!this.canceled) {
-              this.complete(buffer);
-            }
-            return;
+            callback(array);
           } else {
-            if (this.canceled) {
-              if (iterator.return) {
-                handler(iterator.return(void 0)); // todo: use throw instead and pass cancellation error
-                return;
-              }
-              return;
-            }
-
-            buffer.push(result.value);
-            return handler(iterator.next());
+            array.push(result.value!);
+            next();
           }
         });
-      }) as any;
-      handler(iterator.next());
-    });
+      };
+
+      next();
+    }
   };
 }

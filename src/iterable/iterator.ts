@@ -1,6 +1,7 @@
 import { AsyncLikeIterable, AsyncLikeIterator } from './async-like';
 import { AsyncIterableOperatorFunction } from './operator';
-import { MaybePromiseLike, PromiseAlike } from '../core';
+import { MaybePromiseLike, PromiseAlike, ValuePromiseLike } from '../core';
+import { isIterable } from './iterable';
 
 export const getIterator = <T, TReturn = any>(iterable: Iterable<T>): Iterator<T, TReturn> => {
   return iterable[Symbol.iterator]();
@@ -70,3 +71,19 @@ export function asyncLikeIteratorFunction<T, R = T>(
     };
   };
 }
+
+/** @deprecated experimental feature */
+export const monoIterator = <T>(iterable: Iterable<T> | AsyncLikeIterable<T>): AsyncLikeIterator<T> & { async?: boolean } => {
+  if (isIterable(iterable)) {
+    const iterator = getIterator(iterable);
+    return {
+      next: () => new ValuePromiseLike(iterator.next()),
+    };
+  }
+
+  const iterator = getAsyncIterator(iterable);
+  return {
+    async: true,
+    next: () => iterator.next(),
+  };
+};

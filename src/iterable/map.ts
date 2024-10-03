@@ -1,9 +1,9 @@
 import { MapCallback, MaybePromiseLike, PromiseAlike } from '../core';
 import { asyncLikeIteratorFunction, iteratorFunction, iteratorYield } from './iterator';
-import { AsyncIterableOperatorFunction, IterableOperatorFunction } from './operator';
+import { AsyncIterableOperatorFunction, SyncIterableOperatorFunction } from './operator';
 import { AsyncLikeIterable } from './async-like';
 
-export function map<T, R>(callback: MapCallback<T, R>): IterableOperatorFunction<T, Iterable<R>> {
+export function map<T, R>(callback: MapCallback<T, R>): SyncIterableOperatorFunction<T, Iterable<R>> {
   return iteratorFunction(iterator => {
     return () => {
       const result = iterator.next();

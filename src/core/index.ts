@@ -9,6 +9,7 @@ export {
   AnyCallback,
   CallbackShare,
   CallbackShareFunction,
+  forceValue,
 } from './callback';
 export { Equatable } from './equal';
 export * from './decorator';
@@ -16,7 +17,7 @@ export * from './error';
 export { FunctionClass } from './function';
 export { ReadonlyMapView } from './map';
 export { isObject, isObjectMethod } from './object';
-export { MaybePromiseLike, isPromiseLike, PromiseAlike } from './promise';
+export { MaybePromiseLike, isPromiseLike, PromiseAlike, promiseLikeWhenNoCallback, ValuePromiseLike } from './promise';
 export { RadixMap, RadixWalkResult } from './radix-map';
 export { range } from './range';
 export { binarySearch } from './search';
