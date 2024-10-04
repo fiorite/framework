@@ -1,4 +1,4 @@
-export { arraySequenceEqual } from './array';
+export { arraySequenceEqual, arrayRange } from './array';
 export {
   ValueCallback,
   VoidCallback,
@@ -12,17 +12,21 @@ export {
   forceCallbackValue,
   CallbackForceValueError,
 } from './callback';
-export { Equatable } from './equal';
+export { Equatable } from './equatable';
 export * from './decorator';
 export * from './error';
-export { FunctionClass } from './function';
-export { ReadonlyMapView } from './map';
+export { FunctionClass } from './function-class';
 export { isObject, isObjectMethod } from './object';
-export { MaybePromiseLike, isPromiseLike, PromiseAlike, promiseLikeWhenNoCallback, ConstValuePromiseLike, CallbackPromiseLike } from './promise';
+export {
+  MaybePromiseLike,
+  isPromiseLike,
+  promiseLikeWhenNoCallback,
+  ValuePromiseLike,
+  CallbackPromiseLike,
+  PromiseWithSugar,
+} from './promise';
 export { RadixMap, RadixWalkResult } from './radix-map';
-export { range } from './range';
-export { binarySearch } from './search';
-export { SetWithInnerKey } from './set';
+export { SetWithInnerKey } from './set-with-inner-key';
 export { ListenableFunction, ListenableFunctionListener } from './listener';
 export { AbstractType, Type, isType } from './type';
 export { Utf16Sequence, utf16 } from './utf16';

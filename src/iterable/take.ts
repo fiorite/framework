@@ -1,7 +1,7 @@
 import { AsyncLikeIterableOperatorFunction } from './operator';
 import { AsyncLikeIterable } from './async-like';
 import { asyncLikeIteratorFunction, iteratorReturn } from './iterator';
-import { PromiseAlike } from '../core';
+import { PromiseWithSugar } from '../core';
 
 export function takeAsync<T>(count: number): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<T>> {
   return asyncLikeIteratorFunction<T>(iterator => {
@@ -15,13 +15,13 @@ export function takeAsync<T>(count: number): AsyncLikeIterableOperatorFunction<T
             return iterator.return();
           }
         }
-        return PromiseAlike.value<IteratorResult<T>>(iteratorReturn());
+        return PromiseWithSugar.resolve<IteratorResult<T>>(iteratorReturn());
       }
       counter++;
-      return new PromiseAlike(fulfill => {
+      return new PromiseWithSugar(complete => {
         iterator.next().then(result => {
           done = result.done;
-          fulfill(result);
+          complete(result);
         });
       });
     };

@@ -1,7 +1,26 @@
-import { range } from './range';
-import { binarySearch } from './search';
+import { arrayRange } from './array';
 
-// todo: should be renamed properly
+/** @source https://stackoverflow.com/questions/22697936/binary-search-in-javascript */
+function binarySearch(array: readonly number[], value: number) {
+  let start = 0;
+  let end = array.length - 1;
+
+  while (start <= end) {
+    let middle = Math.floor((start + end) / 2);
+
+    if (array[middle] === value) {
+      return middle;
+    }
+
+    if (value < array[middle]) {
+      end = middle - 1;
+    } else {
+      start = middle + 1;
+    }
+  }
+  return -1;
+}
+
 export class Utf16Sequence implements Iterable<number> {
   private readonly _array: readonly number[];
 
@@ -78,11 +97,11 @@ export namespace utf16 {
 
   export const whitespace = new Utf16Sequence([ascii[' '], ascii['\t'], ascii['\r'], ascii['\n']]);
 
-  export const uppercase = new Utf16Sequence(range(ascii['A'], ascii['Z']));
+  export const uppercase = new Utf16Sequence(arrayRange(ascii['A'], ascii['Z']));
 
-  export const lowercase = new Utf16Sequence(range(ascii['a'], ascii['z']));
+  export const lowercase = new Utf16Sequence(arrayRange(ascii['a'], ascii['z']));
 
-  export const digit = new Utf16Sequence(range(ascii[0], ascii[9]));
+  export const digit = new Utf16Sequence(arrayRange(ascii[0], ascii[9]));
 
   export const alpha = new Utf16Sequence([...uppercase, ...lowercase]);
 
@@ -90,8 +109,8 @@ export namespace utf16 {
 
   export const hexdigit = new Utf16Sequence([
     ...digit,
-    ...range(ascii['A'], ascii['F']),
-    ...range(ascii['a'], ascii['f']),
+    ...arrayRange(ascii['A'], ascii['F']),
+    ...arrayRange(ascii['a'], ascii['f']),
   ]);
 
   /**

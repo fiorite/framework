@@ -1,4 +1,4 @@
-import { MapCallback, MaybePromiseLike, PromiseAlike } from '../core';
+import { MapCallback, MaybePromiseLike, PromiseWithSugar } from '../core';
 import { asyncLikeIteratorFunction, iteratorFunction, iteratorYield } from './iterator';
 import { AsyncLikeIterableOperatorFunction, SyncIterableOperatorFunction } from './operator';
 import { AsyncLikeIterable } from './async-like';
@@ -16,14 +16,14 @@ export function map<T, R>(callback: MapCallback<T, R>): SyncIterableOperatorFunc
 export function mapAsync<T, R>(callback: MapCallback<T, MaybePromiseLike<R>>): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<R>> {
   return asyncLikeIteratorFunction<T, R>(iterator => {
     return () => {
-      return new PromiseAlike(fulfill => {
+      return new PromiseWithSugar(complete => {
         iterator.next().then(result => {
           if (!result.done) {
             MaybePromiseLike.then(() => callback(result.value), value => {
-              fulfill(iteratorYield(value));
+              complete(iteratorYield(value));
             });
           } else {
-            fulfill(result);
+            complete(result);
           }
         });
       });

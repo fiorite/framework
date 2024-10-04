@@ -1,6 +1,6 @@
 import { ValueCallback } from './callback';
-import { Cancellable } from './cancellable';
 
+/** @deprecated in development */
 export class EventEmitter {
   #listeners = new Map<string, Set<ValueCallback<unknown>>>();
 

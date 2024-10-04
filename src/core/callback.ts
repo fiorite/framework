@@ -1,4 +1,4 @@
-import { FunctionClass } from './function';
+import { FunctionClass } from './function-class';
 
 export type AnyCallback = (...args: any[]) => any;
 

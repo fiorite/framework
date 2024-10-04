@@ -3,7 +3,7 @@ import { DbReader } from './reader';
 import { mapAsync, Sequence } from '../iterable';
 import { DbModel } from './model';
 import { DbQuery, DbWhere, DbWhereOperator } from './query';
-import { PromiseAlike, promiseLikeWhenNoCallback, ValueCallback } from '../core';
+import { promiseLikeWhenNoCallback, PromiseWithSugar, ValueCallback } from '../core';
 
 // const snapshot = Symbol('DbModel.snapshot');
 const modelName = Symbol('DbModel.name');
@@ -71,8 +71,8 @@ export class DbSequence<T> extends Sequence<T> {
   // }
 
   find(key: string | number | boolean, callback: ValueCallback<T>): void;
-  find(key: string | number | boolean): PromiseAlike<T>;
-  find<K extends keyof T & string>(keys: Record<K, T[K]>): PromiseAlike<T>;
+  find(key: string | number | boolean): PromiseWithSugar<T>;
+  find<K extends keyof T & string>(keys: Record<K, T[K]>): PromiseWithSugar<T>;
   find<K extends keyof T & string>(keys: Record<K, T[K]>, callback: ValueCallback<T>): void;
   find(value: string | number | boolean | Record<string, unknown>, callback?: ValueCallback<T>): unknown {
     this.#ensureKeysSet();
@@ -171,7 +171,7 @@ export class DbSequence<T> extends Sequence<T> {
   // }
 
   override first(callback: ValueCallback<T>): void;
-  override first(): PromiseAlike<T>;
+  override first(): PromiseWithSugar<T>;
   override first(callback?: ValueCallback<T>): unknown {
     return promiseLikeWhenNoCallback(callback => first<T>(callback)(this.take(1)), callback);
   }

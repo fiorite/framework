@@ -1,7 +1,7 @@
 import { AsyncLikeIterableOperatorFunction } from './operator';
 import { AsyncLikeIterable } from './async-like';
 import { asyncLikeIteratorFunction, iteratorReturn } from './iterator';
-import { PromiseAlike } from '../core';
+import { PromiseWithSugar } from '../core';
 
 export function skipAsync<T>(count: number): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<T>> {
   return asyncLikeIteratorFunction<T>(iterator => {
@@ -9,10 +9,10 @@ export function skipAsync<T>(count: number): AsyncLikeIterableOperatorFunction<T
     let done: boolean | undefined;
     return () => { // this is next
       if (done) {
-        return PromiseAlike.value<IteratorResult<T>>(iteratorReturn());
+        return PromiseWithSugar.resolve<IteratorResult<T>>(iteratorReturn());
       }
 
-      return new PromiseAlike(fulfill => {
+      return new PromiseWithSugar(fulfill => {
         const handle = () => {
           if (counter < count) {
             counter++;
