@@ -5,7 +5,7 @@ export { forEach } from './for-each';
 export { isIterable } from './iterable';
 export { map, mapAsync } from './map';
 export { SyncIterableOperatorFunction, SyncIterableOperator } from './operator';
-export { AsyncSequence } from './sequence';
+export { Sequence } from './sequence';
 export { skipAsync } from './skip';
 export { takeAsync } from './take';
 export { toArray } from './to-array';

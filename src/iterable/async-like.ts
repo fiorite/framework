@@ -1,9 +1,7 @@
-// interface AsyncIterator<T, TReturn = any, TNext = undefined> {
-//     // NOTE: 'next' is defined using a tuple to ensure we report the correct assignability errors in all places.
-//     next(...args: [] | [TNext]): Promise<IteratorResult<T, TReturn>>;
-//     return?(value?: TReturn | PromiseLike<TReturn>): Promise<IteratorResult<T, TReturn>>;
-//     throw?(e?: any): Promise<IteratorResult<T, TReturn>>;
-// }
+/**
+ * Async like is specific interface definition which complies with {@link AsyncIterable} structure however,
+ * this doesn't require {@link Promise} result but {@link PromiseLike} which can be substituted with non-promise code.
+ */
 
 import { MaybePromiseLike } from '../core';
 

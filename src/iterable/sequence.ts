@@ -13,19 +13,19 @@ import { forEach } from './for-each';
 import { getAsyncIterator } from './iterator';
 import { takeAsync } from './take';
 import { skipAsync } from './skip';
-import { AsyncIterableOperatorFunction } from './operator';
+import { AsyncLikeIterableOperatorFunction } from './operator';
 import { first } from './first';
 import { count } from './count';
 
-export class AsyncSequence<T> implements AsyncLikeIterable<T> {
+export class Sequence<T> implements AsyncLikeIterable<T> {
   readonly #iterable: AsyncLikeIterable<T>;
 
   constructor(iterable: AsyncLikeIterable<T>) {
     this.#iterable = iterable;
   }
 
-  #withOperator<R>(operator: AsyncIterableOperatorFunction<T, AsyncLikeIterable<R>>): AsyncSequence<R> {
-    return new AsyncSequence(operator(this));
+  #project<R>(operator: AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<R>>): Sequence<R> {
+    return new Sequence(operator(this));
   }
 
   count(callback: ValueCallback<number>): void;
@@ -46,16 +46,16 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
     return promiseLikeWhenNoCallback(done => forEach(callback, done)(this), done);
   }
 
-  map<R>(callback: MapCallback<T, MaybePromiseLike<R>>): AsyncSequence<R> {
-    return this.#withOperator(mapAsync(callback));
+  map<R>(callback: MapCallback<T, MaybePromiseLike<R>>): Sequence<R> {
+    return this.#project(mapAsync(callback));
   }
 
-  skip(count: number): AsyncSequence<T> {
-    return this.#withOperator(skipAsync<T>(count));
+  skip(count: number): Sequence<T> {
+    return this.#project(skipAsync<T>(count));
   }
 
-  take(count: number): AsyncSequence<T> {
-    return this.#withOperator(takeAsync<T>(count));
+  take(count: number): Sequence<T> {
+    return this.#project(takeAsync<T>(count));
   }
 
   toArray(): PromiseAlike<T[]>;

@@ -1,6 +1,6 @@
 import { AsyncLikeIterable, AsyncLikeIterator } from './async-like';
-import { AsyncIterableOperatorFunction } from './operator';
-import { MaybePromiseLike, PromiseAlike, ValuePromiseLike } from '../core';
+import { AsyncLikeIterableOperatorFunction } from './operator';
+import { MaybePromiseLike, PromiseAlike, ConstValuePromiseLike } from '../core';
 import { isIterable } from './iterable';
 
 export const getIterator = <T, TReturn = any>(iterable: Iterable<T>): Iterator<T, TReturn> => {
@@ -51,7 +51,7 @@ export type AsyncLikeIteratorNextFunction<T> = () => PromiseLike<IteratorResult<
 
 export function asyncLikeIteratorFunction<T, R = T>(
   callback: (iterator: AsyncLikeIterator<T>) => AsyncLikeIteratorNextFunction<R>,
-): AsyncIterableOperatorFunction<T, AsyncLikeIterable<R>> {
+): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<R>> {
   return iterable => {
     return {
       [Symbol.asyncIterator](): AsyncLikeIterator<R> {
@@ -77,7 +77,7 @@ export const monoIterator = <T>(iterable: Iterable<T> | AsyncLikeIterable<T>): A
   if (isIterable(iterable)) {
     const iterator = getIterator(iterable);
     return {
-      next: () => new ValuePromiseLike(iterator.next()),
+      next: () => new ConstValuePromiseLike(iterator.next()),
     };
   }
 

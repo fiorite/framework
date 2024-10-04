@@ -1,9 +1,9 @@
-import { AsyncIterableOperatorFunction } from './operator';
+import { AsyncLikeIterableOperatorFunction } from './operator';
 import { AsyncLikeIterable } from './async-like';
 import { asyncLikeIteratorFunction, iteratorReturn } from './iterator';
 import { PromiseAlike } from '../core';
 
-export function takeAsync<T>(count: number): AsyncIterableOperatorFunction<T, AsyncLikeIterable<T>> {
+export function takeAsync<T>(count: number): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<T>> {
   return asyncLikeIteratorFunction<T>(iterator => {
     let counter = 0;
     let done: boolean | undefined;

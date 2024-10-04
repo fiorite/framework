@@ -2,6 +2,7 @@ import { IterableOperatorFunction } from './operator';
 import { ValueCallback } from '../core';
 import { monoIterator } from './iterator';
 
+/** @deprecated todo: refactored the name */
 export class EmptyIterableError {
   readonly name = 'EmptyIterableError';
   readonly message = 'No elements in a sequence.';

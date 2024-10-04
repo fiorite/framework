@@ -263,6 +263,8 @@ export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T
   });
 }
 
+/** @deprecated should be refactored to be a real promise since most places implement default callback signature.
+ * {@link Promise} is fallback to async/await for the best development experience. */
 export class PromiseAlike<T> implements PromiseLike<T> {
   static value<T>(value: T): PromiseAlike<T> {
     return new PromiseAlike(complete => complete(value));
@@ -429,8 +431,8 @@ export class PromiseAlike<T> implements PromiseLike<T> {
   }
 }
 
-/** @deprecated will be used for universal iterable */
-export class ValuePromiseLike<T> implements PromiseLike<T> {
+/** @deprecated another experimental {@link PromiseLike} which returns same value again and again. Used in mono iterator implementation. */
+export class ConstValuePromiseLike<T> implements PromiseLike<T> {
   readonly #value: T;
 
   get value(): T {
@@ -441,13 +443,29 @@ export class ValuePromiseLike<T> implements PromiseLike<T> {
     this.#value = value;
   }
 
-  then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseLike<TResult1 | TResult2> {
+  then<TResult1 = T>(onfulfilled?: ((value: T) => void) | null | undefined): PromiseLike<TResult1> {
     if (onfulfilled) {
-      const result = onfulfilled(this.#value);
-      return isPromiseLike(result) ? result :
-        new ValuePromiseLike(result);
+      onfulfilled(this.#value);
     }
 
+    return this as unknown as PromiseLike<TResult1>;
+  }
+}
+
+/** @deprecated another experimental {@link PromiseLike} which is going to be used in {@link AsyncLikeIterable} to avoid overhead with microtasks in core implementation. */
+export class CallbackPromiseLike<T> implements PromiseLike<T> {
+  readonly #callback: (complete: ValueCallback<T>) => void;
+
+  constructor(callback: (complete: ValueCallback<T>) => void) {
+    this.#callback = callback;
+  }
+
+  then<TResult1 = T>(onfulfilled?: ((value: T) => void) | null | undefined): PromiseLike<TResult1> {
+    if (onfulfilled) {
+      this.#callback((value: T) => {
+        onfulfilled(value);
+      });
+    }
     return this as unknown as PromiseLike<TResult1>;
   }
 }

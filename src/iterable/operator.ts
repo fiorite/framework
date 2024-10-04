@@ -1,11 +1,14 @@
 import { AsyncLikeIterable } from './async-like';
 
+/** @deprecated will be removed, no point having sync/async with mono implementation. */
 export type SyncIterableOperatorFunction<T, R> = (iterable: Iterable<T>) => R;
 
-export type AsyncIterableOperatorFunction<T, R> = (iterable: AsyncLikeIterable<T>) => R;
+/** @deprecated will be removed, no point having sync/async with mono implementation. */
+export type AsyncLikeIterableOperatorFunction<T, R> = (iterable: AsyncLikeIterable<T>) => R;
 
 export type IterableOperatorFunction<T, R> = (iterable: Iterable<T> | AsyncLikeIterable<T>) => R;
 
+/** @deprecated will be removed, no point having sync/async with mono implementation. */
 export namespace SyncIterableOperator {
   export function all<T, A>(
     op1: SyncIterableOperatorFunction<T, A>,
