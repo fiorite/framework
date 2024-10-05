@@ -1,7 +1,7 @@
 import { ValueCallback } from '../core';
 import { IterableOperatorFunction } from './operator';
 
-export function toArray<T>(callback: ValueCallback<T[]>): IterableOperatorFunction<T, void> {
+export function iterableToArray<T>(callback: ValueCallback<T[]>): IterableOperatorFunction<T, void> {
   return iterable => {
     if (Symbol.iterator in iterable) {
       callback(Array.from(iterable));

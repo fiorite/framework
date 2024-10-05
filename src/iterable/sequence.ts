@@ -1,5 +1,5 @@
 import { MapCallback, promiseWhenNoCallback, PromiseWithSugar, ValueCallback, VoidCallback } from '../core';
-import { toArray } from './to-array';
+import { iterableToArray } from './to-array';
 import { iterableMap } from './map';
 import { iterableForEach } from './for-each';
 import { iterableTake } from './take';
@@ -58,7 +58,7 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
   toArray(): PromiseWithSugar<T[]>;
   toArray(callback: ValueCallback<T[]>): void;
   toArray(callback?: ValueCallback<T[]>): unknown {
-    return promiseWhenNoCallback(callback => toArray<T>(callback)(this), callback);
+    return promiseWhenNoCallback(callback => iterableToArray<T>(callback)(this), callback);
   }
 
   [Symbol.asyncIterator]() {

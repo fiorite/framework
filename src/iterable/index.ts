@@ -10,4 +10,4 @@ export { IterableOperatorFunction, IterableProjectFunction, IterableOperator } f
 export { Sequence } from './sequence';
 export { iterableSkip } from './skip';
 export { iterableTake } from './take';
-export { toArray } from './to-array';
+export { iterableToArray } from './to-array';
