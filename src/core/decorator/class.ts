@@ -1,4 +1,4 @@
-import { ClassDecorator2, DecoratorOuterFunction } from './function';
+import { ClassDecorator2, DecoratorOuterFunction } from './typing';
 import { DecoratorWithPayload } from './with-payload';
 import { Type } from '../type';
 

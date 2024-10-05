@@ -110,10 +110,10 @@ export class PromiseWithSugar<T> extends Promise<T> {
   }
 }
 
-export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void): PromiseWithSugar<T>;
-export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback: ValueCallback<T>): void;
-export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback?: ValueCallback<T>): unknown;
-export function promiseLikeWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback?: ValueCallback<T>): unknown {
+export function promiseWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void): PromiseWithSugar<T>;
+export function promiseWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback: ValueCallback<T>): void;
+export function promiseWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback?: ValueCallback<T>): unknown;
+export function promiseWhenNoCallback<T>(handler: (complete: ValueCallback<T>) => void, callback?: ValueCallback<T>): unknown {
   return callback ? handler(callback) : new PromiseWithSugar((complete, fail) => {
     try {
       handler(complete);

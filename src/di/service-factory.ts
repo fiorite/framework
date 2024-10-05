@@ -4,7 +4,6 @@ import {
   FunctionClass,
   MapCallback,
   MaybePromiseLike,
-  returnSelf,
   Type,
   ValueCallback
 } from '../core';
@@ -120,7 +119,7 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
             Reflect.getMetadata('design:paramtypes', type.prototype, propertyKey) :
             Reflect.getMetadata('design:paramtypes', type)
         ) || []
-      ).map((type: AbstractType) => ({ original: type, type, callback: returnSelf }));
+      ).map((type: AbstractType) => ({ original: type, type, callback: (object: unknown) => object }));
 
       if (callback.length && callback.length !== reflect.length) {
         throw new Error(`Decorator metadata has not been emitted: ` + callback.length);

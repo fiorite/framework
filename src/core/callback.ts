@@ -1,19 +1,28 @@
 import { FunctionClass } from './function-class';
 
-export type AnyCallback = (...args: any[]) => any;
-
-export type ValueCallback<T> = (value: T) => void;
-
-export type MapCallback<T, R> = (value: T) => R;
-
-export const returnSelf: MapCallback<unknown, unknown> = value => value;
-
-/** @deprecated no use, could be deleted */
-export type PredicateCallback<T> = (value: T) => unknown;
-
+/**
+ * Callback which is free from parameters or return value.
+ */
 export type VoidCallback = () => void;
 
-export const doNothing = () => void 0;
+/**
+ * Callback which receives {@link value} as the only parameter.
+ * {@link ValueCallback<void>} the same as {@link VoidCallback}
+ */
+export type ValueCallback<T> = (value: T) => void;
+
+/**
+ * Callback which receives {@link value} and projects a new value out of it.
+ * {@link MapCallback<T, void>} the same as {@link ValueCallback<T>} and
+ * {@link MapCallback<void>} the same as {@link ValueCallback<void>} and {@link VoidCallback}.
+ */
+export type MapCallback<T, R = T> = (value: T) => R;
+
+/**
+ * Considered to be the default callback which does nothing.
+ * Used to avoid undefined check in working pieces.
+ */
+export const emptyCallback = () => void 0;
 
 export type CallbackShareFunction = <T>(key: string | symbol | number, complete: (callback: ValueCallback<T>) => void, then: ValueCallback<T>) => void;
 
@@ -27,17 +36,17 @@ export interface CallbackShare {
  * result is shared among all {@link then} up until callback completes.
  */
 export class CallbackShare extends FunctionClass<CallbackShareFunction> {
-  private _queue = new Map<string | symbol | number, ValueCallback<unknown>[]>();
+  #queue = new Map<string | symbol | number, ValueCallback<unknown>[]>();
 
   constructor() {
     super((key, complete, then) => {
-      if (this._queue.has(key)) {
-        this._queue.get(key)!.push(then as ValueCallback<unknown>);
+      if (this.#queue.has(key)) {
+        this.#queue.get(key)!.push(then as ValueCallback<unknown>);
       } else {
-        this._queue.set(key, [then as ValueCallback<unknown>]);
+        this.#queue.set(key, [then as ValueCallback<unknown>]);
         complete(value => {
-          const array = (this._queue.get(key) || []);
-          this._queue.delete(key);
+          const array = (this.#queue.get(key) || []);
+          this.#queue.delete(key);
           array.forEach(callback2 => callback2(value));
         });
       }

@@ -1,5 +1,5 @@
 import { ServiceProvider, ServiceSet } from '../di';
-import { doNothing } from '../core';
+import { emptyCallback } from '../core';
 
 export type ApplicationRegisterServicesFunction = (serviceSet: ServiceSet) => void;
 
@@ -20,10 +20,10 @@ export function applicationFeature(
 export namespace applicationFeature {
   /** @deprecated use {@link registerServices} */
   export function servicesOnly(configure: ApplicationRegisterServicesFunction): ApplicationFeature {
-    return applicationFeature(configure, doNothing);
+    return applicationFeature(configure, emptyCallback);
   }
 }
 
 export function registerServices(configure: ApplicationRegisterServicesFunction): ApplicationFeature {
-  return applicationFeature(configure, doNothing);
+  return applicationFeature(configure, emptyCallback);
 }

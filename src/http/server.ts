@@ -2,7 +2,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { HttpContext, HttpContextHost } from './context';
 import { ServiceProvider } from '../di';
 import { NodeServerRequest, NodeServerResponse } from './node';
-import { doNothing, FunctionClass, ValueCallback } from '../core';
+import { emptyCallback, FunctionClass, ValueCallback } from '../core';
 import { HttpCallback } from './callback';
 
 /** @deprecated will be replaced with listener */
@@ -62,13 +62,13 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     );
     provider(HttpContextHost).apply(context);
     res.once('close', () => provider.destroyScope());
-    this._callback(context, doNothing);
+    this._callback(context, emptyCallback);
   }
 
   /**
    * @deprecated refactor to #listen(): Listener
    */
-  start(port: number, callback: ValueCallback<unknown> = doNothing): void {
+  start(port: number, callback: ValueCallback<unknown> = emptyCallback): void {
     if (this._state !== HttpServerState.Stopped) {
       throw new Error('server is supposed to be stopped in order to start it.');
     }
@@ -88,14 +88,14 @@ export class HttpServer extends FunctionClass<HttpCallback> {
     });
   }
 
-  listen(port: number, callback: ValueCallback<unknown> = doNothing): HttpServerListener {
+  listen(port: number, callback: ValueCallback<unknown> = emptyCallback): HttpServerListener {
     throw new Error('Not implemented.');
   }
 
   /**
    * @deprecated refactor to #listen(): Listener
    */
-  stop(callback: ValueCallback<Error | undefined> = doNothing): void {
+  stop(callback: ValueCallback<Error | undefined> = emptyCallback): void {
     if (this._state === HttpServerState.Stopped) {
       throw new Error('unable to stop inactive server.');
     }
@@ -129,7 +129,7 @@ export class HttpServerListener {
     this._server = server;
   }
 
-  close(callback: ValueCallback<Error | undefined> = doNothing): void {
+  close(callback: ValueCallback<Error | undefined> = emptyCallback): void {
     // this._server.close();
     // originalServer.closeAllConnections();
   }

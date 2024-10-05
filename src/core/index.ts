@@ -1,12 +1,9 @@
-export { arraySequenceEqual, arrayRange } from './array';
+export { arraySequenceEqual, arrayRange } from './array-utils';
 export {
   ValueCallback,
   VoidCallback,
-  PredicateCallback,
   MapCallback,
-  returnSelf,
-  doNothing,
-  AnyCallback,
+  emptyCallback,
   CallbackShare,
   CallbackShareFunction,
   forceCallbackValue,
@@ -16,15 +13,15 @@ export { Equatable } from './equatable';
 export * from './decorator';
 export * from './error';
 export { FunctionClass } from './function-class';
-export { isObject, isObjectMethod } from './object';
+export { isObject, isObjectMethod } from './object-utils';
 export {
   MaybePromiseLike,
   isPromiseLike,
-  promiseLikeWhenNoCallback,
+  promiseWhenNoCallback,
   ValuePromiseLike,
   CallbackPromiseLike,
   PromiseWithSugar,
-} from './promise';
+} from './promises';
 export { RadixMap, RadixWalkResult } from './radix-map';
 export { SetWithInnerKey } from './set-with-inner-key';
 export { ListenableFunction, ListenableFunctionListener } from './listener';

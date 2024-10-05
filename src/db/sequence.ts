@@ -3,7 +3,7 @@ import { DbReader } from './reader';
 import { mapAsync, Sequence } from '../iterable';
 import { DbModel } from './model';
 import { DbQuery, DbWhere, DbWhereOperator } from './query';
-import { promiseLikeWhenNoCallback, PromiseWithSugar, ValueCallback } from '../core';
+import { promiseWhenNoCallback, PromiseWithSugar, ValueCallback } from '../core';
 
 // const snapshot = Symbol('DbModel.snapshot');
 const modelName = Symbol('DbModel.name');
@@ -92,7 +92,7 @@ export class DbSequence<T> extends Sequence<T> {
       }, sequence);
     }
 
-    return promiseLikeWhenNoCallback(callback => {
+    return promiseWhenNoCallback(callback => {
       try {
         sequence.find(callback);
       } catch (error) {
@@ -173,7 +173,7 @@ export class DbSequence<T> extends Sequence<T> {
   override first(callback: ValueCallback<T>): void;
   override first(): PromiseWithSugar<T>;
   override first(callback?: ValueCallback<T>): unknown {
-    return promiseLikeWhenNoCallback(callback => first<T>(callback)(this.take(1)), callback);
+    return promiseWhenNoCallback(callback => first<T>(callback)(this.take(1)), callback);
   }
 
   #cloneSequence(): DbSequence<T> {

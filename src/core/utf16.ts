@@ -1,4 +1,4 @@
-import { arrayRange } from './array';
+import { arrayRange } from './array-utils';
 
 /** @source https://stackoverflow.com/questions/22697936/binary-search-in-javascript */
 function binarySearch(array: readonly number[], value: number) {

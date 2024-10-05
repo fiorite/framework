@@ -1,4 +1,4 @@
-import { MapCallback, returnSelf } from './callback';
+import { MapCallback } from './callback';
 
 /**
  * Custom set designed to provide the same signature and the way to configure comparison flow using {@link _keyCallback}
@@ -22,7 +22,7 @@ export class SetWithInnerKey<T, K = T> implements Set<T> {
   }
 
   constructor(keyCallback?: MapCallback<T, K>) {
-    this._keyCallback = keyCallback || returnSelf as any;
+    this._keyCallback = keyCallback || (key => key as unknown as K);
   }
 
   add(value: T): this {

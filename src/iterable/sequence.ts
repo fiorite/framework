@@ -2,7 +2,7 @@ import { AsyncLikeIterable } from './async-like';
 import {
   MapCallback,
   MaybePromiseLike,
-  promiseLikeWhenNoCallback,
+  promiseWhenNoCallback,
   PromiseWithSugar,
   ValueCallback,
   VoidCallback
@@ -31,19 +31,19 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
   count(callback: ValueCallback<number>): void;
   count(): PromiseWithSugar<number>;
   count(callback?: ValueCallback<number>): unknown {
-    return promiseLikeWhenNoCallback(callback => count(callback)(this), callback);
+    return promiseWhenNoCallback(callback => count(callback)(this), callback);
   }
 
   first(callback: ValueCallback<T>): void;
   first(): PromiseWithSugar<T>;
   first(callback?: ValueCallback<T>): unknown {
-    return promiseLikeWhenNoCallback(complete => first<T>(complete)(this), callback);
+    return promiseWhenNoCallback(complete => first<T>(complete)(this), callback);
   }
 
   forEach(callback: ValueCallback<T>, done: VoidCallback): void;
   forEach(callback: ValueCallback<T>): PromiseWithSugar<void>;
   forEach(callback: ValueCallback<T>, done?: VoidCallback) {
-    return promiseLikeWhenNoCallback(done => forEach(callback, done)(this), done);
+    return promiseWhenNoCallback(done => forEach(callback, done)(this), done);
   }
 
   map<R>(callback: MapCallback<T, MaybePromiseLike<R>>): Sequence<R> {
@@ -61,7 +61,7 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
   toArray(): PromiseWithSugar<T[]>;
   toArray(callback: ValueCallback<T[]>): void;
   toArray(callback?: ValueCallback<T[]>): unknown {
-    return promiseLikeWhenNoCallback(callback => toArray<T>(callback)(this), callback);
+    return promiseWhenNoCallback(callback => toArray<T>(callback)(this), callback);
   }
 
   [Symbol.asyncIterator]() {

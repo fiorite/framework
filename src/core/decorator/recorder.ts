@@ -1,4 +1,4 @@
-import { DecoratorFunction, DecoratorOuterFunction } from './function';
+import { DecoratorFunction, DecoratorOuterFunction } from './typing';
 import { isType, Type } from '../type';
 import type { ParameterDecoratorWithPayload } from './parameter';
 import type { MethodDecoratorWithPayload } from './method';

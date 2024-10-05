@@ -1,4 +1,4 @@
-import { DecoratorOuterFunction } from './function';
+import { DecoratorOuterFunction } from './typing';
 import { DecoratorWithPayload } from './with-payload';
 
 export interface MethodDecoratorWithPayload<TPayload> extends DecoratorWithPayload<TPayload, MethodDecorator> {

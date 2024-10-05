@@ -1,4 +1,4 @@
-import { MapCallback, MaybePromiseLike, returnSelf } from '../core';
+import { MapCallback, MaybePromiseLike } from '../core';
 import { HttpQuery, HttpRequest } from './request';
 import { Provide, ProvideDecorator } from '../di';
 import { HttpContext } from './context';
@@ -56,7 +56,7 @@ export function FromHeader(...args: unknown[]) {
 export function FromBody<T>(): ProvideDecorator<HttpBodyResult<T>, T | undefined>;
 export function FromBody<T, R>(callback: MapCallback<T | undefined, MaybePromiseLike<R>>): ProvideDecorator<HttpBodyResult<T>, MaybePromiseLike<R>>;
 export function FromBody(...args: unknown[]) {
-  let callback: MapCallback<unknown, unknown> = returnSelf;
+  let callback: MapCallback<unknown, unknown> = value => value;
   if (1 === args.length) {
     callback = args[0] as MapCallback<unknown, unknown>;
   }

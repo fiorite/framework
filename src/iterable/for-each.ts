@@ -1,9 +1,9 @@
-import { doNothing, isPromiseLike, ValueCallback } from '../core';
+import { emptyCallback, isPromiseLike, ValueCallback } from '../core';
 import { monoIterator } from './iterator';
 import { AsyncLikeIterable } from './async-like';
 
 export function forEach<T, TReturn = unknown>(
-  callback: ValueCallback<T>, done: ValueCallback<TReturn> = doNothing
+  callback: ValueCallback<T>, done: ValueCallback<TReturn> = emptyCallback
 ): (iterable: Iterable<T> | AsyncLikeIterable<T>) => void {
   return iterable => {
     const iterator = monoIterator(iterable);

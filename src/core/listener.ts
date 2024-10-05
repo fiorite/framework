@@ -1,6 +1,6 @@
-import { AnyCallback, doNothing, FunctionClass, ValueCallback, VoidCallback } from '../core';
+import { emptyCallback, FunctionClass, ValueCallback, VoidCallback } from '../core';
 
-export class ListenableFunction<TCallback extends AnyCallback, TEvent> extends FunctionClass<TCallback> {
+export class ListenableFunction<TCallback extends (...args: any[]) => any, TEvent> extends FunctionClass<TCallback> {
   private _listeners: ValueCallback<TEvent>[] = [];
 
   constructor(callback: TCallback) {
@@ -18,7 +18,7 @@ export class ListenableFunction<TCallback extends AnyCallback, TEvent> extends F
     }
 
     let listener: ListenableFunctionListener;
-    const closeListener: VoidCallback = (callback: VoidCallback = doNothing) => {
+    const closeListener: VoidCallback = (callback: VoidCallback = emptyCallback) => {
       const index = this._listeners.indexOf(callback);
       if (index > -1) {
         this._listeners.splice(index, 1);
