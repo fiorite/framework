@@ -1,29 +1,17 @@
-import { AsyncLikeIterableOperatorFunction } from './operator';
-import { AsyncLikeIterable } from './async-like';
-import { asyncLikeIteratorFunction, iteratorReturn } from './iterator';
-import { PromiseWithSugar } from '../core';
+import { IterableProjectFunction } from './operator';
+import { makeIterable } from './iterable';
 
-export function takeAsync<T>(count: number): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<T>> {
-  return asyncLikeIteratorFunction<T>(iterator => {
+export function iterableTake<T>(count: number): IterableProjectFunction<T> {
+  return iterable => makeIterable<T>(iterable, iterator => {
     let counter = 0;
-    let done: boolean | undefined;
-    return () => { // this is next
+    return complete => {
       if (counter >= count) {
-        if (done!) {
-          done = true;
-          if (iterator.return) {
-            return iterator.return();
-          }
-        }
-        return PromiseWithSugar.resolve<IteratorResult<T>>(iteratorReturn());
+        return iterator.return ?
+          iterator.return(complete) :
+          complete({ done: true, value: void 0 });
       }
       counter++;
-      return new PromiseWithSugar(complete => {
-        iterator.next().then(result => {
-          done = result.done;
-          complete(result);
-        });
-      });
+      iterator.next(complete);
     };
   });
 }

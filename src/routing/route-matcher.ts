@@ -10,7 +10,7 @@ import {
   StaticRouteComponentMatcher
 } from './route-path-matcher';
 import { DecoratorOuterFunction, DecoratorRecorder, isType, SetWithInnerKey, Type } from '../core';
-import { forEach } from '../iterable';
+import { iterableForEach } from '../iterable';
 import { RouteCallback } from './callback';
 import { TypeRoutes } from './route';
 
@@ -72,7 +72,7 @@ export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
   constructor(descriptors: Iterable<RouteDescriptor>) {
     const routeToString = (route: RouteDescriptor) => route.toString();
     super(routeToString);
-    forEach<RouteDescriptor>(route => super.add(route))(descriptors); // use parent add to avoid map matcher of each all
+    iterableForEach<RouteDescriptor>(route => super.add(route))(descriptors); // use parent add to avoid map matcher of each all
     this._mapMatcher();
   }
 

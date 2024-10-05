@@ -1,4 +1,4 @@
-import { MapCallback } from './callback';
+import { MapCallback } from './callbacks';
 
 /**
  * Custom set designed to provide the same signature and the way to configure comparison flow using {@link _keyCallback}

@@ -1,91 +1,76 @@
-import { AsyncLikeIterable, AsyncLikeIterator } from './async-like';
-import { AsyncLikeIterableOperatorFunction } from './operator';
-import { MaybePromiseLike, PromiseWithSugar, ValuePromiseLike } from '../core';
-import { isIterable } from './iterable';
+import { MaybePromiseLike, ValueCallback } from '../core';
+import type { AsyncLikeIterable } from './iterable';
 
-export const getIterator = <T, TReturn = any>(iterable: Iterable<T>): Iterator<T, TReturn> => {
-  return iterable[Symbol.iterator]();
-};
+export interface AsyncLikeIterator<T, TReturn = unknown> {
+  next(): PromiseLike<IteratorResult<T, TReturn>>;
 
-export const getAsyncIterator = <T, TReturn = any>(iterable: AsyncLikeIterable<T>): AsyncLikeIterator<T> => {
-  return iterable[Symbol.asyncIterator]();
-};
-
-export type IteratorNextFunction<T> = () => IteratorResult<T>;
-
-export function iteratorFunction<T, R = T>(callback: (iterator: Iterator<T>) => IteratorNextFunction<R>): (iterable: Iterable<T>) => Iterable<R> {
-  return iterable => ({
-    [Symbol.iterator](): Iterator<R> {
-      const iterator1 = getIterator(iterable);
-      const iterator2: Iterator<R> = { next: callback(iterator1) };
-      if (iterator1.return) {
-        iterator2.return = (value?: unknown) => iterator1.return!(value) as IteratorResult<R>;
-      }
-      return iterator2;
-    }
-  });
+  return?(value?: MaybePromiseLike<TReturn>): PromiseLike<IteratorResult<T, TReturn>>;
 }
 
-// export type AsyncIteratorNextFunction<T> = () => Promise<IteratorResult<T>>;
-//
-// export function asyncIteratorFunction<T, R = T>(callback: (iterator: AsyncIterator<T>) => AsyncIteratorNextFunction<R>): (iterable: AsyncIterable<T>) => AsyncIterable<R> {
-//   return iterable => ({
-//     [Symbol.asyncIterator](): AsyncIterator<R> {
-//       const iterator = getAsyncIterator(iterable);
-//       return { next: callback(iterator) };
-//     }
-//   });
-// }
+export interface CallbackIterator<T> {
+  readonly async?: boolean;
 
-export function iteratorYield<T>(value: T): IteratorYieldResult<T> {
-  return { value };
+  readonly iterator: Iterator<T> | AsyncLikeIterator<T>;
+
+  next(callback: ValueCallback<IteratorResult<T>>): void;
+
+  return?(callback: ValueCallback<IteratorResult<T>>): void;
 }
 
-export function iteratorReturn<T = void>(): IteratorReturnResult<T>;
-export function iteratorReturn<T>(value: T): IteratorReturnResult<T>;
-export function iteratorReturn(value?: unknown): IteratorReturnResult<unknown> {
-  return { done: true, value };
+export function getIterator<T>(iterable: Iterable<T> | AsyncLikeIterable<T>): CallbackIterator<T> {
+  return new MonoIterator<T>(iterable);
 }
 
-export type AsyncLikeIteratorNextFunction<T> = () => PromiseLike<IteratorResult<T>>;
+/** @deprecated todo: refactor */
+class MonoIterator<T> implements CallbackIterator<T> {
+  readonly #async?: boolean;
 
-export function asyncLikeIteratorFunction<T, R = T>(
-  callback: (iterator: AsyncLikeIterator<T>) => AsyncLikeIteratorNextFunction<R>,
-): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<R>> {
-  return iterable => {
-    return {
-      [Symbol.asyncIterator](): AsyncLikeIterator<R> {
-        const iterator1 = getAsyncIterator(iterable);
-        const iterator2: AsyncLikeIterator<R> = {
-          next: callback(iterator1),
-        };
-        if (iterator1.return) {
-          iterator2.return = (value?: MaybePromiseLike<unknown>) => {
-            return new PromiseWithSugar(complete => {
-              iterator1.return!(value).then(result => complete(result as any));
-            });
-          };
-        }
-        return iterator2;
-      }
-    };
-  };
-}
-
-/** @deprecated experimental feature */
-export const monoIterator = <T>(iterable: Iterable<T> | AsyncLikeIterable<T>): AsyncLikeIterator<T> & {
-  async?: boolean
-} => {
-  if (isIterable(iterable)) {
-    const iterator = getIterator(iterable);
-    return {
-      next: () => new ValuePromiseLike(iterator.next()),
-    };
+  get async(): boolean | undefined {
+    return this.#async;
   }
 
-  const iterator = getAsyncIterator(iterable);
-  return {
-    async: true,
-    next: () => iterator.next(),
-  };
-};
+  readonly #iterator: Iterator<T> | AsyncLikeIterator<T>;
+
+  get iterator(): Iterator<T> | AsyncLikeIterator<T> {
+    return this.#iterator;
+  }
+
+  readonly #next: (callback: ValueCallback<IteratorResult<T>>) => void;
+
+  get next(): (callback: ValueCallback<IteratorResult<T>>) => void {
+    return this.#next;
+  }
+
+  readonly #return?: (callback: ValueCallback<IteratorResult<T>>) => void;
+
+  get return(): ((callback: ValueCallback<IteratorResult<T>>) => void) | undefined {
+    return this.#return;
+  }
+
+  constructor(iterable: Iterable<T> | AsyncLikeIterable<T>) {
+    if (Symbol.iterator in iterable) {
+      const iterator = iterable[Symbol.iterator]();
+      this.#iterator = iterator;
+      this.#next = callback => callback(iterator.next());
+      if (iterator.return) {
+        this.#return = callback => callback(iterator.return!());
+      }
+      return;
+    }
+
+    if (Symbol.asyncIterator in iterable) {
+      const iterator = iterable[Symbol.asyncIterator]();
+      this.#iterator = iterator;
+      this.#async = true;
+      this.#next = callback => iterator.next().then(result => callback(result));
+      if (iterator.return) {
+        this.#return = callback => {
+          iterator.return!().then(result => callback(result));
+        };
+      }
+      return;
+    }
+
+    throw new Error('neither Iterable nor AsyncIterable.');
+  }
+}

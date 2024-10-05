@@ -1,4 +1,4 @@
-import { ValueCallback } from './callback';
+import { ValueCallback } from './callbacks';
 
 /** @deprecated in development */
 export class EventEmitter {

@@ -1,38 +1,25 @@
-import { AsyncLikeIterableOperatorFunction } from './operator';
-import { AsyncLikeIterable } from './async-like';
-import { asyncLikeIteratorFunction, iteratorReturn } from './iterator';
-import { PromiseWithSugar } from '../core';
+import { IterableProjectFunction } from './operator';
+import { makeIterable } from './iterable';
 
-export function skipAsync<T>(count: number): AsyncLikeIterableOperatorFunction<T, AsyncLikeIterable<T>> {
-  return asyncLikeIteratorFunction<T>(iterator => {
+export function iterableSkip<T>(count: number): IterableProjectFunction<T> {
+  return iterable => makeIterable<T>(iterable, iterator => {
     let counter = 0;
-    let done: boolean | undefined;
-    return () => { // this is next
-      if (done) {
-        return PromiseWithSugar.resolve<IteratorResult<T>>(iteratorReturn());
+    return complete => {
+      if (counter >= count) {
+        return iterator.next(complete);
       }
 
-      return new PromiseWithSugar(fulfill => {
-        const handle = () => {
-          if (counter < count) {
+      const next = () => {
+        if (counter < count) {
+          iterator.next(result => {
             counter++;
-            iterator.next().then(result => {
-              done = result.done;
-              if (done) {
-                fulfill(result);
-              } else {
-                handle();
-              }
-            });
-          } else {
-            iterator.next().then(result => {
-              done = result.done;
-              fulfill(result);
-            });
-          }
-        };
-        handle();
-      });
+            result.done ? complete(result) : next();
+          });
+        } else {
+          iterator.next(complete);
+        }
+      };
+      next();
     };
   });
 }

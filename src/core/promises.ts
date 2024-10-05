@@ -1,4 +1,4 @@
-import { ValueCallback } from './callback';
+import { ValueCallback } from './callbacks';
 import { Type } from './type';
 
 export type MaybePromiseLike<T> = PromiseLike<T> | T;
@@ -123,30 +123,36 @@ export function promiseWhenNoCallback<T>(handler: (complete: ValueCallback<T>) =
   });
 }
 
-/** @deprecated another experimental {@link PromiseLike} which returns same value again and again. Used in mono iterator implementation. */
-export class ValuePromiseLike<T> implements PromiseLike<T> {
-  readonly #value: T;
+// /** @deprecated another experimental {@link PromiseLike} which returns same value again and again. Used in mono iterator implementation. */
+// export class ValuePromiseLike<T> implements PromiseLike<T> {
+//   readonly #value: T;
+//
+//   get value(): T {
+//     return this.#value;
+//   }
+//
+//   constructor(value: T) {
+//     this.#value = value;
+//   }
+//
+//   then<TResult1 = T>(onfulfilled?: ((value: T) => void) | null | undefined): PromiseLike<TResult1> {
+//     if (onfulfilled) {
+//       onfulfilled(this.#value);
+//     }
+//
+//     return this as unknown as PromiseLike<TResult1>;
+//   }
+// }
 
-  get value(): T {
-    return this.#value;
-  }
-
-  constructor(value: T) {
-    this.#value = value;
-  }
-
-  then<TResult1 = T>(onfulfilled?: ((value: T) => void) | null | undefined): PromiseLike<TResult1> {
-    if (onfulfilled) {
-      onfulfilled(this.#value);
-    }
-
-    return this as unknown as PromiseLike<TResult1>;
-  }
-}
-
-/** @deprecated another experimental {@link PromiseLike} which is going to be used in {@link AsyncLikeIterable} to avoid overhead with microtasks in core implementation. */
+/**
+ * Not {@link Promise}, simulates signature and runs {@link CallbackPromiseLike.callback}.
+ */
 export class CallbackPromiseLike<T> implements PromiseLike<T> {
   readonly #callback: (complete: ValueCallback<T>) => void;
+
+  get callback(): (complete: ValueCallback<T>) => void {
+    return this.#callback;
+  }
 
   constructor(callback: (complete: ValueCallback<T>) => void) {
     this.#callback = callback;

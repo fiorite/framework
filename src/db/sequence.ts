@@ -1,6 +1,6 @@
-import { EmptyIterableError, first } from '../iterable/first';
+import { EmptyIterableError, iterableFirst } from '../iterable/first';
 import { DbReader } from './reader';
-import { mapAsync, Sequence } from '../iterable';
+import { AsyncLikeIterator, iterableMap, Sequence } from '../iterable';
 import { DbModel } from './model';
 import { DbQuery, DbWhere, DbWhereOperator } from './query';
 import { promiseWhenNoCallback, PromiseWithSugar, ValueCallback } from '../core';
@@ -28,13 +28,13 @@ export class DbSequence<T> extends Sequence<T> {
   constructor(reader: DbReader, model: DbModel<T>) {
     super({
       [Symbol.asyncIterator]: () => {
-        return mapAsync<T, T>(object => {
+        return iterableMap<T>(object => {
           this.#setDebugInformation(object);
           // this.#setSnapshot(object, object);
           return object;
         })({
           [Symbol.asyncIterator]: () => this.#reader.read(this.#model, this.#query || {}),
-        })[Symbol.asyncIterator]();
+        })[Symbol.asyncIterator]() as AsyncLikeIterator<T>;
       }
     });
     this.#reader = reader;
@@ -173,7 +173,7 @@ export class DbSequence<T> extends Sequence<T> {
   override first(callback: ValueCallback<T>): void;
   override first(): PromiseWithSugar<T>;
   override first(callback?: ValueCallback<T>): unknown {
-    return promiseWhenNoCallback(callback => first<T>(callback)(this.take(1)), callback);
+    return promiseWhenNoCallback(callback => iterableFirst<T>(callback)(this.take(1)), callback);
   }
 
   #cloneSequence(): DbSequence<T> {

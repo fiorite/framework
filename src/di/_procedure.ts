@@ -1,7 +1,6 @@
 import { ServiceDescriptor } from './service-descriptor';
 import { ServiceBehavior } from './service-behavior';
 import { ServiceType } from './service-type';
-import { map } from '../iterable';
 
 type IndexedValue<T> = [T, number];
 
@@ -9,7 +8,7 @@ export function remapBehaviorInheritance(source: Iterable<ServiceDescriptor>): S
   const result: ServiceDescriptor[] = Array.from(source);
 
   let index = 0;
-  map(x => [x, index++])(source);
+  // iterableMap(x => [x, index++])(source);
 
   const queue = Array.from(source).map<IndexedValue<ServiceDescriptor>>((x, index) => [x, index])
     .filter(x => ServiceBehavior.Inherited === x[0].behavior);
@@ -20,7 +19,7 @@ export function remapBehaviorInheritance(source: Iterable<ServiceDescriptor>): S
     const dependencies = entry[0].dependencies.map<IndexedValue<ServiceDescriptor>>(serviceKey => {
       const index = result.findIndex(x => x.type === serviceKey);
       if (index < 0) {
-        throw new Error('Missing dependency: '+ServiceType.toString(serviceKey));
+        throw new Error('Missing dependency: ' + ServiceType.toString(serviceKey));
       }
       return [result[index], index];
     });
@@ -47,10 +46,10 @@ function mapDependenciesToDeclarations(collection: readonly ServiceDescriptor[],
   return declaration.dependencies.map(serviceKey => {
     const index = collection.findIndex(x => x.type === serviceKey);
     if (index < 0) {
-      throw new Error('Missing dependency: '+ServiceType.toString(serviceKey));
+      throw new Error('Missing dependency: ' + ServiceType.toString(serviceKey));
     }
     return collection[index];
-  })
+  });
 }
 
 // todo: optimize algorithm probably
@@ -64,7 +63,7 @@ export function validateCircularDependency(source: readonly ServiceDescriptor[])
     while (queue2.length) {
       const declaration2 = queue2.shift()!;
       if (declaration2.type === declaration1.type) {
-        throw new Error('Circular dependency detected: '+ServiceType.toString(declaration1.type));
+        throw new Error('Circular dependency detected: ' + ServiceType.toString(declaration1.type));
       }
       queue2.unshift(...mapDependenciesToDeclarations(source, declaration2));
     }
@@ -80,7 +79,7 @@ export function validateBehaviorDependency(source: readonly ServiceDescriptor[])
     const index1 = dependencies.findIndex(x => ServiceBehavior.Inherited === x.behavior);
     if (index1 > -1) {
       const dependency1 = dependencies[index1];
-      throw new Error('Inherit behavior is not resolved: '+ServiceType.toString(dependency1.type));
+      throw new Error('Inherit behavior is not resolved: ' + ServiceType.toString(dependency1.type));
     }
 
     if (ServiceBehavior.Singleton === declaration.behavior) {

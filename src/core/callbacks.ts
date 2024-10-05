@@ -13,8 +13,8 @@ export type ValueCallback<T> = (value: T) => void;
 
 /**
  * Callback which receives {@link value} and projects a new value out of it.
- * {@link MapCallback<T, void>} the same as {@link ValueCallback<T>} and
- * {@link MapCallback<void>} the same as {@link ValueCallback<void>} and {@link VoidCallback}.
+ * `MapCallback<T, void>` the same as `ValueCallback<T>` and
+ * `MapCallback<void>` the same as `ValueCallback<void>` and `VoidCallback`.
  */
 export type MapCallback<T, R = T> = (value: T) => R;
 

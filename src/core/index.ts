@@ -8,7 +8,7 @@ export {
   CallbackShareFunction,
   forceCallbackValue,
   CallbackForceValueError,
-} from './callback';
+} from './callbacks';
 export { Equatable } from './equatable';
 export * from './decorator';
 export * from './error';
@@ -18,7 +18,6 @@ export {
   MaybePromiseLike,
   isPromiseLike,
   promiseWhenNoCallback,
-  ValuePromiseLike,
   CallbackPromiseLike,
   PromiseWithSugar,
 } from './promises';

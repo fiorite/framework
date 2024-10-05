@@ -12,7 +12,7 @@ import {
   Type,
   ValueCallback
 } from '../core';
-import { forEach } from '../iterable';
+import { iterableForEach } from '../iterable';
 import { ServiceFactoryWithReturnFunction } from './service-factory';
 
 export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> {
@@ -52,7 +52,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
   }
 
   override addAll(iterable: Iterable<Type | ServiceDescriptor | object>): this {
-    forEach<Type | ServiceDescriptor | object>(item => {
+    iterableForEach<Type | ServiceDescriptor | object>(item => {
       if (item instanceof ServiceDescriptor) {
         this.add(item);
       } else {

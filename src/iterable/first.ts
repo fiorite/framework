@@ -1,6 +1,6 @@
 import { IterableOperatorFunction } from './operator';
-import { ValueCallback } from '../core';
-import { monoIterator } from './iterator';
+import { emptyCallback, ValueCallback } from '../core';
+import { getIterator } from './iterator';
 
 /** @deprecated todo: refactored the name */
 export class EmptyIterableError {
@@ -8,18 +8,16 @@ export class EmptyIterableError {
   readonly message = 'No elements in a sequence.';
 }
 
-export function first<T>(callback: ValueCallback<T>): IterableOperatorFunction<T, void> {
+export function iterableFirst<T>(callback: ValueCallback<T>): IterableOperatorFunction<T, void> {
   return iterable => {
-    const iterator = monoIterator(iterable);
-    iterator.next().then(result => {
+    const iterator = getIterator(iterable);
+    iterator.next(result => {
       if (result.done) {
         throw new EmptyIterableError();
       }
       callback(result.value);
       if (iterator.return) {
-        iterator.return().then(() => {
-          // do nothing perhaps
-        });
+        iterator.return(emptyCallback);
       }
     });
   };
