@@ -206,7 +206,7 @@ export class DbSequence<T> extends Sequence<T> {
 
     return promiseWhenNoCallback(callback => {
       try {
-        sequence.find(callback);
+        sequence.first(callback);
       } catch (error) {
         if (error instanceof EmptyIterableError) {
           throw new DbObjectNotFound(this.#model);
@@ -317,16 +317,8 @@ export class DbSequence<T> extends Sequence<T> {
   }
 
   where<K extends keyof T>(key: K, value: MaybePromiseLike<T[K] | undefined>): DbSequence<T>;
-  where<K extends keyof T>(
-    key: K,
-    operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=',
-    value: MaybePromiseLike<T[K] | undefined>
-  ): DbSequence<T>;
-  where<K extends keyof T>(
-    key: K,
-    operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in',
-    value: MaybePromiseLike<MaybeAsyncLikeIterable<T[K]>>
-  ): DbSequence<T>;
+  where<K extends keyof T>(key: K, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: MaybePromiseLike<T[K] | undefined>): DbSequence<T>;
+  where<K extends keyof T>(key: K, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: MaybePromiseLike<MaybeAsyncLikeIterable<T[K]>>): DbSequence<T>;
   where(...args: unknown[]): DbSequence<T> {
     const whereSet = this.#query && this.#query.where ? new Set(this.#query.where) : new Set<DbWhere>();
 
