@@ -1,4 +1,4 @@
-import { MapCallback, promiseWhenNoCallback, PromiseWithSugar, ValueCallback, VoidCallback } from '../core';
+import { MapCallback, promiseWhenNoCallback, ValueCallback, VoidCallback } from '../core';
 import { iterableToArray } from './to-array';
 import { iterableMap } from './map';
 import { iterableForEach } from './for-each';
@@ -22,7 +22,7 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
   }
 
   count(callback: ValueCallback<number>): void;
-  count(): PromiseWithSugar<number>;
+  count(): PromiseLike<number>;
   count(callback?: ValueCallback<number>): unknown {
     return promiseWhenNoCallback(callback => iterableCount(callback)(this), callback);
   }
@@ -32,13 +32,13 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
   }
 
   first(callback: ValueCallback<T>): void;
-  first(): PromiseWithSugar<T>;
+  first(): PromiseLike<T>;
   first(callback?: ValueCallback<T>): unknown {
     return promiseWhenNoCallback(complete => iterableFirst<T>(complete)(this), callback);
   }
 
   forEach(callback: ValueCallback<T>, done: VoidCallback): void;
-  forEach(callback: ValueCallback<T>): PromiseWithSugar<void>;
+  forEach(callback: ValueCallback<T>): PromiseLike<void>;
   forEach(callback: ValueCallback<T>, done?: VoidCallback) {
     return promiseWhenNoCallback(done => iterableForEach(callback, done)(this), done);
   }
@@ -55,7 +55,7 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
     return this.#project(iterableTake<T>(count));
   }
 
-  toArray(): PromiseWithSugar<T[]>;
+  toArray(): PromiseLike<T[]>;
   toArray(callback: ValueCallback<T[]>): void;
   toArray(callback?: ValueCallback<T[]>): unknown {
     return promiseWhenNoCallback(callback => iterableToArray<T>(callback)(this), callback);

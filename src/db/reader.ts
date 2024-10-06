@@ -2,9 +2,14 @@ import { DbModel } from './model';
 import { DbQuery } from './query';
 import { AsyncLikeIterableIterator } from '../iterable';
 
+export interface DbReadContext<T> {
+  readonly model: DbModel<T>;
+  readonly query: DbQuery
+}
+
 /**
  * level #1 of database implementation: db reader. basically converts {@link query} to async sequence.
  */
 export abstract class DbReader {
-  abstract read<T>(model: DbModel<T>, query: DbQuery): AsyncLikeIterableIterator<T>;
+  abstract read<T>(context: DbReadContext<T>): AsyncLikeIterableIterator<T>;
 }

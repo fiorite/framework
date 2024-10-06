@@ -8,6 +8,8 @@ export {
   CallbackShareFunction,
   forceCallbackValue,
   CallbackForceValueError,
+  LazyCallbackShare,
+  lazyCallbackShare,
 } from './callbacks';
 export { Equatable } from './equatable';
 export * from './decorator';

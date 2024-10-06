@@ -1,36 +1,43 @@
-export interface DbQuery {
+export interface DbQuery<TWhere = DbWhere> {
   readonly take?: number;
   readonly skip?: number;
-  readonly where?: Set<DbWhere>;
+  readonly where?: Set<TWhere>;
 }
 
 export enum DbWhereOperator {
   EqualTo = '==',
   NotEqualTo = '!=',
+  In = 'in',
+  NotIn = 'not-in',
 }
 
-export class DbWhere<T = unknown, K extends keyof T & string = keyof T & string> {
-  readonly #key: K | string;
+export type DbPrimitiveValue = string | number | boolean | undefined;
+type DbObject = Record<string, DbPrimitiveValue>;
 
-  get key(): K | string {
+export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
+  readonly #key: string;
+
+  get key(): string {
     return this.#key;
   }
 
-  readonly #operator: DbWhereOperator | string;
+  readonly #operator: DbWhereOperator;
 
-  get operator(): DbWhereOperator | string {
+  get operator(): DbWhereOperator {
     return this.#operator;
   }
 
-  readonly #value: T[K] | unknown;
+  readonly #value: typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T;
 
-  get value(): T[K] | unknown {
+  get value(): typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T {
     return this.#value;
   }
 
-  constructor(key: K | string, operator: DbWhereOperator | string, value: T[K] | unknown) {
+  constructor(key: string, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: TIterable);
+  constructor(key: string, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: T);
+  constructor(key: string, operator: DbWhereOperator | string, value: unknown) {
     this.#key = key;
-    this.#operator = operator;
-    this.#value = value;
+    this.#operator = operator as DbWhereOperator;
+    this.#value = value as typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T;
   }
 }

@@ -75,3 +75,48 @@ export const forceCallbackValue = <T>(callback: (catchValue: ValueCallback<T>) =
   }
   return value!;
 };
+
+
+export class LazyCallbackShare<T> extends FunctionClass<(consume: ValueCallback<T>) => void> {
+  #completed?: boolean;
+
+  get completed(): boolean | undefined {
+    return this.#completed;
+  }
+
+  #value?: T;
+
+  get value(): T | undefined {
+    return this.#value;
+  }
+
+  #pending?: ValueCallback<T>[];
+
+  constructor(configure: (complete: ValueCallback<T>) => void) {
+    super((callback2: ValueCallback<T>) => {
+      if (this.#completed) {
+        callback2(this.#value!);
+      } else {
+        if (this.#pending) {
+          this.#pending.push(callback2);
+        } else {
+          this.#pending = [callback2];
+          configure(value => {
+            this.#value = value;
+            this.#completed = true;
+            while (this.#pending!.length) {
+              this.#pending!.shift()!(value);
+            }
+            this.#pending = undefined;
+          });
+        }
+      }
+    });
+  }
+}
+
+export function lazyCallbackShare<T>(configure: (complete: ValueCallback<T>) => void): LazyCallbackShare<T> {
+  return new LazyCallbackShare<T>(configure);
+}
+
+// export const lazyValue = (

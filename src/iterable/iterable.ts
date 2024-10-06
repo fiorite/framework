@@ -14,6 +14,14 @@ export interface AsyncLikeIterableIterator<T, TReturn = unknown> extends AsyncLi
   [Symbol.asyncIterator](): AsyncLikeIterableIterator<T, TReturn>;
 }
 
+export type MaybeAsyncLikeIterable<T> = Iterable<T> | AsyncLikeIterableIterator<T>;
+
+export namespace MaybeAsyncLikeIterable {
+  export function is<T>(object: unknown): object is MaybeAsyncLikeIterable<T> {
+    return null !== object && undefined !== object && (Symbol.iterator in (object as any) || Symbol.asyncIterator in (object as any));
+  }
+}
+
 /** @deprecated todo: refactor */
 class MonoIterable<T, R = T> {
   [Symbol.iterator]?: () => Iterator<R>;
