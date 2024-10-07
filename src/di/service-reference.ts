@@ -2,8 +2,7 @@ import { ServiceType } from './service-type';
 import { ServiceProviderWithReturnFunction } from './service-provider';
 import { MapCallback } from '../core';
 
-/** @deprecated experimental */
-export class ServiceRef<T, R = T> {
+export class ServiceReference<T, R = T> {
   readonly #type: ServiceType<T>;
 
   get type(): ServiceType<T> {
@@ -26,11 +25,8 @@ export class ServiceRef<T, R = T> {
   }
 }
 
-/** @deprecated experimental */
-export function serviceRef<T>(type: ServiceType<T>): ServiceRef<T>;
-/** @deprecated experimental */
-export function serviceRef<T, R>(type: ServiceType<T>, project: MapCallback<T, R>): ServiceRef<T, R>;
-/** @deprecated experimental */
-export function serviceRef(type: ServiceType, project?: MapCallback<unknown>): ServiceRef<unknown> {
-  return new ServiceRef(type, project);
+export function serviceReference<T>(type: ServiceType<T>): ServiceReference<T>;
+export function serviceReference<T, R>(type: ServiceType<T>, project: MapCallback<T, R>): ServiceReference<T, R>;
+export function serviceReference(type: ServiceType, project?: MapCallback<unknown>): ServiceReference<unknown> {
+  return new ServiceReference(type, project);
 }

@@ -127,10 +127,10 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
 
       parameters = DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {
         const substitution = result[decoration.path[2]] as Writeable<TargetParameter>;
-        if (decoration.payload.referTo) {
-          substitution.type = decoration.payload.referTo;
+        if (decoration.payload.type) {
+          substitution.type = decoration.payload.type;
         }
-        substitution.callback = decoration.payload.callback;
+        substitution.callback = decoration.payload.project;
         return result;
       }, reflect);
 

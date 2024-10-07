@@ -24,7 +24,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
 
   constructor(
     behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
-      .map(d => [d.path[0] as Type, d.payload.behavior])
+      .map(d => [d.path[0] as Type, d.payload])
   ) {
     const getServiceType = (def: ServiceDescriptor) => def.type;
     super(getServiceType);

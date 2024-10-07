@@ -4,9 +4,7 @@ export {
   Inherited,
   Scoped,
   Prototype,
-  BehaveLikePayload,
   BehaveLikeDecorator,
-  ProvidePayload,
   Provide,
   ProvideDecorator
 } from './decorators';
@@ -32,7 +30,7 @@ export {
   OnScopeDestroy,
 } from './service-provider';
 export { ServiceType } from './service-type';
-export { serviceRef } from './service-ref';
+export { serviceReference } from './service-reference';
 export { ServiceScope } from './service-scope';
 
 export { runProviderContext, provide } from './global'; // todo: will be moved away
