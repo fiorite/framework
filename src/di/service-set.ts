@@ -31,9 +31,13 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
     this._behavioralMap = new Map(behavioralMap);
   }
 
+  hasType(type: ServiceType): boolean {
+    return this.innerMap.has(type);
+  }
+
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
     decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
-      .filter(type => !this.innerMap.has(type))
+      .filter(type => !this.hasType(type))
       .forEach(type => this.addType(type as Type));
     return this;
   }

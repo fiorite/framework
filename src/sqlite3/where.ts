@@ -1,5 +1,4 @@
-import { DbModel, DbWhere } from '../db';
-import { DbPrimitiveValue, DbWhereCondition } from '../db/query';
+import { DbModel, DbPrimitiveValue, DbWhere, DbWhereCondition } from '../db';
 
 export function buildSqlite3Where(model: DbModel, iterable: Iterable<DbWhere>): {
   sql: string,

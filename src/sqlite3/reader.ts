@@ -2,12 +2,13 @@ import { Database } from 'sqlite3';
 import { Sqlite3DbIterator } from './iterator';
 import { DbModel, DbModelField, DbReadContext, DbReader } from '../db';
 import { buildSqlite3Where } from './where';
+import { Sqlite3LogSql } from './log-sql';
 
 export class Sqlite3DbReader extends DbReader {
   readonly #database: Database;
   readonly #logSql: (sql: string, params?: unknown) => void;
 
-  constructor(database: Database, logSql: (sql: string, params?: unknown) => void) {
+  constructor(database: Database, logSql: Sqlite3LogSql) {
     super();
     this.#database = database;
     this.#logSql = logSql;

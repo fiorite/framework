@@ -2,12 +2,13 @@ import { DbCreateContext, DbDeleteContext, DbUpdateContext, DbWriter } from '../
 import { VoidCallback } from '../core';
 import { Database } from 'sqlite3';
 import { buildSqlite3Where } from './where';
+import { Sqlite3LogSql } from './log-sql';
 
 export class Sqlite3DbWriter extends DbWriter {
   readonly #database: Database;
   readonly #logSql: (sql: string, params?: unknown) => void;
 
-  constructor(database: Database, logSql: (sql: string, params?: unknown) => void) {
+  constructor(database: Database, logSql: Sqlite3LogSql) {
     super();
     this.#database = database;
     this.#logSql = logSql;
