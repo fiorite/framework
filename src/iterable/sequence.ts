@@ -28,8 +28,8 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
     this.#comparer = comparer;
   }
 
-  #project<R>(operator: IterableProjectFunction<T, R>): AsyncSequence<R> {
-    return new AsyncSequence(operator(this), this.#comparer as unknown as EqualityComparer<R>);
+  #project<R>(operator: IterableProjectFunction<T, R>, comparer: EqualityComparer<R>): AsyncSequence<R> {
+    return new AsyncSequence(operator(this), comparer);
   }
 
   contains(value: MaybePromiseLike<T>, callback: ValueCallback<boolean>): void;
@@ -45,7 +45,7 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
   }
 
   filter(predicate: MapCallback<T, MaybePromiseLike<unknown>>): AsyncSequence<T> {
-    return this.#project(iterableFilter<T>(predicate));
+    return this.#project(iterableFilter<T>(predicate), this.#comparer);
   }
 
   first(callback: ValueCallback<T>): void;
@@ -68,16 +68,16 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
     return this.contains(value, callback as any);
   }
 
-  map<R>(callback: MapCallback<T, PromiseLike<R>>): AsyncSequence<R> {
-    return this.#project(iterableMap(callback) as IterableProjectFunction<T, R>);
+  map<R>(callback: MapCallback<T, MaybePromiseLike<R>>, comparer: EqualityComparer<R> = defaultComparer): AsyncSequence<R> {
+    return this.#project(iterableMap(callback) as IterableProjectFunction<T, R>, comparer);
   }
 
   skip(count: number): AsyncSequence<T> {
-    return this.#project(iterableSkip<T>(count));
+    return this.#project(iterableSkip<T>(count), this.#comparer);
   }
 
   take(count: number): AsyncSequence<T> {
-    return this.#project(iterableTake<T>(count));
+    return this.#project(iterableTake<T>(count), this.#comparer);
   }
 
   toArray(): PromiseLike<T[]>;
