@@ -10,6 +10,6 @@ export interface DbReadContext<T> {
 /**
  * level #1 of database implementation: db reader. basically converts {@link query} to async sequence.
  */
-export abstract class DbReader {
-  abstract read<T>(context: DbReadContext<T>): AsyncLikeIterableIterator<T>;
+export interface DbReader {
+  read<T>(context: DbReadContext<T>): AsyncLikeIterableIterator<T>;
 }

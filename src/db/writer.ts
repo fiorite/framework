@@ -24,10 +24,10 @@ export interface DbDeleteContext {
 /**
  * level #2 of database implementation: db writer. create/update/delete records done here.
  */
-export abstract class DbWriter {
-  abstract create(context: DbCreateContext, callback: VoidCallback): void;
+export interface DbWriter {
+  create(context: DbCreateContext, callback: VoidCallback): void;
 
-  abstract update(context: DbUpdateContext, callback: VoidCallback): void;
+  update(context: DbUpdateContext, callback: VoidCallback): void;
 
-  abstract delete(context: DbDeleteContext, callback: VoidCallback): void;
+  delete(context: DbDeleteContext, callback: VoidCallback): void;
 }

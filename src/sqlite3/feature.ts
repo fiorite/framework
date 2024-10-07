@@ -1,7 +1,6 @@
 import { ApplicationFeature, applicationFeature } from '../app';
 import { Database } from 'sqlite3';
-import { addDbManager } from '../db';
-import { DbManager } from '../db/manager';
+import { addDbManager, DbManager } from '../db';
 import { Sqlite3DbAdapter } from './adapter';
 import { Logger } from '../logging';
 
@@ -21,7 +20,6 @@ export function addSqlite3(filename: string, connection?: string): ApplicationFe
           params ? logger.debug('sql: ' + sql + '; params: ' + JSON.stringify(params)) : logger.debug('sql: ' + sql);
         }
       );
-      provide<Database>(databaseSymbol);
       provide(DbManager).set(connection, adapter);
     },
   );
