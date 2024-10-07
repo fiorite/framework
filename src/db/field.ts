@@ -39,9 +39,9 @@ export abstract class ModelField implements Equatable {
 }
 
 export class DbModelField extends ModelField {
-  readonly #name: string;
+  readonly #name: string | symbol;
 
-  get name(): string {
+  get name(): string | symbol {
     return this.#name;
   }
 
@@ -52,7 +52,7 @@ export class DbModelField extends ModelField {
   }
 
   constructor(
-    name: string,
+    name: string | symbol,
     type: ModelFieldType,
     optional?: boolean,
     default1?: ModelFieldTypeToJs[typeof type]

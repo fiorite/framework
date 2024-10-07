@@ -1,6 +1,6 @@
 import { DbModelField, ModelField } from './field';
 
-export type ObjectModelFields<TObject, TField extends ModelField = ModelField> = Record<keyof TObject & string, TField>;
+export type ObjectModelFields<TObject, TField extends ModelField = ModelField> = Record<keyof TObject, TField>;
 
 abstract class ObjectModel<T> {
   readonly #fields: ObjectModelFields<T>;
@@ -15,7 +15,7 @@ abstract class ObjectModel<T> {
 }
 
 export class DbModel<T = unknown> extends ObjectModel<T> {
-  readonly #nameMap = new Map<keyof T | string, string>();
+  readonly #nameMap = new Map<keyof T | string, string | symbol>();
 
   override get fields(): ObjectModelFields<T, DbModelField> {
     return super.fields as ObjectModelFields<T, DbModelField>;
@@ -32,7 +32,8 @@ export class DbModel<T = unknown> extends ObjectModel<T> {
     });
   }
 
-  fieldName(key: keyof T & string | string): string {
+  /** @deprecated */
+  fieldName(key: keyof T & string | string): string | symbol {
     return this.#nameMap.get(key)!;
   }
 }

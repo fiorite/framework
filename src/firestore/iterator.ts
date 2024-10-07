@@ -3,16 +3,19 @@ import { Readable } from 'stream';
 import { CallbackPromiseLike } from '../core';
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { firestoreDocumentId } from './document-id';
+import { DbObject } from '../db';
 
-export class FirestoreDbIterator<T> implements AsyncLikeIterableIterator<T> {
+export class FirestoreDbIterator implements AsyncLikeIterableIterator<DbObject> {
   readonly #stream: Readable;
+  readonly #includeDocumentId: boolean;
 
-  constructor(stream: Readable) {
+  constructor(stream: Readable, includeDocumentId: boolean) {
     stream.pause();
     this.#stream = stream;
+    this.#includeDocumentId = includeDocumentId;
   }
 
-  next(): PromiseLike<IteratorResult<T, unknown>> {
+  next(): PromiseLike<IteratorResult<DbObject, unknown>> {
     return new CallbackPromiseLike(complete => {
       const removeListeners = () => {
         this.#stream.off('data', dataListener);
@@ -23,10 +26,12 @@ export class FirestoreDbIterator<T> implements AsyncLikeIterableIterator<T> {
         removeListeners();
         this.#stream.pause();
 
-        complete({
-          done: false,
-          value: { ...document.data(), [firestoreDocumentId]: document.id, } as T
-        });
+        let value = document.data() as DbObject;
+        if (this.#includeDocumentId) {
+          value[firestoreDocumentId as any] = document.id;
+        }
+
+        complete({ done: false, value });
       };
 
       const endListener = () => {
@@ -40,7 +45,7 @@ export class FirestoreDbIterator<T> implements AsyncLikeIterableIterator<T> {
     });
   }
 
-  return(): PromiseLike<IteratorResult<T, unknown>> {
+  return(): PromiseLike<IteratorResult<DbObject, unknown>> {
     return new CallbackPromiseLike(complete => {
       this.#stream.destroy();
       complete({ value: undefined, done: true });

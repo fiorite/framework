@@ -1,4 +1,4 @@
-export { addFirestoreDb } from './app-feature';
-export { FirestoreDbAdapter } from './db-adapter';
-export { FirestoreDbIterator } from './db-iterator';
+export { addFirestoreDb } from './feature';
+export { FirestoreDbAdapter } from './adapter';
+export { FirestoreDbIterator } from './iterator';
 export { firestoreDocumentId } from './document-id';

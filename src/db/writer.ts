@@ -1,22 +1,21 @@
-import { DbModel } from './model';
 import { VoidCallback } from '../core';
 import { DbObject } from './object';
 import { DbWhere } from './query';
 
 export interface DbCreateContext {
-  readonly model: DbModel;
+  readonly model: string;
   readonly object: DbObject;
 }
 
 export interface DbUpdateContext {
-  readonly model: DbModel;
+  readonly model: string;
   readonly where: readonly DbWhere[];
   readonly snapshot: DbObject;
   readonly modified: DbObject;
 }
 
 export interface DbDeleteContext {
-  readonly model: DbModel;
+  readonly model: string;
   readonly where: readonly DbWhere[];
   readonly snapshot: DbObject;
 }

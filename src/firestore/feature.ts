@@ -1,8 +1,8 @@
 import { applicationFeature, ApplicationFeature } from '../app';
 import { addDbManager, DbConnectionName, DbManager } from '../db';
 import { Firestore } from 'firebase-admin/firestore';
-import { FirestoreDbAdapter } from './db-adapter';
-import { ServiceReference } from '../di/service-ref';
+import { FirestoreDbAdapter } from './adapter';
+import { ServiceReference } from '../di';
 
 export function addFirestoreDb(firestore: Firestore | ServiceReference<Firestore>, dbConnection?: DbConnectionName): ApplicationFeature {
   // const databaseSymbol = Symbol(`firebase-admin.Firestore(${String(dbConnection || 'default')}):${firestore.databaseId}`);

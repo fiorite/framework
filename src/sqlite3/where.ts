@@ -1,6 +1,6 @@
-import { DbModel, DbPrimitiveValue, DbWhere, DbWhereCondition } from '../db';
+import { DbPrimitiveValue, DbWhere, DbWhereCondition } from '../db';
 
-export function buildSqlite3Where(model: DbModel, iterable: Iterable<DbWhere>): {
+export function buildSqlite3Where(iterable: Iterable<DbWhere>): {
   sql: string,
   params: Record<string, unknown>
 } {
@@ -16,7 +16,7 @@ export function buildSqlite3Where(model: DbModel, iterable: Iterable<DbWhere>): 
       pieces.push(where.condition === DbWhereCondition.And ? 'AND' : 'OR');
     }
 
-    const column = model.fieldName(where.key as string);
+    const column = String(where.key);
     let operator: string;
     let iterable = false;
     switch (where.operator) {

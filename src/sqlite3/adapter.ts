@@ -1,16 +1,6 @@
 import { Database } from 'sqlite3';
 import { Sqlite3LogSql } from './log-sql';
-import {
-  DbAdapter,
-  DbCreateContext,
-  DbDeleteContext,
-  DbModel,
-  DbModelField,
-  DbReadContext,
-  DbReader,
-  DbUpdateContext,
-  DbWriter
-} from '../db';
+import { DbAdapter, DbCreateContext, DbDeleteContext, DbReadContext, DbReader, DbUpdateContext, DbWriter } from '../db';
 import { Sqlite3DbIterator } from './iterator';
 import { buildSqlite3Where } from './where';
 import { VoidCallback } from '../core';
@@ -19,11 +9,11 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
   readonly #database: Database;
   readonly #logSql: Sqlite3LogSql;
 
-  get reader(): Sqlite3DbAdapter {
+  get reader(): this {
     return this;
   }
 
-  get writer(): Sqlite3DbAdapter {
+  get writer(): this {
     return this;
   }
 
@@ -32,13 +22,13 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
     this.#logSql = logSql;
   }
 
-  read<T>({ model, query }: DbReadContext<T>): Sqlite3DbIterator<T> {
-    const columns = Object.values<DbModelField>(model.fields).map(x => x.name).join(', ');
-    let sql = `SELECT ${columns} FROM ${model.name}`;
+  read({ model, query, fields }: DbReadContext): Sqlite3DbIterator {
+    const columns = fields.map(x => x.name).join(', ');
+    let sql = `SELECT ${columns} FROM ${model}`;
     const params: Record<string, unknown> = {};
 
     if (query.where && query.where.size) {
-      const where = buildSqlite3Where(model as DbModel, query.where);
+      const where = buildSqlite3Where(query.where);
       Object.assign(params, where.params);
       sql += ' WHERE ' + where.sql;
     }
@@ -53,7 +43,7 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
 
     this.#logSql(sql, params);
     const statement = this.#database.prepare(sql, params);
-    return new Sqlite3DbIterator(model, statement);
+    return new Sqlite3DbIterator(fields, statement);
   }
 
   create({ object, model }: DbCreateContext, callback: VoidCallback) {
@@ -61,8 +51,7 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
     const params: Record<string, unknown> = {};
 
     const result = Object.entries(object).reduce((record, entry) => {
-      const column = model.fieldName(entry[0]);
-      record.insert.push(column);
+      record.insert.push(entry[0]);
 
       const param = `$v${counter++}_${entry[0]}`;
       params[param] = entry[1];
@@ -74,7 +63,7 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
       values: [] as string[],
     });
 
-    const sql = `INSERT INTO ${model.name}(${result.insert.join(', ')}) VALUES (${result.values.join(', ')})`;
+    const sql = `INSERT INTO ${model}(${result.insert.join(', ')}) VALUES (${result.values.join(', ')})`;
     this.#logSql(sql, params);
     this.#database.run(sql, params, err => { // todo: think of autoincrement
       if (err) {
@@ -86,18 +75,18 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
   }
 
   update(context: DbUpdateContext, callback: VoidCallback): void {
-    const where = buildSqlite3Where(context.model, context.where);
+    const where = buildSqlite3Where(context.where);
     const params = where.params;
 
     let counter = context.where.length;
     const set = Object.entries(context.modified).map(entry => {
       const param = `$v${counter++}_${entry[0]}`;
       params[param] = entry[1];
-      const column = context.model.fieldName(entry[0]);
+      const column = entry[0];
       return `${column} = ${param}`;
     }).join(', ');
 
-    const sql = `UPDATE ${context.model.name} SET ${set} WHERE ${where.sql}`;
+    const sql = `UPDATE ${context.model} SET ${set} WHERE ${where.sql}`;
     this.#logSql(sql, params);
     this.#database.run(sql, params, err => {
       if (err) {
@@ -109,8 +98,8 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
   }
 
   delete(context: DbDeleteContext, callback: VoidCallback): void {
-    const where = buildSqlite3Where(context.model, context.where);
-    const sql = `DELETE FROM ${context.model.name} WHERE ${where.sql}`;
+    const where = buildSqlite3Where(context.where);
+    const sql = `DELETE FROM ${context.model} WHERE ${where.sql}`;
     this.#logSql(sql, where.params);
     this.#database.run(sql, where.params, err => {
       if (err) {

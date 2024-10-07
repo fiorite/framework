@@ -1,5 +1,4 @@
 import { DbModel } from './model';
-import { read } from 'node:fs';
 
 export interface DbQuery<TWhere = DbWhere> {
   readonly take?: number;
@@ -23,9 +22,9 @@ export type DbPrimitiveValue = string | number | boolean | undefined;
 type DbObject = Record<string, DbPrimitiveValue>;
 
 export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
-  readonly #key: string;
+  readonly #key: string | symbol;
 
-  get key(): string {
+  get key(): string | symbol {
     return this.#key;
   }
 
@@ -47,13 +46,17 @@ export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
     return this.#condition;
   }
 
-  constructor(key: string, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: TIterable, condition?: DbWhereCondition);
-  constructor(key: string, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: T, condition?: DbWhereCondition);
-  constructor(key: string, operator: DbWhereOperator | string, value: unknown, condition: DbWhereCondition = DbWhereCondition.And) {
+  constructor(key: string | symbol, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: TIterable, condition?: DbWhereCondition);
+  constructor(key: string | symbol, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: T, condition?: DbWhereCondition);
+  constructor(key: string | symbol, operator: DbWhereOperator | string, value: unknown, condition: DbWhereCondition = DbWhereCondition.And) {
     this.#key = key;
     this.#operator = operator as DbWhereOperator;
     this.#value = value as typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T;
     this.#condition = condition;
+  }
+
+  withKey(value: string): DbWhere<T, TIterable> {
+    return new DbWhere<T, TIterable>(value, this.#operator as any, this.#value, this.#condition);
   }
 }
 

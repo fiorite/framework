@@ -23,47 +23,50 @@ import {
 import { MaybeAsyncLikeIterable } from '../iterable/iterable';
 import { DbWriter } from './writer';
 import { DbObject } from './object';
+import { DbModelField } from './field';
 
 const snapshot = Symbol('DbModel.snapshot');
+
 const modelName = Symbol('DbModel.name');
+
+type DbSequenceWhere = DbWhere<MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>;
+
+type DbSequenceQuery = DbQuery<DbSequenceWhere>;
 
 export class DbObjectNotFound<TModel = unknown> implements Error {
   readonly name = 'DbObjectNotFound';
   readonly message: string;
 
-  // readonly #model: DbModel<TModel>;
-
   constructor(model: DbModel<TModel>) {
-    // this.#model = model;
     this.message = 'Database object is not found (' + model.name + ').';
   }
 }
 
-export class TransitionDbIterator<T> implements AsyncLikeIterableIterator<T> {
-  readonly #query: DbQuery<DbWhere<MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>>;
-  readonly #share: LazyCallbackShare<AsyncLikeIterableIterator<T>>;
+export class TransitionDbIterator implements AsyncLikeIterableIterator<DbObject> {
+  readonly #query: DbSequenceQuery;
+  readonly #share: LazyCallbackShare<AsyncLikeIterableIterator<DbObject>>;
 
   constructor(
     reader: DbReader,
-    model: DbModel<T>,
-    query: DbQuery<DbWhere<MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>>,
+    model: DbModel,
+    query: DbSequenceQuery,
   ) {
     this.#query = query;
 
     this.#share = lazyCallbackShare(complete => {
       this.#synchronizeQuery(query2 => {
-        complete(reader.read({ model, query: query2 }));
+        complete(reader.read({ model: model.name, query: query2, fields: Object.values(model.fields) }));
       });
     });
   }
 
-  next(): PromiseLike<IteratorResult<T, unknown>> {
+  next(): PromiseLike<IteratorResult<DbObject, unknown>> {
     return this.#share.value ? this.#share.value.next() : new CallbackPromiseLike(complete => {
       this.#share(iterator => iterator.next().then(complete));
     });
   }
 
-  return(value?: MaybePromiseLike<unknown>): PromiseLike<IteratorResult<T, unknown>> {
+  return(value?: MaybePromiseLike<unknown>): PromiseLike<IteratorResult<DbObject, unknown>> {
     if (this.#share.value) {
       if (this.#share.value.return) {
         return this.#share.value.return(value);
@@ -116,7 +119,7 @@ export class TransitionDbIterator<T> implements AsyncLikeIterableIterator<T> {
     }
   }
 
-  [Symbol.asyncIterator](): AsyncLikeIterableIterator<T> {
+  [Symbol.asyncIterator](): AsyncLikeIterableIterator<DbObject> {
     return this.#share.value || this;
   }
 }
@@ -130,7 +133,7 @@ export class DbSequence<T> extends Sequence<T> {
    * db sequence is going to resolve {@link MaybePromiseLike}, {@link MaybeAsyncLikeIterable} and deliver sync result to adapter.
    * @private
    */
-  #query?: DbQuery<DbWhere<MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>>;
+  #query?: DbSequenceQuery;
 
   constructor(model: DbModel<T>, reader?: DbReader, writer?: DbWriter) {
     super({
@@ -139,18 +142,53 @@ export class DbSequence<T> extends Sequence<T> {
           throw new Error('reader is not implemented for current DbSequence.');
         }
 
-        return iterableMap<T>(object => {
-          this.#setSnapshot(object, object);
-          this.#setDebugInformation(object);
-          return object;
+        return iterableMap<DbObject, T>(object => {
+          const importObject = this.#remapObjectFromAdapter(object);
+          this.#setSnapshot(importObject, importObject);
+          this.#setDebugInformation(importObject);
+          return importObject;
         })({
-          [Symbol.asyncIterator]: () => new TransitionDbIterator(this.#reader!, this.#model, this.#query || {}),
+          [Symbol.asyncIterator]: () => {
+            const exportQuery = this.#remapQueryFields(this.#query || {});
+            return new TransitionDbIterator(this.#reader!, this.#model as DbModel, exportQuery);
+          },
         })[Symbol.asyncIterator]() as AsyncLikeIterator<T>;
       }
     });
     this.#model = model;
     this.#reader = reader;
     this.#writer = writer;
+  }
+
+  #remapObjectForAdapter(object: Partial<T>): DbObject {
+    return Object.entries(object).reduce((result, [key, value]) => {
+      result[(this.#model.fields as any)[key].name] = value;
+      return result;
+    }, {} as DbObject);
+  }
+
+  #remapObjectFromAdapter(object: DbObject): T {
+    return Object.entries<DbModelField>(this.#model.fields).reduce((result, [key, field]) => {
+      result[key] = object[field.name as any];
+      return result;
+    }, {} as DbObject) as T;
+  }
+
+  /**
+   * Replace any field name from domain value to mapped one.
+   * @param query
+   * @private
+   */
+  #remapQueryFields(query: DbSequenceQuery): DbSequenceQuery {
+    let where: Set<DbSequenceWhere> | undefined;
+    if (query.where) {
+      where = new Set(this.#remapWhere(query.where));
+    }
+    return { ...query, where };
+  }
+
+  #remapWhere<TWhere extends DbWhere<unknown, unknown>>(where: Iterable<TWhere>): TWhere[] {
+    return Array.from(where).map(entry => entry.withKey((this.#model.fields as any)[entry.key]!.name)) as TWhere[];
   }
 
   #setDebugInformation(object: T): void {
@@ -161,7 +199,7 @@ export class DbSequence<T> extends Sequence<T> {
     });
   }
 
-  #ensureWriterBound(): void {
+  #ensureWriterImplemented(): void {
     if (!this.#writer) {
       throw new Error('writer is not implemented for current DbSequence.');
     }
@@ -176,14 +214,14 @@ export class DbSequence<T> extends Sequence<T> {
   add(object: T, callback: VoidCallback): void;
   add(object: T): PromiseLike<void>;
   add(object: T, callback?: VoidCallback): unknown {
-    this.#ensureWriterBound();
+    this.#ensureWriterImplemented();
 
     if (this.#getSnapshot(object)) {
       throw new Error('unable to add an item with bound Symbol(DbModel.snapshot).');
     }
 
     return promiseWhenNoCallback<void>(callback => {
-      this.#writer!.create({ object: object as DbObject, model: this.#model as DbModel }, () => {
+      this.#writer!.create({ object: this.#remapObjectForAdapter(object), model: this.#model.name }, () => {
         this.#setSnapshot(object, object);
         callback();
       });
@@ -233,8 +271,8 @@ export class DbSequence<T> extends Sequence<T> {
   update(object: T, callback: VoidCallback): void;
   update(object: T): PromiseLike<void>;
   update(object: T, callback?: VoidCallback): unknown {
-    this.#ensureWriterBound();
     this.#ensureKeysSet();
+    this.#ensureWriterImplemented();
     const snapshot = this.#getSnapshot(object);
     if (undefined === snapshot) {
       throw new Error('unable to edit an item without bound snapshot.');
@@ -256,10 +294,10 @@ export class DbSequence<T> extends Sequence<T> {
 
     return promiseWhenNoCallback<void>(callback => {
       this.#writer!.update({
-        model: this.#model as DbModel,
-        modified,
-        snapshot: snapshot as DbObject,
-        where: this.#makeWhereUsingKeys(snapshot),
+        model: this.#model.name,
+        modified: this.#remapObjectForAdapter(modified),
+        snapshot: this.#remapObjectForAdapter(snapshot),
+        where: this.#remapWhere(this.#makeWhereUsingKeys(snapshot)),
       }, () => {
         this.#setSnapshot(object, object);
         callback();
@@ -270,7 +308,7 @@ export class DbSequence<T> extends Sequence<T> {
   delete(object: T): PromiseLike<void>;
   delete(object: T, callback: ValueCallback<void>): void;
   delete(object: T, callback?: ValueCallback<void>): unknown {
-    this.#ensureWriterBound();
+    this.#ensureWriterImplemented();
     this.#ensureKeysSet();
     const snapshot = this.#getSnapshot(object);
     if (undefined === snapshot) {
@@ -288,7 +326,11 @@ export class DbSequence<T> extends Sequence<T> {
     }
 
     return promiseWhenNoCallback<void>(callback => {
-      this.#writer!.delete({ model: this.#model as DbModel, where: read, snapshot: snapshot as DbObject }, () => {
+      this.#writer!.delete({
+        model: this.#model.name,
+        where: this.#remapWhere(read),
+        snapshot: this.#remapObjectForAdapter(snapshot)
+      }, () => {
         this.#setSnapshot(object);
         callback();
       });
