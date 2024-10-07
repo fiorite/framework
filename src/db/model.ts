@@ -15,7 +15,7 @@ abstract class ObjectModel<T> {
 }
 
 export class DbModel<T = unknown> extends ObjectModel<T> {
-  readonly #nameMap = new Map<keyof T & string | string, string>();
+  readonly #nameMap = new Map<keyof T | string, string>();
 
   override get fields(): ObjectModelFields<T, DbModelField> {
     return super.fields as ObjectModelFields<T, DbModelField>;
@@ -23,7 +23,7 @@ export class DbModel<T = unknown> extends ObjectModel<T> {
 
   constructor(
     readonly name: string,
-    readonly keys: (keyof T & string)[],
+    readonly keys: (keyof T | string | symbol)[],
     fields: ObjectModelFields<T, DbModelField>,
   ) {
     super(fields);

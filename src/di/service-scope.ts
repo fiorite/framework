@@ -1,7 +1,7 @@
 import { ServiceType } from './service-type';
 import { CallbackShare, ValueCallback } from '../core';
 
-export class ServiceScope {
+export class ServiceScope implements Iterable<[ServiceType, unknown]> {
   readonly #scoped = new Map<ServiceType, unknown>();
   readonly #callbackShare = new CallbackShare();
 
@@ -16,5 +16,9 @@ export class ServiceScope {
         callback(instance);
       });
     }, then);
+  }
+
+  [Symbol.iterator](): Iterator<[ServiceType, unknown]> {
+    return this.#scoped[Symbol.iterator]();
   }
 }

@@ -1,6 +1,7 @@
 import {
   CallbackForceValueError,
-  CallbackShare, forceCallbackValue,
+  CallbackShare,
+  forceCallbackValue,
   FunctionClass,
   isObjectMethod,
   MapCallback,
@@ -14,6 +15,7 @@ import { ServiceBehavior } from './service-behavior';
 import { ServiceScope } from './service-scope';
 import { remapBehaviorInheritance, validateBehaviorDependency, validateCircularDependency } from './_procedure';
 import { ServiceFactoryFunction } from './service-factory';
+import { iterableForEach } from '../iterable';
 
 /**
  * Service provider is build on callbacks.
@@ -56,18 +58,17 @@ export interface ServiceProviderWithReturnFunction extends ServiceProvideFunctio
 export interface ServiceProviderWithReturn extends ServiceProviderWithReturnFunction {
   /**
    * @inheritdoc
-   */
-  <T>(type: ServiceType<T>): T;
+   */<T>(type: ServiceType<T>): T;
 
   /**
    * @inheritdoc
-   */
-  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
 export class NotSynchronousServiceError {
   readonly name = 'AsynchronousServiceError';
   readonly message: string;
+
   constructor(type: ServiceType) {
     this.message = `Service(${ServiceType.toString(type)}) is not synchronous. Add callback() to provide(..., callback) instead.`;
   }
@@ -109,13 +110,11 @@ export class ServiceProviderWithReturn extends FunctionClass<ServiceProviderWith
 export interface ServiceProvider extends ServiceProviderWithReturnFunction {
   /**
    * @inheritdoc
-   */
-  <T>(type: ServiceType<T>): T;
+   */<T>(type: ServiceType<T>): T;
 
   /**
    * @inheritdoc
-   */
-  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 }
 
 export class ServiceNotFoundError implements Error {
@@ -280,11 +279,11 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     const scope = this.scope;
     delete this._scope;
 
-    scope.forEach(value => {
-      if (isObjectMethod(value, 'onScopeDestroy')) {
-        value['onScopeDestroy']();
+    iterableForEach<[ServiceType, unknown]>(entry => {
+      if (isObjectMethod(entry[1], 'onScopeDestroy')) {
+        entry[1]['onScopeDestroy']();
       }
-    });
+    })(scope);
   }
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {

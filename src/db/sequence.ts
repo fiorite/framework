@@ -201,7 +201,7 @@ export class DbSequence<T> extends Sequence<T> {
       if (this.#model.keys.length !== 1) {
         throw new Error('#get() received a single value whereas model (' + this.#model.name + ') keys number is different (' + this.#model.keys.length + ')');
       }
-      sequence = sequence.where(this.#model.keys[0], value as any);
+      sequence = sequence.where(this.#model.keys[0] as any, value as any);
     } else {
       sequence = Object.entries(value as Record<string, unknown>).reduce((sequence, entry) => {
         const key = entry[0] as keyof T & string;
@@ -226,7 +226,7 @@ export class DbSequence<T> extends Sequence<T> {
 
   #makeWhereUsingKeys(object: T): DbWhere[] {
     return this.#model.keys.map(key => {
-      return new DbWhere(key, DbWhereOperator.EqualTo, object[key] as DbPrimitiveValue);
+      return new DbWhere(key as string, DbWhereOperator.EqualTo, (object as any)[key] as DbPrimitiveValue);
     });
   }
 

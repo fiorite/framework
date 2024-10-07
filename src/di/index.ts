@@ -32,6 +32,7 @@ export {
   OnScopeDestroy,
 } from './service-provider';
 export { ServiceType } from './service-type';
+export { serviceRef } from './service-ref';
 export { ServiceScope } from './service-scope';
 
 export { runProviderContext, provide } from './global'; // todo: will be moved away

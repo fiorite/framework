@@ -14,7 +14,7 @@ export class Sqlite3DbIterator<T, TReturn = unknown> implements AsyncLikeIterabl
 
   #transform(object: DbObject): T { // todo: move to data manipulator instance.
     return Object.entries<DbModelField>(this.#model.fields)
-      .reduce((object, [key, field]) => {
+      .reduce((object, [key, field]) => { // add name <=> key transformation
         const value = object[key];
         if (null === value) {
           object[key] = undefined;
