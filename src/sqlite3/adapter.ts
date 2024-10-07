@@ -27,7 +27,7 @@ export class Sqlite3DbAdapter implements DbAdapter, DbReader, DbWriter {
     let sql = `SELECT ${columns} FROM ${model}`;
     const params: Record<string, unknown> = {};
 
-    if (query.where && query.where.size) {
+    if (query.where && query.where.length) {
       const where = buildSqlite3Where(query.where);
       Object.assign(params, where.params);
       sql += ' WHERE ' + where.sql;

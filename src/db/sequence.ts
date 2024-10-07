@@ -1,18 +1,8 @@
 import { EmptyIterableError, iterableFirst } from '../iterable/first';
 import { DbReader } from './reader';
-import { AsyncLikeIterator, AsyncSequence, iterableContains, iterableMap } from '../iterable';
+import { AsyncLikeIterator, AsyncSequence, iterableMap } from '../iterable';
 import { DbModel } from './model';
-import {
-  DbLooseQuery,
-  DbLooseWhere,
-  DbPrimitiveValue,
-  DbQuery,
-  DbWhere,
-  DbWhereCondition,
-  DbWhereExpression,
-  DbWhereKey,
-  DbWhereOperator
-} from './query';
+import { DbLooseQuery, DbQuery, } from './query';
 import {
   callbackPromiseLike,
   EqualityComparer,
@@ -23,9 +13,10 @@ import {
 } from '../core';
 import { MaybeAsyncLikeIterable } from '../iterable/iterable';
 import { DbWriter } from './writer';
-import { DbObject } from './object';
+import { DbObject, DbPrimitiveValue } from './object';
 import { DbModelField } from './field';
 import { MiddleDbIterator } from './iterator';
+import { DbLooseWhere, DbWhere, DbWhereOperator } from './where';
 
 const snapshot = Symbol('DbModel.snapshot');
 
@@ -107,9 +98,9 @@ export class DbSequenceQuery<T> extends AsyncSequence<T> {
    * @private
    */
   #remapQueryFields(query: DbLooseQuery): DbLooseQuery {
-    let where: Set<DbLooseWhere> | undefined;
+    let where: DbLooseWhere[] | undefined;
     if (query.where) {
-      where = new Set(this._remapWhere(query.where));
+      where = this._remapWhere(query.where);
     }
     return { ...query, where };
   }
@@ -166,27 +157,27 @@ export class DbSequenceQuery<T> extends AsyncSequence<T> {
   where<K extends keyof T>(key: K, value: MaybePromiseLike<T[K] | undefined>): DbSequenceQuery<T>;
   where<K extends keyof T>(key: K, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: MaybePromiseLike<T[K] | undefined>): DbSequenceQuery<T>;
   where<K extends keyof T>(key: K, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: MaybePromiseLike<MaybeAsyncLikeIterable<T[K]>>): DbSequenceQuery<T>;
-  where<K extends keyof T>(callback: (builder: DbWhereKey<T, MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>) => DbWhereExpression<T>): DbSequenceQuery<T>;
+  // where<K extends keyof T>(callback: (builder: DbWhereKey<T, MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>) => DbWhereExpression<T>): DbSequenceQuery<T>;
   where(...args: unknown[]): DbSequenceQuery<T> {
-    const whereSet = this.#query && this.#query.where ? new Set(this.#query.where) : new Set<DbWhere>();
+    const whereArray = this.#query && this.#query.where ? [...this.#query.where] : [];
 
-    if (args.length === 1) {
-      const builder = new DbWhereKey(this.#model, DbWhereCondition.And, []);
-      const expression = (args[0] as (builder: DbWhereKey<T>) => DbWhereExpression<T>)(builder);
-      DbWhereExpression.stack(expression).forEach(where => whereSet.add(where));
-    }
+    // if (args.length === 1) {
+    //   const builder = new DbWhereKey(this.#model, DbWhereCondition.And, []);
+    //   const expression = (args[0] as (builder: DbWhereKey<T>) => DbWhereExpression<T>)(builder);
+    //   DbWhereExpression.stack(expression).forEach(where => whereSet.add(where));
+    // }
 
     if (args.length === 2) {
       const where = new DbWhere(args[0] as string, DbWhereOperator.EqualTo, args[1] as MaybePromiseLike<unknown>);
-      whereSet.add(where as any);
+      whereArray.push(where as DbLooseWhere);
     }
 
     if (args.length === 3) {
       const where = new DbWhere(args[0] as string, args[1] as any, args[2] as any);
-      whereSet.add(where);
+      whereArray.push(where as DbLooseWhere);
     }
 
-    return this.#withQuery({ where: whereSet as any });
+    return this.#withQuery({ where: whereArray as any }); // todo: fix type
   }
 
   protected _getSnapshot<T>(object: T): T | undefined {

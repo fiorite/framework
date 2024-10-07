@@ -1,4 +1,4 @@
-import { ApplicationFeature, registerServices } from '../app';
+import { ApplicationFeature } from '../app';
 import { DbConnectionName, DbManager } from './manager';
 import { DbModel } from './model';
 import { DbSequence } from './sequence';

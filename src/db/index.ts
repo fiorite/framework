@@ -3,19 +3,9 @@ export { FromDbModel, dbSequence, dbCoreServices } from './feature';
 export { DbModelField, ModelFieldTypeToJs, ModelFieldType, ModelField } from './field';
 export { DbConnectionName, DbManager } from './manager';
 export { DbModel, ObjectModelFields } from './model';
-export { DbObject } from './object';
-export {
-  DbQuery,
-  DbWhere,
-  DbWhereOperator,
-  DbWhereKey,
-  DbWhereCondition,
-  DbWhereExpression,
-  DbWhereKeyOperator,
-  DbPrimitiveValue,
-  DbLooseWhere,
-  DbLooseQuery,
-} from './query';
+export { DbObject, DbPrimitiveValue } from './object';
+export { DbQuery, DbLooseQuery } from './query';
 export { DbReader, DbReadContext } from './reader';
 export { DbSequence, DbObjectNotFound } from './sequence';
+export { DbWhere, DbLooseWhere } from './where';
 export { DbWriter, DbCreateContext, DbDeleteContext, DbUpdateContext, } from './writer';

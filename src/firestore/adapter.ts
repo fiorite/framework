@@ -7,10 +7,9 @@ import {
   DbReader,
   DbUpdateContext,
   DbWhere,
-  DbWhereCondition,
   DbWriter
 } from '../db';
-import { CollectionReference, FieldPath, Filter, Firestore, Query } from 'firebase-admin/firestore';
+import { CollectionReference, FieldPath, Firestore, Query } from 'firebase-admin/firestore';
 import { Readable } from 'stream';
 import { FirestoreDbIterator } from './iterator';
 import { firestoreDocumentId } from './document';
@@ -42,21 +41,24 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
     );
     const includeDocumentId = fieldNames.includes(firestoreDocumentId);
 
-    if (query.where) {
-      let filter: Filter;
-      let condition: DbWhereCondition | undefined;
-      for (const where of Array.from(query.where).reverse()) { // go backwards to apply filters, apparently fix required.
-        const key = this.#fieldKeyToFirestoreKey(where.key);
-        const current = Filter.where(key, where.operator, where.value);
-        if (!condition) {
-          condition = where.condition;
-          filter = current;
-          continue;
-        }
-        filter = DbWhereCondition.And === condition ? Filter.and(filter!, current) : Filter.or(filter!, current);
-        condition = where.condition;
-      }
-      collection = collection.where(filter!);
+    if (query.where && query.where.length) {
+      query.where.forEach(where => {
+        collection = collection.where(String(where.key), where.operator, where.value);
+      });
+      // let filter: Filter;
+      // let condition: DbWhereCondition | undefined;
+      // for (const where of Array.from(query.where).reverse()) { // go backwards to apply filters, apparently fix required.
+      //   const key = this.#fieldKeyToFirestoreKey(where.key);
+      //   const current = Filter.where(key, where.operator, where.value);
+      //   if (!condition) {
+      //     condition = where.condition;
+      //     filter = current;
+      //     continue;
+      //   }
+      //   filter = DbWhereCondition.And === condition ? Filter.and(filter!, current) : Filter.or(filter!, current);
+      //   condition = where.condition;
+      // }
+      // collection = collection.where(filter!);
     }
 
     if (query.take) {

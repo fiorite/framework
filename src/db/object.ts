@@ -1,1 +1,3 @@
-export type DbObject = Record<string | symbol, unknown>;
+export type DbPrimitiveValue = string | number | boolean;
+
+export type DbObject = Record<string | symbol, DbPrimitiveValue | unknown>;

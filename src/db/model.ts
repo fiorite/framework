@@ -15,8 +15,6 @@ abstract class ObjectModel<T> {
 }
 
 export class DbModel<T = unknown> extends ObjectModel<T> {
-  readonly #nameMap = new Map<keyof T | string, string | symbol>();
-
   override get fields(): ObjectModelFields<T, DbModelField> {
     return super.fields as ObjectModelFields<T, DbModelField>;
   }
@@ -27,13 +25,5 @@ export class DbModel<T = unknown> extends ObjectModel<T> {
     fields: ObjectModelFields<T, DbModelField>,
   ) {
     super(fields);
-    Object.entries<DbModelField>(fields).forEach(entry => {
-      this.#nameMap.set(entry[0] as keyof T & string, entry[1].name);
-    });
-  }
-
-  /** @deprecated */
-  fieldName(key: keyof T & string | string): string | symbol {
-    return this.#nameMap.get(key)!;
   }
 }
