@@ -45,6 +45,7 @@ export class RoutePayload {
   }
 }
 
+// todo: check class whether is has arguments and if so and no decorator, write a warning.
 export function Route(path?: string, method?: HttpMethod | string): MethodDecoratorWithPayload<RoutePayload> {
   return makeMethodDecorator(Route, new RoutePayload(path, method));
 }
