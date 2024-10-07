@@ -3,7 +3,7 @@ import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithRet
 import { HttpMethod } from '../http';
 import { Route, RouteCallback, RouteDescriptor, RouteMatcher } from '../routing';
 import { Logger } from '../logging';
-import { MaybePromiseLike, ValueCallback, VoidCallback } from '../core';
+import { MaybeArray, MaybePromiseLike, ValueCallback, VoidCallback } from '../core';
 import { addHttpServer, HttpServerFeature } from './http-server';
 import { HttpServer, HttpServerListener } from '../http/server';
 
@@ -116,6 +116,18 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
 
   if (!features.some(x => x instanceof HttpServerFeature)) {  // should be by default.
     features.unshift(addHttpServer());
+  }
+
+  // resolve tree of extendWith
+  const queue = [...features];
+  while (queue.length) {
+    const feature = queue.shift()!;
+    if (feature.extendWith) {
+      queue.push(...MaybeArray.toArray(feature.extendWith));
+    }
+    if (!features.includes(feature)) {
+      features.push(feature);
+    }
   }
 
   features.filter(x => x.registerServices).forEach(x => x.registerServices!(serviceSet));

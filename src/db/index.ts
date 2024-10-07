@@ -1,5 +1,5 @@
 export { DbAdapter } from './adapter';
-export { addDbManager, FromDbModel, dbSequence } from './feature';
+export { FromDbModel, dbSequence, dbCoreServices } from './feature';
 export { DbModelField, ModelFieldTypeToJs, ModelFieldType, ModelField } from './field';
 export { DbConnectionName, DbManager } from './manager';
 export { DbModel, ObjectModelFields } from './model';

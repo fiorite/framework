@@ -12,7 +12,7 @@ import {
   DbWhereOperator
 } from './query';
 import {
-  CallbackPromiseLike,
+  callbackPromiseLike,
   LazyCallbackShare,
   lazyCallbackShare,
   MaybePromiseLike,
@@ -61,8 +61,8 @@ export class TransitionDbIterator implements AsyncLikeIterableIterator<DbObject>
   }
 
   next(): PromiseLike<IteratorResult<DbObject, unknown>> {
-    return this.#share.value ? this.#share.value.next() : new CallbackPromiseLike(complete => {
-      this.#share(iterator => iterator.next().then(complete));
+    return this.#share.value ? this.#share.value.next() : callbackPromiseLike(then => {
+      this.#share(iterator => iterator.next().then(then));
     });
   }
 
@@ -71,7 +71,7 @@ export class TransitionDbIterator implements AsyncLikeIterableIterator<DbObject>
       if (this.#share.value.return) {
         return this.#share.value.return(value);
       } else {
-        return new CallbackPromiseLike(complete => {
+        return callbackPromiseLike(complete => {
           value ? MaybePromiseLike.then(() => value, value2 => {
             complete({ done: true, value: value2 });
           }) : complete({ done: true, value: undefined });
@@ -79,16 +79,14 @@ export class TransitionDbIterator implements AsyncLikeIterableIterator<DbObject>
       }
     }
 
-    return new CallbackPromiseLike(complete => {
+    return callbackPromiseLike(complete => {
       this.#share(iterator => {
         if (iterator.return) {
-          return iterator.return(value).then(complete);
+          iterator.return(value).then(complete);
         } else {
-          return new CallbackPromiseLike(complete => {
-            value ? MaybePromiseLike.then(() => value, value2 => {
-              complete({ done: true, value: value2 });
-            }) : complete({ done: true, value: undefined });
-          });
+          value ? MaybePromiseLike.then(() => value, value2 => {
+            complete({ done: true, value: value2 });
+          }) : complete({ done: true, value: undefined });
         }
       });
     });
@@ -100,10 +98,10 @@ export class TransitionDbIterator implements AsyncLikeIterableIterator<DbObject>
 
       MaybePromiseLike.all(() => {
         return wheres.map(where => {
-          return new CallbackPromiseLike(complete => {
+          return callbackPromiseLike(then => {
             MaybePromiseLike.then(() => where.value, value2 => {
               [DbWhereOperator.In, DbWhereOperator.NotIn].includes(where.operator) ?
-                iterableToArray(complete)(value2 as MaybeAsyncLikeIterable<unknown>) : complete(value2);
+                iterableToArray(then)(value2 as MaybeAsyncLikeIterable<unknown>) : then(value2);
             });
           });
         });
@@ -289,7 +287,7 @@ export class DbSequence<T> extends Sequence<T> {
         callback();
         return;
       }
-      return new CallbackPromiseLike(complete => complete(void 0));
+      return callbackPromiseLike(then => then(void 0));
     }
 
     return promiseWhenNoCallback<void>(callback => {

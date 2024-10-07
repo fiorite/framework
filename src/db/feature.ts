@@ -4,18 +4,14 @@ import { DbModel } from './model';
 import { DbSequence } from './sequence';
 import { Provide, provide, ProvideDecorator } from '../di';
 
-export function addDbManager(): ApplicationFeature {
-  return registerServices(serviceSet => {
-    if (!serviceSet.hasType(DbManager)) {
-      serviceSet.addSingleton(DbManager, () => new DbManager());
-    }
-  });
-}
+export const dbCoreServices: ApplicationFeature = {
+  registerServices: serviceSet => serviceSet.addSingleton(DbManager),
+};
 
 export function dbSequence<T>(model: DbModel<T>, connection?: DbConnectionName): DbSequence<T> {
   const adapter = provide(DbManager).get(connection);
   if (undefined === adapter) {
-    throw new Error('DbAdapter is not implemented for connection: '+String(connection || 'default'))
+    throw new Error('DbAdapter is not implemented for connection: ' + String(connection || 'default'));
   }
   return new DbSequence(model, adapter.reader, adapter.writer);
 }
@@ -30,8 +26,8 @@ export function FromDbModel<T>(model: DbModel<T>, connection?: DbConnectionName)
   return Provide(DbManager, manager => {
     const adapter = manager.get(connection);
     if (undefined === adapter) {
-      throw new Error('DbAdapter is not implemented for connection: '+String(connection || 'default'))
+      throw new Error('DbAdapter is not implemented for connection: ' + String(connection || 'default'));
     }
     return new DbSequence(model, adapter.reader, adapter.writer);
-  })
+  });
 }

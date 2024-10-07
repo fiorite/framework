@@ -1,8 +1,8 @@
 import { AsyncLikeIterableIterator } from '../iterable';
 import { Readable } from 'stream';
-import { CallbackPromiseLike } from '../core';
+import { callbackPromiseLike } from '../core';
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
-import { firestoreDocumentId } from './document-id';
+import { firestoreDocumentId } from './document';
 import { DbObject } from '../db';
 
 export class FirestoreDbIterator implements AsyncLikeIterableIterator<DbObject> {
@@ -16,7 +16,7 @@ export class FirestoreDbIterator implements AsyncLikeIterableIterator<DbObject> 
   }
 
   next(): PromiseLike<IteratorResult<DbObject, unknown>> {
-    return new CallbackPromiseLike(complete => {
+    return callbackPromiseLike(complete => {
       const removeListeners = () => {
         this.#stream.off('data', dataListener);
         this.#stream.off('end', endListener);
@@ -46,7 +46,7 @@ export class FirestoreDbIterator implements AsyncLikeIterableIterator<DbObject> 
   }
 
   return(): PromiseLike<IteratorResult<DbObject, unknown>> {
-    return new CallbackPromiseLike(complete => {
+    return callbackPromiseLike(complete => {
       this.#stream.destroy();
       complete({ value: undefined, done: true });
     });

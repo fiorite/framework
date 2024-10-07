@@ -1,15 +1,17 @@
 import { ServiceProvider, ServiceSet } from '../di';
-import { emptyCallback } from '../core';
+import { emptyCallback, MaybeArray } from '../core';
 
 export type ApplicationRegisterServicesFunction = (serviceSet: ServiceSet) => void;
 
 export type ApplicationConfigureFunction = (provider: ServiceProvider) => void;
 
 export interface ApplicationFeature {
+  extendWith?: MaybeArray<ApplicationFeature>;
   registerServices?: ApplicationRegisterServicesFunction;
   configure?: ApplicationConfigureFunction;
 }
 
+/** @deprecated use literal perhaps */
 export function applicationFeature(
   registerServices: ApplicationRegisterServicesFunction,
   configure: ApplicationConfigureFunction,
@@ -18,12 +20,13 @@ export function applicationFeature(
 }
 
 export namespace applicationFeature {
-  /** @deprecated use {@link registerServices} */
+  /** @deprecated use literal perhaps */
   export function servicesOnly(configure: ApplicationRegisterServicesFunction): ApplicationFeature {
     return applicationFeature(configure, emptyCallback);
   }
 }
 
+/** @deprecated use literal perhaps */
 export function registerServices(configure: ApplicationRegisterServicesFunction): ApplicationFeature {
   return applicationFeature(configure, emptyCallback);
 }

@@ -13,7 +13,7 @@ import {
 import { CollectionReference, FieldPath, Filter, Firestore, Query } from 'firebase-admin/firestore';
 import { Readable } from 'stream';
 import { FirestoreDbIterator } from './iterator';
-import { firestoreDocumentId } from './document-id';
+import { firestoreDocumentId } from './document';
 import { VoidCallback } from '../core';
 
 export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {

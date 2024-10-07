@@ -66,6 +66,7 @@ export namespace MaybePromiseLike {
 
 /**
  * Framework version of Promise extended with useful overloads. Will be added #cancel() logic later.
+ * @deprecated thinking of removing or changing the name.
  * @example```
  * promiseWithSugar.catch(CustomError, (error: CustomError) => {
  *    // handle a specific error.
@@ -146,8 +147,9 @@ export function promiseWhenNoCallback<T>(handler: (complete: ValueCallback<T>) =
 
 /**
  * Not {@link Promise}, simulates signature and runs {@link CallbackPromiseLike.callback}.
+ * @deprecated use {@link callbackPromiseLike}.
  */
-export class CallbackPromiseLike<T> implements PromiseLike<T> {
+class CallbackPromiseLike<T> implements PromiseLike<T> {
   readonly #callback: (complete: ValueCallback<T>) => void;
 
   get callback(): (complete: ValueCallback<T>) => void {
@@ -166,4 +168,8 @@ export class CallbackPromiseLike<T> implements PromiseLike<T> {
     }
     return this as unknown as PromiseLike<TResult1>;
   }
+}
+
+export function callbackPromiseLike<T>(callback: (then: ValueCallback<T>) => void): PromiseLike<T> {
+  return new CallbackPromiseLike(callback);
 }

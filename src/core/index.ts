@@ -1,4 +1,4 @@
-export { arraySequenceEqual, arrayRange } from './array-utils';
+export { arraySequenceEqual, arrayRange, MaybeArray } from './array-utils';
 export {
   ValueCallback,
   VoidCallback,
@@ -20,8 +20,8 @@ export {
   MaybePromiseLike,
   isPromiseLike,
   promiseWhenNoCallback,
-  CallbackPromiseLike,
   PromiseWithSugar,
+  callbackPromiseLike,
 } from './promises';
 export { RadixMap, RadixWalkResult } from './radix-map';
 export { SetWithInnerKey } from './set-with-inner-key';
