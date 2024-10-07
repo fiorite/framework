@@ -14,7 +14,7 @@ export interface CallbackIterator<T> {
 
   next(callback: ValueCallback<IteratorResult<T>>): void;
 
-  return?(callback: ValueCallback<IteratorResult<T>>): void;
+  return?(callback?: ValueCallback<IteratorResult<T>>): void;
 }
 
 export function getIterator<T>(iterable: Iterable<T> | AsyncLikeIterable<T>): CallbackIterator<T> {
@@ -53,7 +53,7 @@ class MonoIterator<T> implements CallbackIterator<T> {
       this.#iterator = iterator;
       this.#next = callback => callback(iterator.next());
       if (iterator.return) {
-        this.#return = callback => callback(iterator.return!());
+        this.#return = callback => callback ? callback(iterator.return!()) : void 0;
       }
       return;
     }
@@ -65,7 +65,7 @@ class MonoIterator<T> implements CallbackIterator<T> {
       this.#next = callback => iterator.next().then(result => callback(result));
       if (iterator.return) {
         this.#return = callback => {
-          iterator.return!().then(result => callback(result));
+          iterator.return!().then(result => callback ? callback(result) : void 0);
         };
       }
       return;

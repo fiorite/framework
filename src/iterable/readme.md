@@ -15,7 +15,6 @@ add later:
 - sort() // and orderBy to DbSequence
 - intersect()
 - except()
-- elementAt()
 - distinct()
 - skipWhile()
 - takeWhile()

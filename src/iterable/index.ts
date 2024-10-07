@@ -1,4 +1,4 @@
-// export { AsyncLikeIterable, AsyncLikeIterator, AsyncLikeIterableIterator } from './async-like';
+export { iterableContains } from './contains';
 export { iterableCount } from './count';
 export { iterableFilter } from './filter';
 export { iterableFirst } from './first';
@@ -7,7 +7,7 @@ export { makeIterable, AsyncLikeIterableIterator, AsyncLikeIterable } from './it
 export { AsyncLikeIterator, CallbackIterator, getIterator } from './iterator';
 export { iterableMap } from './map';
 export { IterableOperatorFunction, IterableProjectFunction, IterableOperator } from './operator';
-export { Sequence } from './sequence';
+export { AsyncSequence } from './sequence';
 export { iterableSkip } from './skip';
 export { iterableTake } from './take';
 export { iterableToArray } from './to-array';

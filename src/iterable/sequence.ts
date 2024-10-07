@@ -1,4 +1,12 @@
-import { MapCallback, promiseWhenNoCallback, ValueCallback, VoidCallback } from '../core';
+import {
+  defaultComparer,
+  EqualityComparer,
+  MapCallback,
+  MaybePromiseLike,
+  promiseWhenNoCallback,
+  ValueCallback,
+  VoidCallback
+} from '../core';
 import { iterableToArray } from './to-array';
 import { iterableMap } from './map';
 import { iterableForEach } from './for-each';
@@ -9,16 +17,25 @@ import { iterableCount } from './count';
 import { IterableProjectFunction } from './operator';
 import { iterableFilter } from './filter';
 import { AsyncLikeIterable } from './iterable';
+import { iterableContains } from './contains';
 
-export class Sequence<T> implements AsyncLikeIterable<T> {
+export class AsyncSequence<T> implements AsyncLikeIterable<T> {
   readonly #iterable: AsyncLikeIterable<T>;
+  readonly #comparer: EqualityComparer<T>;
 
-  constructor(iterable: AsyncLikeIterable<T>) {
+  constructor(iterable: AsyncLikeIterable<T>, comparer: EqualityComparer<T> = defaultComparer) {
     this.#iterable = iterable;
+    this.#comparer = comparer;
   }
 
-  #project<R>(operator: IterableProjectFunction<T, R>): Sequence<R> {
-    return new Sequence(operator(this));
+  #project<R>(operator: IterableProjectFunction<T, R>): AsyncSequence<R> {
+    return new AsyncSequence(operator(this), this.#comparer as unknown as EqualityComparer<R>);
+  }
+
+  contains(value: MaybePromiseLike<T>, callback: ValueCallback<boolean>): void;
+  contains(value: MaybePromiseLike<T>): PromiseLike<boolean>;
+  contains(value: MaybePromiseLike<T>, callback?: ValueCallback<boolean>): unknown {
+    return promiseWhenNoCallback(callback => iterableContains(value as T, callback, this.#comparer)(this), callback);
   }
 
   count(callback: ValueCallback<number>): void;
@@ -27,7 +44,7 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
     return promiseWhenNoCallback(callback => iterableCount(callback)(this), callback);
   }
 
-  filter(predicate: MapCallback<T, unknown>): Sequence<T> {
+  filter(predicate: MapCallback<T, MaybePromiseLike<unknown>>): AsyncSequence<T> {
     return this.#project(iterableFilter<T>(predicate));
   }
 
@@ -43,15 +60,23 @@ export class Sequence<T> implements AsyncLikeIterable<T> {
     return promiseWhenNoCallback(done => iterableForEach(callback, done)(this), done);
   }
 
-  map<R>(callback: MapCallback<T, PromiseLike<R>>): Sequence<R> {
+  /** @deprecated Array method, will not be removed however, prefer contains (like RxJS).  */
+  includes(value: MaybePromiseLike<T>, callback: ValueCallback<boolean>): void;
+  /** @deprecated Array method, will not be removed however, prefer contains (like RxJS).  */
+  includes(value: MaybePromiseLike<T>): PromiseLike<boolean>;
+  includes(value: MaybePromiseLike<T>, callback?: ValueCallback<boolean>): unknown {
+    return this.contains(value, callback as any);
+  }
+
+  map<R>(callback: MapCallback<T, PromiseLike<R>>): AsyncSequence<R> {
     return this.#project(iterableMap(callback) as IterableProjectFunction<T, R>);
   }
 
-  skip(count: number): Sequence<T> {
+  skip(count: number): AsyncSequence<T> {
     return this.#project(iterableSkip<T>(count));
   }
 
-  take(count: number): Sequence<T> {
+  take(count: number): AsyncSequence<T> {
     return this.#project(iterableTake<T>(count));
   }
 

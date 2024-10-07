@@ -11,7 +11,7 @@ export {
   LazyCallbackShare,
   lazyCallbackShare,
 } from './callbacks';
-export { Equatable } from './equatable';
+export { Equatable, EqualityComparer, defaultComparer } from './equality';
 export * from './decorator';
 export * from './error';
 export { FunctionClass } from './function-class';

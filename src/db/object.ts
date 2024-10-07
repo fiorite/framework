@@ -1,1 +1,1 @@
-export type DbObject = Record<string, unknown>;
+export type DbObject = Record<string | symbol, unknown>;

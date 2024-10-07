@@ -1,6 +1,6 @@
 import { EmptyIterableError, iterableFirst } from '../iterable/first';
 import { DbReader } from './reader';
-import { AsyncLikeIterator, iterableMap, Sequence } from '../iterable';
+import { AsyncLikeIterator, AsyncSequence, iterableContains, iterableMap } from '../iterable';
 import { DbModel } from './model';
 import {
   DbLooseQuery,
@@ -13,7 +13,14 @@ import {
   DbWhereKey,
   DbWhereOperator
 } from './query';
-import { callbackPromiseLike, MaybePromiseLike, promiseWhenNoCallback, ValueCallback, VoidCallback } from '../core';
+import {
+  callbackPromiseLike,
+  EqualityComparer,
+  MaybePromiseLike,
+  promiseWhenNoCallback,
+  ValueCallback,
+  VoidCallback
+} from '../core';
 import { MaybeAsyncLikeIterable } from '../iterable/iterable';
 import { DbWriter } from './writer';
 import { DbObject } from './object';
@@ -33,7 +40,7 @@ export class DbObjectNotFound<TModel = unknown> implements Error {
   }
 }
 
-export class DbSequenceQuery<T> extends Sequence<T> {
+export class DbSequenceQuery<T> extends AsyncSequence<T> {
   readonly #model: DbModel<T>;
 
   protected get _model(): DbModel<T> {
@@ -67,7 +74,22 @@ export class DbSequenceQuery<T> extends Sequence<T> {
           },
         })[Symbol.asyncIterator]() as AsyncLikeIterator<T>;
       }
-    });
+    }, ((x: DbObject, y: DbObject) => {
+      if (
+        x[modelName] && y[modelName] &&
+        x[modelName] !== y[modelName]
+      ) {
+        return false;
+      }
+
+      if (!this.#model.keys.length) {
+        return false;
+      }
+
+      return (this.#model.keys as (string | symbol)[]).every(key => {
+        return x[key] === y[key];
+      });
+    }) as EqualityComparer<unknown>);
     this.#model = model;
     this.#reader = reader;
   }
@@ -102,6 +124,14 @@ export class DbSequenceQuery<T> extends Sequence<T> {
       enumerable: true,
       writable: true,
     });
+  }
+
+  // todo: add partial value or one value like #find()
+
+  override contains(value: MaybePromiseLike<Partial<T>>, callback: ValueCallback<boolean>): void;
+  override contains(value: MaybePromiseLike<Partial<T>>): PromiseLike<boolean>;
+  override contains(value: MaybePromiseLike<T>, callback?: ValueCallback<boolean>): unknown {
+    return super.contains(value, callback as any); // todo: optimize with query later
   }
 
   override first(callback: ValueCallback<T>): void;
