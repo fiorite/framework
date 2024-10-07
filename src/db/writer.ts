@@ -1,6 +1,6 @@
 import { VoidCallback } from '../core';
 import { DbObject } from './object';
-import { DbWhere } from './query';
+import { DbWhere } from './where';
 
 export interface DbCreateContext {
   readonly model: string;

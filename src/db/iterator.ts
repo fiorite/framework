@@ -1,10 +1,10 @@
-import { AsyncLikeIterableIterator, iterableToArray } from '../iterable';
+import { AsyncLikeIterableIterator, iterableToArray, MaybeAsyncLikeIterable } from '../iterable';
 import { DbObject } from './object';
 import { callbackPromiseLike, lazyCallbackShare, LazyCallbackShare, MaybePromiseLike, ValueCallback } from '../core';
 import { DbReader } from './reader';
 import { DbModel } from './model';
-import { DbLooseQuery, DbQuery, DbWhere, DbWhereOperator } from './query';
-import { MaybeAsyncLikeIterable } from '../iterable/iterable';
+import { DbLooseQuery, DbQuery } from './query';
+import { DbWhere, DbWhereOperator } from './where';
 
 /**
  * Middle iterator resolves async values and switch to reader.read() iterator further.
@@ -70,11 +70,11 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
           });
         });
       }, values => { // resolve all async pieces.
-        const where = new Set<DbWhere>();
+        const whereArray: DbWhere[] = [];
         values.forEach((value, index) => {
-          where.add(new DbWhere(wheres[index].key, wheres[index].operator as any, value, wheres[index].condition));
+          whereArray.push(new DbWhere(wheres[index].key, wheres[index].operator as any, value/*, wheres[index].condition*/));
         });
-        callback({ ...this.#query as DbQuery, where });
+        callback({ ...this.#query as DbQuery, where: whereArray });
       });
     } else {
       callback({ ...this.#query as DbQuery });

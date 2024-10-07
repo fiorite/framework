@@ -17,6 +17,10 @@ component is experimental, roadmap is long-term research. some points:
 [ ] couple adapters: in-memory db, sqlite3, mysql, firestore and http-based db.
 [ ] adapter tells supported types, apparently, if type is not supported, provide fallback.
 
-For later:
+Next version might include (for now simple implementation is done, CRUD + reactive approach):
 [ ] or/and where conditions, need time to work through. if OR needed, prefer TypeORM-ish which support advanced query. 
+[ ] subquery support
+[ ] migrations API
+[ ] relationship (many-to-many, one-to-many, one-to-one, many-to-one)
+[ ] custom types, and date, binary enum idk. 
 ```

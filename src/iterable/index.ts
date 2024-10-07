@@ -1,9 +1,9 @@
 export { iterableContains } from './contains';
 export { iterableCount } from './count';
 export { iterableFilter } from './filter';
-export { iterableFirst } from './first';
+export { iterableFirst, EmptyIterableError } from './first';
 export { iterableForEach } from './for-each';
-export { makeIterable, AsyncLikeIterableIterator, AsyncLikeIterable } from './iterable';
+export { makeIterable, AsyncLikeIterableIterator, AsyncLikeIterable, MaybeAsyncLikeIterable } from './iterable';
 export { AsyncLikeIterator, CallbackIterator, getIterator } from './iterator';
 export { iterableMap } from './map';
 export { IterableOperatorFunction, IterableProjectFunction, IterableOperator } from './operator';

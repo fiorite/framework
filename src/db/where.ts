@@ -1,5 +1,5 @@
 import { MaybePromiseLike } from '../core';
-import { MaybeAsyncLikeIterable } from '../iterable/iterable';
+import { MaybeAsyncLikeIterable } from '../iterable';
 import { DbPrimitiveValue } from './object';
 
 export enum DbWhereOperator {

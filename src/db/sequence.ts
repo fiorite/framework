@@ -1,6 +1,12 @@
-import { EmptyIterableError, iterableFirst } from '../iterable/first';
 import { DbReader } from './reader';
-import { AsyncLikeIterator, AsyncSequence, iterableMap } from '../iterable';
+import {
+  AsyncLikeIterator,
+  AsyncSequence,
+  EmptyIterableError,
+  iterableFirst,
+  iterableMap,
+  MaybeAsyncLikeIterable
+} from '../iterable';
 import { DbModel } from './model';
 import { DbLooseQuery, DbQuery, } from './query';
 import {
@@ -11,7 +17,6 @@ import {
   ValueCallback,
   VoidCallback
 } from '../core';
-import { MaybeAsyncLikeIterable } from '../iterable/iterable';
 import { DbWriter } from './writer';
 import { DbObject, DbPrimitiveValue } from './object';
 import { DbModelField } from './field';
