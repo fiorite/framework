@@ -6,12 +6,13 @@ export function iterableFilter<T>(predicate: MapCallback<T, unknown>): IterableP
   return iterable => makeIterable(iterable, iterator => {
     return complete => {
       const next = () => iterator.next(result => {
-        if (predicate(result.value)) {
+        if (result.done || predicate(result.value)) {
           complete(result);
         } else {
           next();
         }
       });
+      next();
     };
   });
 }

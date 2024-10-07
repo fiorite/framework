@@ -12,7 +12,9 @@ export {
   DbWhereCondition,
   DbWhereExpression,
   DbWhereKeyOperator,
-  DbPrimitiveValue
+  DbPrimitiveValue,
+  DbLooseWhere,
+  DbLooseQuery,
 } from './query';
 export { DbReader, DbReadContext } from './reader';
 export { DbSequence, DbObjectNotFound } from './sequence';

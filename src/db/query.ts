@@ -1,4 +1,6 @@
 import { DbModel } from './model';
+import { MaybePromiseLike } from '../core';
+import { MaybeAsyncLikeIterable } from '../iterable/iterable';
 
 export interface DbQuery<TWhere = DbWhere> {
   readonly take?: number;
@@ -19,6 +21,7 @@ export enum DbWhereCondition {
 }
 
 export type DbPrimitiveValue = string | number | boolean | undefined;
+
 type DbObject = Record<string, DbPrimitiveValue>;
 
 export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
@@ -60,7 +63,18 @@ export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
   }
 }
 
+/**
+ * PromiseLike + AsyncLikeIterable for values. Loosen types become tie in middle iterator, so adapter operates with sync code.
+ */
+export type DbLooseWhere = DbWhere<MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>;
+
+/**
+ * PromiseLike + AsyncLikeIterable for values. Loosen types become tie in middle iterator, so adapter operates with sync code.
+ */
+export type DbLooseQuery = DbQuery<DbLooseWhere>;
+
 export type DbWhereKey<T, TValue = DbPrimitiveValue, TIterable = readonly T[]> = { [P in keyof T]: DbWhereKeyOperator<T, P, TValue, TIterable> };
+
 export type DbWhereKeyConstructor = new <T, TValue = DbPrimitiveValue, TIterable = readonly T[]>(model: DbModel<T>, condition: DbWhereCondition, stack: DbWhere[]) => DbWhereKey<T, TValue, TIterable>;
 
 namespace internal {
@@ -168,3 +182,4 @@ export class DbWhereExpression<T> {
     this.#stack = [...stack, new DbWhere(key, operator as any, value, condition)];
   }
 }
+
