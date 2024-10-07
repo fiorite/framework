@@ -2,7 +2,15 @@ import { EmptyIterableError, iterableFirst } from '../iterable/first';
 import { DbReader } from './reader';
 import { AsyncLikeIterableIterator, AsyncLikeIterator, iterableMap, iterableToArray, Sequence } from '../iterable';
 import { DbModel } from './model';
-import { DbPrimitiveValue, DbQuery, DbWhere, DbWhereOperator } from './query';
+import {
+  DbPrimitiveValue,
+  DbQuery,
+  DbWhere,
+  DbWhereCondition,
+  DbWhereExpression,
+  DbWhereKey,
+  DbWhereOperator
+} from './query';
 import {
   CallbackPromiseLike,
   LazyCallbackShare,
@@ -99,7 +107,7 @@ export class TransitionDbIterator<T> implements AsyncLikeIterableIterator<T> {
       }, values => { // resolve all async pieces.
         const where = new Set<DbWhere>();
         values.forEach((value, index) => {
-          where.add(new DbWhere(wheres[index].key, wheres[index].operator as any, value));
+          where.add(new DbWhere(wheres[index].key, wheres[index].operator as any, value, wheres[index].condition));
         });
         callback({ ...this.#query as DbQuery, where });
       });
@@ -319,8 +327,15 @@ export class DbSequence<T> extends Sequence<T> {
   where<K extends keyof T>(key: K, value: MaybePromiseLike<T[K] | undefined>): DbSequence<T>;
   where<K extends keyof T>(key: K, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: MaybePromiseLike<T[K] | undefined>): DbSequence<T>;
   where<K extends keyof T>(key: K, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: MaybePromiseLike<MaybeAsyncLikeIterable<T[K]>>): DbSequence<T>;
+  where<K extends keyof T>(callback: (builder: DbWhereKey<T, MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>) => DbWhereExpression<T>): DbSequence<T>;
   where(...args: unknown[]): DbSequence<T> {
     const whereSet = this.#query && this.#query.where ? new Set(this.#query.where) : new Set<DbWhere>();
+
+    if (args.length === 1) {
+      const builder = new DbWhereKey(this.#model, DbWhereCondition.And, []);
+      const expression = (args[0] as (builder: DbWhereKey<T>) => DbWhereExpression<T>)(builder);
+      DbWhereExpression.stack(expression).forEach(where => whereSet.add(where));
+    }
 
     if (args.length === 2) {
       const where = new DbWhere(args[0] as string, DbWhereOperator.EqualTo, args[1] as MaybePromiseLike<unknown>);

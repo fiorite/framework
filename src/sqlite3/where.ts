@@ -1,12 +1,22 @@
 import { DbModel, DbWhere } from '../db';
-import { DbPrimitiveValue } from '../db/query';
+import { DbPrimitiveValue, DbWhereCondition } from '../db/query';
 
-export function buildSqlite3Where(model: DbModel, iterable: Iterable<DbWhere>): { sql: string, params: Record<string, unknown> } {
+export function buildSqlite3Where(model: DbModel, iterable: Iterable<DbWhere>): {
+  sql: string,
+  params: Record<string, unknown>
+} {
   let counter = 0;
   const pieces: string[] = [];
   const params: Record<string, unknown> = {};
+  let startConditionSkipped = false;
 
   for (const where of iterable) {
+    if (!startConditionSkipped) {
+      startConditionSkipped = true;
+    } else {
+      pieces.push(where.condition === DbWhereCondition.And ? 'AND' : 'OR');
+    }
+
     const column = model.fieldName(where.key as string);
     let operator: string;
     let iterable = false;
@@ -44,5 +54,5 @@ export function buildSqlite3Where(model: DbModel, iterable: Iterable<DbWhere>): 
     }
   }
 
-  return { sql: pieces.join(' AND '), params };
+  return { sql: pieces.join(' '), params };
 }
