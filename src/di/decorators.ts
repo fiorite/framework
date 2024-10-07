@@ -8,7 +8,7 @@ import {
   MaybePromiseLike,
   ParameterDecoratorWithPayload
 } from '../core';
-import { ServiceReference } from './service-reference';
+import { ServiceReference } from './service-ref';
 
 export function BehaveLike(behavior: ServiceBehavior): ClassDecoratorWithPayload<ServiceBehavior, unknown> {
   return makeClassDecorator(BehaveLike, behavior);
