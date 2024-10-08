@@ -152,7 +152,7 @@ export class DecoratorRecorder {
           typeof event.path[2] !== 'number';
       }
     ) : (event: DecoratorEvent) => {
-      return event.decorator === decorator && event.path.length === 3 && typeof event.path[2] !== 'number';
+      return event.decorator === decorator; // && event.path.length === 3 && typeof event.path[2] !== 'number';
     };
 
     return this._data.filter(callback) as any;

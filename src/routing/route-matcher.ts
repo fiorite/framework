@@ -1,4 +1,4 @@
-import { HttpCallback, HttpMethod, HttpRequest } from '../http';
+import { HttpMethod } from '../http';
 import { RouteDescriptor } from './route-descriptor';
 import { DynamicPathSegment, NullPathSegment, RoutePathSegment, StaticPathSegment } from './route-path-segment';
 import {
@@ -128,7 +128,7 @@ export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
     return false;
   }
 
-  *match(path: string): Iterable<RouteMatchResult> {
+  * match(path: string): Iterable<RouteMatchResult> {
     for (const result of this._pathMatcher.match(path)) {
       if (!result.substring.length && undefined !== result.payload) { // if path has not processed part
         yield { params: result.params, descriptor: result.payload };
@@ -141,9 +141,9 @@ export class RouteMatcher extends SetWithInnerKey<RouteDescriptor, string> {
    */
   mapDecoratedBy(...decorators: DecoratorOuterFunction<MethodDecorator>[]): this {
     // todo: refactor since corners been cut
-    const types = decorators.flatMap(decorator => DecoratorRecorder.methodSearch(decorator).map(x => x.path[0].constructor))
+    const types = decorators.flatMap(decorator => DecoratorRecorder.methodSearch(decorator).map(x => x.path[0] as Type))
       .reduce((result, current) => {
-        if (result.includes(current)) {
+        if (!result.includes(current)) {
           result.push(current);
         }
         return result;

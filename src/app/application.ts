@@ -157,7 +157,7 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     }
 
     if (provider.has(RouteMatcher)) { // todo: probably move somewhere else.
-      provider(RouteMatcher).mapDecoratedBy(Route);
+      setTimeout(() => provider(RouteMatcher).mapDecoratedBy(Route)); // decorators a bit later, postpone to another call stack
     }
   });
 

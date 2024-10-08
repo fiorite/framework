@@ -9,21 +9,18 @@ export interface FunctionClass<TCallback extends (...args: any[]) => any = (...a
  * Please avoid making object check on its children instances.
  */
 export abstract class FunctionClass<TCallback extends (...args: any[]) => any> extends Function {
-  readonly #callback: TCallback;
+  private readonly _objectCallback: TCallback;
 
-  /**
-   * Exposes inner callback to validate, for example, number of arguments `instance[Symbol.species].length`.
-   */
-  get [Symbol.species](): TCallback {
-    return this.#callback;
+  get objectCallback(): TCallback {
+    return this._objectCallback;
   }
 
   protected constructor(callback: TCallback) {
     super();
-    this.#callback = callback;
+    this._objectCallback = callback;
     return new Proxy(this, {
       apply: (target, _, args: Parameters<TCallback>) => {
-        return this.#callback.apply(target, args);
+        return this._objectCallback.apply(target, args);
       }
     });
   }
