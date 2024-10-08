@@ -1,8 +1,7 @@
 export { DbAdapter } from './adapter';
-export { FromDbModel, dbSequence, dbCoreServices } from './feature';
-export { DbModelField, ModelFieldTypeToJs, ModelFieldType, ModelField } from './field';
+export { FromDb, fromDb, dbCoreServices } from './feature';
 export { DbConnectionName, DbManager } from './manager';
-export { DbModel, ObjectModelFields } from './model';
+export { DbModel, DbModelField } from './model';
 export { DbObject, DbPrimitiveValue } from './object';
 export { DbQuery, DbLooseQuery } from './query';
 export { DbReader, DbReadContext } from './reader';

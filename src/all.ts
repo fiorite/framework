@@ -1,5 +1,6 @@
 // export * from './app'; // todo: refactor http server to exclude nodejs code from core
 export * from './core';
+export * from './data';
 export * from './db';
 export * from './di';
 export * from './http';

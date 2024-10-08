@@ -7,7 +7,7 @@ import {
   iterableMap,
   MaybeAsyncLikeIterable
 } from '../iterable';
-import { DbModel } from './model';
+import { DbModel, DbModelField } from './model';
 import { DbLooseQuery, DbQuery, } from './query';
 import {
   callbackPromiseLike,
@@ -19,7 +19,6 @@ import {
 } from '../core';
 import { DbWriter } from './writer';
 import { DbObject, DbPrimitiveValue } from './object';
-import { DbModelField } from './field';
 import { MiddleDbIterator } from './iterator';
 import { DbLooseWhere, DbWhere, DbWhereOperator } from './where';
 

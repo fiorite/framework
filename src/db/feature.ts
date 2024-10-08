@@ -8,7 +8,7 @@ export const dbCoreServices: ApplicationFeature = {
   registerServices: serviceSet => serviceSet.addSingleton(DbManager),
 };
 
-export function dbSequence<T>(model: DbModel<T>, connection?: DbConnectionName): DbSequence<T> {
+export function fromDb<T>(model: DbModel<T>, connection?: DbConnectionName): DbSequence<T> {
   const adapter = provide(DbManager).get(connection);
   if (undefined === adapter) {
     throw new Error('DbAdapter is not implemented for connection: ' + String(connection || 'default'));
@@ -22,7 +22,7 @@ export function dbSequence<T>(model: DbModel<T>, connection?: DbConnectionName):
  * @param connection
  * @constructor
  */
-export function FromDbModel<T>(model: DbModel<T>, connection?: DbConnectionName): ProvideDecorator<DbManager> {
+export function FromDb<T>(model: DbModel<T>, connection?: DbConnectionName): ProvideDecorator<DbManager> {
   return Provide(DbManager, manager => {
     const adapter = manager.get(connection);
     if (undefined === adapter) {
