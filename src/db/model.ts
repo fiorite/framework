@@ -1,4 +1,7 @@
-import { Model, ModelField, ModelFields, ModelFieldType, ModelFieldTypeToJs } from '../data';
+import { Model, ModelFields, ModelFieldType } from '../data';
+import { DbModelField, DbModelFieldBuilder } from './model-field';
+import { DbPrimitiveValue } from './object';
+import { MapCallback } from '../core';
 
 export class DbModel<T = unknown> extends Model<T> {
   override get fields(): ModelFields<T, DbModelField> {
@@ -14,35 +17,46 @@ export class DbModel<T = unknown> extends Model<T> {
   }
 }
 
-export class DbModelField extends ModelField {
-  readonly #name: string | symbol;
+export class DbModelBuilder {
+  readonly #optional: boolean;
 
-  get name(): string | symbol {
-    return this.#name;
+  // get optional(): DbModelBuilder {
+  //   return new DbModelBuilder(true);
+  // }
+
+  get string(): DbModelFieldBuilder<string> {
+    return this.#field(ModelFieldType.String);
   }
 
-  readonly #default?: ModelFieldTypeToJs[typeof this.type];
-
-  get default(): ModelFieldTypeToJs[typeof this.type] | undefined {
-    return this.#default;
+  get number(): DbModelFieldBuilder<number> {
+    return this.#field(ModelFieldType.Number);
   }
 
-  constructor(
-    name: string | symbol,
-    type: ModelFieldType,
-    optional?: boolean,
-    default1?: ModelFieldTypeToJs[typeof type]
-  ) {
-    super(type, optional);
-    this.#name = name;
-    this.#default = default1;
+  get boolean(): DbModelFieldBuilder<boolean> {
+    return this.#field(ModelFieldType.Boolean);
   }
 
-  override equals(other: unknown): other is this {
-    return other instanceof DbModelField &&
-      other.name === this.name &&
-      other.type === this.type &&
-      other.optional === this.optional &&
-      other.default === this.default;
+  constructor(optional = false) {
+    this.#optional = optional;
   }
+
+  #field<T extends DbPrimitiveValue>(type: ModelFieldType): DbModelFieldBuilder<T> {
+    const builder = new DbModelFieldBuilder(type);
+    return this.#optional ? builder.optional : builder;
+  }
+}
+
+export function makeDbModel<T>(name: string, configure: MapCallback<DbModelBuilder, Record<keyof T, DbModelFieldBuilder>>): DbModel<T> {
+  const builder = new DbModelBuilder();
+  const keys: (keyof T | string | symbol)[] = [];
+  const fields = Object.entries<DbModelFieldBuilder>(configure(builder)).reduce((record, [key, fieldBuilder]) => {
+    const { field, keyMark } = DbModelFieldBuilder.build(key, fieldBuilder);
+    record[key as keyof T] = field;
+    if (keyMark) {
+      keys.push(key);
+    }
+    return record;
+  }, {} as Partial<ModelFields<T, DbModelField>>) as ModelFields<T, DbModelField>;
+
+  return new DbModel(name, keys, fields as ModelFields<T, DbModelField>);
 }

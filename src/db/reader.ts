@@ -1,7 +1,7 @@
 import { DbQuery } from './query';
 import { AsyncLikeIterableIterator } from '../iterable';
 import { DbObject } from './object';
-import { DbModelField } from './model';
+import { DbModelField } from './model-field';
 
 export interface DbReadContext {
   readonly fields: readonly DbModelField[];

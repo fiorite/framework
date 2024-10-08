@@ -1,7 +1,8 @@
 import { Statement } from 'sqlite3';
 import { AsyncLikeIterableIterator } from '../iterable';
 import { callbackPromiseLike, MaybePromiseLike } from '../core';
-import { DbModelField, DbObject, ModelFieldType } from '../db';
+import { DbModelField, DbObject } from '../db';
+import { ModelFieldType } from '../data';
 
 export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
   readonly #fields: readonly DbModelField[];

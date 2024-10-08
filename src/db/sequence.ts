@@ -7,7 +7,8 @@ import {
   iterableMap,
   MaybeAsyncLikeIterable
 } from '../iterable';
-import { DbModel, DbModelField } from './model';
+import { DbModel } from './model';
+import { DbModelField } from './model-field';
 import { DbLooseQuery, DbQuery, } from './query';
 import {
   callbackPromiseLike,

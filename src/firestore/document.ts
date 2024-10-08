@@ -1,3 +1,5 @@
+import { DbModelFieldBuilder } from '../db';
+
 /**
  * Symbol used to identify specific key in object.
  */

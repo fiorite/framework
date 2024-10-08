@@ -1,10 +1,13 @@
+/** @deprecated experimental feature. there and issue with { ...object } and Object.assign(object, other). could be removed */
 interface ModelFieldDescriptorOptions {
   readonly readonly?: boolean;
   readonly optional?: boolean;
 }
 
+/** @deprecated experimental feature. there and issue with { ...object } and Object.assign(object, other). could be removed */
 export type ModelFieldDescriptor<T> = TypedPropertyDescriptor<T> | ModelFieldDescriptorOptions;
 
+/** @deprecated experimental feature. there and issue with { ...object } and Object.assign(object, other). could be removed */
 export function defineFieldDescriptor<T>(set: (value: unknown | undefined) => T, { optional: _optional, readonly: _readonly }: {
   readonly optional?: boolean;
   readonly readonly?: boolean;
