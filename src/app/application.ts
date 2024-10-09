@@ -7,43 +7,43 @@ import { MaybeArray, MaybePromiseLike, promiseWhenNoCallback, VoidCallback } fro
 import { addHttpServer, HttpServerFeature } from './http-server';
 
 export class Application {
-  private readonly _provider: ServiceProvider;
+  private readonly _services: ServiceProvider;
 
-  get provider(): ServiceProvider {
-    return this._provider;
+  get services(): ServiceProvider {
+    return this._services;
   }
 
   get provide(): ServiceProviderWithReturnFunction {
-    return this._provider.withReturn;
+    return this._services.withReturn;
   }
 
   get server(): HttpServer {
-    return this._provider(HttpServer);
+    return this._services(HttpServer);
   }
 
   get routing(): RouteMatcher {
-    return this._provider(RouteMatcher);
+    return this._services(RouteMatcher);
   }
 
   get logger(): Logger {
-    return this._provider(Logger);
+    return this._services(Logger);
   }
 
   constructor(provider: ServiceProvider) {
-    this._provider = provider;
+    this._services = provider;
   }
 
   contextualize(callback: (complete: VoidCallback) => void): void {
-    runProviderContext(this._provider, callback);
+    runProviderContext(this._services, callback);
   }
 
   run(callback: VoidCallback): void;
   run(): PromiseLike<void>;
   run(callback?: VoidCallback): unknown {
     return promiseWhenNoCallback<void>(callback => {
-      runProviderContext(this._provider, complete => {
-        this._provider(HttpServer).listen(
-          this._provider(HttpServerFeature).port,
+      runProviderContext(this._services, complete => {
+        this._services(HttpServer).listen(
+          this._services(HttpServerFeature).port,
           () => MaybePromiseLike.then(() => callback(), complete),
         );
       });

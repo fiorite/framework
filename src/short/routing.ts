@@ -53,7 +53,7 @@ export function param(context: HttpContext, key: string): string | number | bool
 export function param<R>(context: HttpContext, key: string, callback: MapCallback<string | number | boolean | undefined, R>): R;
 export function param<R>(context: HttpContext, callback: MapCallback<RouteParams, R>): R;
 export function param(context: HttpContext, ...args: unknown[]) {
-  const params = context.provide(RouteParams);
+  const params = context.provide!(RouteParams);
 
   if (1 === args.length) {
     if ('string' === typeof args[0]) {

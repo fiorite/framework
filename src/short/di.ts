@@ -36,7 +36,7 @@ function provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 function provide(...args: unknown[]): unknown {
   if (args[0] instanceof HttpContext) {
     const type = args[1] as ServiceType;
-    return args[2] ? args[0].provide(type, args[2] as ValueCallback<unknown>) : args[0].provide(type);
+    return args[2] ? args[0].provide!(type, args[2] as ValueCallback<unknown>) : args[0].provide!(type);
   }
 
   throw new Error('not implemented fully');

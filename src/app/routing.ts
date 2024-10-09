@@ -48,7 +48,7 @@ export function addRoute(descriptor: RouteDescriptor): RouteAddFeature;
 export function addRoute(path: string, callback: HttpCallback): RouteAddFeature;
 export function addRoute(method: HttpMethod | string, path: string, callback: HttpCallback): RouteAddFeature;
 export function addRoute(...args: unknown[]): RouteAddFeature {
-  return new RouteAddFeature(routeSet => {
-    args[0] instanceof RouteDescriptor ? routeSet.add(args[0]) : (routeSet.map as Function)(...args);
+  return new RouteAddFeature(routeMatcher => {
+    args[0] instanceof RouteDescriptor ? routeMatcher.routeSet.add(args[0]) : (routeMatcher.routeSet.add as Function)(...args);
   });
 }
