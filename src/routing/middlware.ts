@@ -21,9 +21,7 @@ export class RoutingMiddleware extends FunctionClass<HttpCallback> {
           params.clear();
           Object.entries(result.params).forEach((x) => params.set(x[0], x[1] as any));
 
-          const length = result.descriptor.callback instanceof FunctionClass ?
-            result.descriptor.callback.objectCallback.length :
-            result.descriptor.callback.length;
+          const length = result.descriptor.callback.length;
 
           if (length < 2) {
             // next is not bound to route callback.
