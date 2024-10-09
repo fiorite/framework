@@ -7,45 +7,78 @@ import {
   AbstractType,
   DecoratorOuterFunction,
   DecoratorRecorder,
+  emptyCallback,
   isType,
   SetWithInnerKey,
   Type,
+  ValueCallback,
   VoidCallback
 } from '../core';
 import { iterableForEach } from '../iterable';
 import { ServiceFactoryWithReturnFunction } from './service-factory';
-import { EventEmitter } from '../core/event-emitter';
+
+interface ServiceSetEvents {
+  readonly add: ValueCallback<ServiceDescriptor>,
+  readonly delete: ValueCallback<ServiceDescriptor>,
+  readonly clear: VoidCallback,
+}
 
 export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> {
   get [Symbol.toStringTag](): string {
     return 'ServiceSet';
   }
 
-  private readonly _changeEmitter = new EventEmitter();
+  private readonly _eventListeners: ServiceSetEvents;
   private readonly _behavioralMap = new Map<Type, ServiceBehavior>();
 
   constructor(
+    descriptors: Iterable<ServiceDescriptor> = [],
     // behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
     //   .map(d => [d.path[0] as Type, d.payload]),
-    onChange?: VoidCallback,
+    eventListeners: Partial<{
+      readonly add: ValueCallback<ServiceDescriptor>,
+      readonly delete: ValueCallback<ServiceDescriptor>,
+      readonly clear: VoidCallback,
+    }> = {},
     behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
       .map(d => [d.path[0] as Type, d.payload]),
   ) {
     const getServiceType = (def: ServiceDescriptor) => def.type;
     super(getServiceType);
+    Array.from(descriptors).forEach(descriptor => super.add(descriptor));
+    this._eventListeners = {
+      add: eventListeners.add || emptyCallback as any,
+      delete: eventListeners.delete || emptyCallback as any,
+      clear: eventListeners.clear || emptyCallback,
+    };
     this._behavioralMap = new Map(behavioralMap);
-    if (onChange) {
-      this._changeEmitter.on('change', onChange);
-    }
   }
 
-  hasType(type: ServiceType): boolean {
-    return this.innerMap.has(type);
+  containsType(type: ServiceType): boolean {
+    return this._innerMap.has(type);
+  }
+
+  findDescriptor(type: ServiceType): ServiceDescriptor | undefined {
+    return this._innerMap.get(type);
+  }
+
+  replaceInherited(with1: ServiceDescriptor): void {
+    if (with1.inherited) {
+      throw new Error('unable to replace with inherited');
+    }
+
+    const actual = this._innerMap.get(with1.type)!;
+
+    if (!actual || !actual.inherited) {
+      throw new Error('service set does not contain inherited service: '+ServiceType.toString(with1.type));
+    }
+
+    this._innerMap.set(with1.type, with1);
   }
 
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
     decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
-      .filter(type => !this.hasType(type))
+      .filter(type => !this.containsType(type))
       .forEach(type => this.addType(type as Type));
     return this;
   }
@@ -55,7 +88,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
     while (queue.length) {
       const descriptor = queue.shift()!;
       descriptor.dependencies
-        .filter(dependency => !this.innerMap.has(dependency) && dependency !== ServiceProvider)
+        .filter(dependency => !this.containsType(dependency) && dependency !== ServiceProvider)
         .filter(isType)
         .map(type => this._addType(type))
         .forEach(descriptor2 => queue.push(descriptor2));
@@ -65,19 +98,19 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
 
   override add(value: ServiceDescriptor): this {
     super.add(value);
-    this._changeEmitter.emit('change');
+    this._eventListeners.add(value);
     return this;
   }
 
   override clear() {
     super.clear();
-    this._changeEmitter.emit('change');
+    this._eventListeners.clear();
   }
 
   override delete(value: ServiceDescriptor): boolean {
     const result = super.delete(value);
     if (result) {
-      this._changeEmitter.emit('change');
+      this._eventListeners.delete(value);
     }
     return result;
   }

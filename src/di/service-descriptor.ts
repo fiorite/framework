@@ -10,26 +10,42 @@ import {
 } from './service-factory';
 
 export class ServiceDescriptor<T = unknown> {
-  readonly #type: ServiceType<T>;
+  private readonly _type: ServiceType<T>;
 
   get type(): ServiceType<T> {
-    return this.#type;
+    return this._type;
   }
 
-  readonly #factory: ServiceFactory<T>;
+  private readonly _factory: ServiceFactory<T>;
 
   get factory(): ServiceFactory<T> {
-    return this.#factory;
+    return this._factory;
   }
 
   get dependencies(): readonly ServiceType[] {
-    return this.#factory.dependencies;
+    return this._factory.dependencies;
   }
 
-  readonly #behavior: ServiceBehavior;
+  private readonly _behavior: ServiceBehavior;
 
   get behavior(): ServiceBehavior {
-    return this.#behavior;
+    return this._behavior;
+  }
+
+  get inherited(): boolean {
+    return ServiceBehavior.Inherited === this.behavior;
+  }
+
+  get singleton(): boolean {
+    return ServiceBehavior.Singleton === this.behavior;
+  }
+
+  get scoped(): boolean {
+    return ServiceBehavior.Scoped === this.behavior;
+  }
+
+  get prototype(): boolean {
+    return ServiceBehavior.Prototype === this.behavior;
   }
 
   static fromValue<T extends object | FunctionClass>(value: T): ServiceDescriptor<T>;
@@ -85,9 +101,9 @@ export class ServiceDescriptor<T = unknown> {
     factory: ServiceFactory<T>,
     behavior?: ServiceBehavior
   ) {
-    this.#type = type;
-    this.#behavior = behavior || ServiceBehavior.Inherited;
-    this.#factory = factory;
+    this._type = type;
+    this._behavior = behavior || ServiceBehavior.Inherited;
+    this._factory = factory;
   }
 
   inherit(behavior: ServiceBehavior.Scoped | ServiceBehavior.Singleton): ServiceDescriptor<T> {

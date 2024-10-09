@@ -1,32 +1,26 @@
 import { MapCallback } from './callbacks';
 
 /**
- * Custom set designed to provide the same signature and the way to configure comparison flow using {@link _keyCallback}
+ * Custom set designed to provide the same signature and the way to configure comparison flow using {@link _keySelector}
  */
 export class SetWithInnerKey<T, K = T> implements Set<T> {
   get [Symbol.toStringTag](): string {
-    return 'CustomSet';
+    return 'SetWithInnerKey';
   }
 
-  // @ts-ignore
-  private readonly _innerMap = new Map<K, T>();
-
-  get innerMap(): ReadonlyMap<K, T> {
-    return this._innerMap;
-  }
-
-  private readonly _keyCallback: MapCallback<T, K>;
+  protected readonly _innerMap = new Map<K, T>();
+  private readonly _keySelector: MapCallback<T, K>;
 
   get size(): number {
     return this._innerMap.size;
   }
 
-  constructor(keyCallback?: MapCallback<T, K>) {
-    this._keyCallback = keyCallback || (key => key as unknown as K);
+  constructor(keySelector?: MapCallback<T, K>) {
+    this._keySelector = keySelector || (key => key as unknown as K);
   }
 
   add(value: T): this {
-    const key = this._keyCallback(value);
+    const key = this._keySelector(value);
     if (!this._innerMap.has(key)) {
       this._innerMap.set(key, value);
     }
@@ -45,7 +39,7 @@ export class SetWithInnerKey<T, K = T> implements Set<T> {
   }
 
   delete(value: T): boolean {
-    return this._innerMap.delete(this._keyCallback(value));
+    return this._innerMap.delete(this._keySelector(value));
   }
 
   forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void { // todo: handle thisArg?
@@ -53,7 +47,7 @@ export class SetWithInnerKey<T, K = T> implements Set<T> {
   }
 
   has(value: T): boolean {
-    return this._innerMap.has(this._keyCallback(value));
+    return this._innerMap.has(this._keySelector(value));
   }
 
   entries(): IterableIterator<[T, T]> {
