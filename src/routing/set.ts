@@ -7,14 +7,14 @@ import { HttpMethod } from '../http';
 import { TypeRoutes } from './route';
 
 export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
-  private readonly _events = new EventEmitter();
+  private readonly _changeEmitter = new EventEmitter();
 
   constructor(descriptors: Iterable<RouteDescriptor>, onChange?: VoidCallback) {
     const routeToString = (route: RouteDescriptor) => route.toString();
     super(routeToString);
     iterableForEach<RouteDescriptor>(route => super.add(route))(descriptors);
     if (onChange) {
-      this._events.on('change', onChange);
+      this._changeEmitter.on('change', onChange);
     }
   }
 
@@ -33,7 +33,7 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
       }
 
       super.add(value);
-      this._events.emit('change');
+      this._changeEmitter.emit('change');
       return this;
     }
 
@@ -63,12 +63,12 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
 
   override clear(): void {
     super.clear();
-    this._events.emit('change');
+    this._changeEmitter.emit('change');
   }
 
   override delete(value: RouteDescriptor): boolean {
     if (super.delete(value)) {
-      this._events.emit('change');
+      this._changeEmitter.emit('change');
       return true;
     }
 

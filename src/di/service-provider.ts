@@ -16,6 +16,7 @@ import { ServiceScope } from './service-scope';
 import { remapBehaviorInheritance, validateBehaviorDependency, validateCircularDependency } from './_procedure';
 import { ServiceFactoryFunction } from './service-factory';
 import { iterableForEach } from '../iterable';
+import { ServiceSet } from './service-set';
 
 /**
  * Service provider is build on callbacks.
@@ -194,11 +195,16 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
 
   private _runtimeMap = new Map<ServiceType, ServiceFactoryFunctionWithProvider>;
 
+  private _serviceSet: ServiceSet;
+
   constructor(services: Iterable<ServiceDescriptor>, scope?: ServiceScope) {
     const withReturn = new ServiceProviderWithReturn((type, callback) => this.provide(type, callback));
     super(withReturn);
     this._scope = scope;
     this._withReturn = withReturn;
+    this._serviceSet = new ServiceSet(/*services, */() => {
+      console.log('CHANGED');
+    });
 
     if (!(services instanceof ServiceProvider)) { // todo: maybe refactor
       const array = remapBehaviorInheritance(services);

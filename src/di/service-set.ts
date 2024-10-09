@@ -5,30 +5,38 @@ import { BehaveLike } from './decorators';
 import { ServiceBehavior } from './service-behavior';
 import {
   AbstractType,
-  SetWithInnerKey,
   DecoratorOuterFunction,
   DecoratorRecorder,
   isType,
+  SetWithInnerKey,
   Type,
-  ValueCallback
+  VoidCallback
 } from '../core';
 import { iterableForEach } from '../iterable';
 import { ServiceFactoryWithReturnFunction } from './service-factory';
+import { EventEmitter } from '../core/event-emitter';
 
 export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> {
   get [Symbol.toStringTag](): string {
     return 'ServiceSet';
   }
 
+  private readonly _changeEmitter = new EventEmitter();
   private readonly _behavioralMap = new Map<Type, ServiceBehavior>();
 
   constructor(
+    // behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
+    //   .map(d => [d.path[0] as Type, d.payload]),
+    onChange?: VoidCallback,
     behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
-      .map(d => [d.path[0] as Type, d.payload])
+      .map(d => [d.path[0] as Type, d.payload]),
   ) {
     const getServiceType = (def: ServiceDescriptor) => def.type;
     super(getServiceType);
     this._behavioralMap = new Map(behavioralMap);
+    if (onChange) {
+      this._changeEmitter.on('change', onChange);
+    }
   }
 
   hasType(type: ServiceType): boolean {
@@ -53,6 +61,25 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
         .forEach(descriptor2 => queue.push(descriptor2));
     }
     return this;
+  }
+
+  override add(value: ServiceDescriptor): this {
+    super.add(value);
+    this._changeEmitter.emit('change');
+    return this;
+  }
+
+  override clear() {
+    super.clear();
+    this._changeEmitter.emit('change');
+  }
+
+  override delete(value: ServiceDescriptor): boolean {
+    const result = super.delete(value);
+    if (result) {
+      this._changeEmitter.emit('change');
+    }
+    return result;
   }
 
   override addAll(iterable: Iterable<Type | ServiceDescriptor | object>): this {
@@ -198,17 +225,4 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
       ServiceBehavior.Prototype
     );
   }
-}
-
-/** @deprecated will be refactored */
-export function makeServiceProvider(configure: Iterable<Type | ServiceDescriptor | object> | ValueCallback<ServiceSet>): ServiceProvider {
-  const serviceSet = new ServiceSet();
-
-  if ('function' === typeof configure) {
-    configure(serviceSet);
-  } else {
-    serviceSet.addAll(configure);
-  }
-
-  return new ServiceProvider(serviceSet);
 }

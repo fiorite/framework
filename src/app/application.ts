@@ -6,6 +6,7 @@ import { Logger } from '../logging';
 import { MaybeArray, MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
 import { addHttpServer, HttpServerFeature } from './http-server';
 
+// todo: make reactive application which extends as it goes.
 export class Application {
   private readonly _services: ServiceProvider;
 
@@ -33,7 +34,7 @@ export class Application {
     this._services = provider;
   }
 
-  contextualize(callback: (complete: VoidCallback) => void): void {
+  call(callback: (complete: VoidCallback) => void): void {
     runProviderContext(this._services, callback);
   }
 
