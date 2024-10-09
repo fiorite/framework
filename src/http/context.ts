@@ -16,13 +16,13 @@ export class HttpContext {
     return this._response;
   }
 
-  private readonly _provide: ServiceProviderWithReturnFunction;
+  private readonly _provide?: ServiceProviderWithReturnFunction;
 
-  get provide(): ServiceProviderWithReturnFunction {
+  get provide(): ServiceProviderWithReturnFunction | undefined {
     return this._provide;
   }
 
-  constructor(request: HttpRequest, response: HttpResponse, provide: ServiceProviderWithReturnFunction) {
+  constructor(request: HttpRequest, response: HttpResponse, provide?: ServiceProviderWithReturnFunction) {
     this._request = request;
     this._response = response;
     this._provide = provide;

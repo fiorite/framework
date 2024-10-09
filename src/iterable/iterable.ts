@@ -65,8 +65,8 @@ class MonoIterable<T, R = T> {
 
     if (Symbol.asyncIterator in iterable) {
       this[Symbol.asyncIterator] = () => {
-        const iterator1 = getIterator({
-          [Symbol.asyncIterator]: () => iterable[Symbol.asyncIterator](),
+        const iterator1 = getIterator<T>({
+          [Symbol.asyncIterator]: () => iterable[Symbol.asyncIterator]() as any,
         });
 
         const outerNext = makeNext(iterator1);

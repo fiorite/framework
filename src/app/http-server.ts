@@ -1,7 +1,6 @@
 import { ServiceProvider, ServiceSet } from '../di';
-import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse } from '../http';
+import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse, HttpServer } from '../http';
 import { ApplicationFeature } from './feature';
-import { HttpServer } from '../http/server';
 
 export class HttpServerFeature implements ApplicationFeature {
   registerServices(serviceSet: ServiceSet) {
@@ -9,7 +8,13 @@ export class HttpServerFeature implements ApplicationFeature {
 
     serviceSet.addValue(HttpPipeline, pipeline)
       .addSingleton(HttpServer, (provider: ServiceProvider) => {
-        return new HttpServer({ callback: pipeline, provider, });
+        return new HttpServer((context, next) => {
+          const requestServices = provider.makeScopedProvider();
+          const requestContext = new HttpContext(context.request, context.response, requestServices);
+          requestServices(HttpContextHost).apply(requestContext);
+          pipeline(requestContext, next);
+          context.response.on('close', () => provider.destroyScope());
+        });
       }, [ServiceProvider])
       .addScoped(HttpContextHost)
       .addInherited(HttpContext, (host: HttpContextHost) => {

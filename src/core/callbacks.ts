@@ -1,4 +1,5 @@
 import { FunctionClass } from './function-class';
+import { CallbackPromiseLike, MaybePromiseLike } from './promises';
 
 /**
  * Callback which is free from parameters or return value.
@@ -76,47 +77,51 @@ export const forceCallbackValue = <T>(callback: (catchValue: ValueCallback<T>) =
   return value!;
 };
 
-
-export class LazyCallbackShare<T> extends FunctionClass<(consume: ValueCallback<T>) => void> {
-  #completed?: boolean;
+export class ComputedPromiseLike<T> extends CallbackPromiseLike<T> {
+  private _completed?: boolean;
 
   get completed(): boolean | undefined {
-    return this.#completed;
+    return this._completed;
   }
 
-  #value?: T;
+  private _value?: T;
 
   get value(): T | undefined {
-    return this.#value;
+    return this._value;
   }
 
-  #pending?: ValueCallback<T>[];
+  private _listeners?: ValueCallback<T>[];
 
-  constructor(configure: (complete: ValueCallback<T>) => void) {
+  constructor(executor: (complete: ValueCallback<T>) => void) {
     super((callback2: ValueCallback<T>) => {
-      if (this.#completed) {
-        callback2(this.#value!);
+      if (this._completed) {
+        callback2(this._value!);
       } else {
-        if (this.#pending) {
-          this.#pending.push(callback2);
+        if (this._listeners) {
+          this._listeners.push(callback2);
         } else {
-          this.#pending = [callback2];
-          configure(value => {
-            this.#value = value;
-            this.#completed = true;
-            while (this.#pending!.length) {
-              this.#pending!.shift()!(value);
+          this._listeners = [callback2];
+
+          const complete = (value: T) => {
+            this._value = value;
+            this._completed = true;
+            while (this._listeners!.length) {
+              this._listeners!.shift()!(value);
             }
-            this.#pending = undefined;
-          });
+            delete this._listeners;
+          };
+
+          if (executor.length) {
+            executor(complete);
+          } else {
+            MaybePromiseLike.then(() => (executor as () => MaybePromiseLike<T>)(), complete);
+          }
         }
       }
     });
   }
 }
 
-export function lazyCallbackShare<T>(configure: (complete: ValueCallback<T>) => void): LazyCallbackShare<T> {
-  return new LazyCallbackShare<T>(configure);
+export function computePromiseLike<T>(executor: (complete: ValueCallback<T>) => void): ComputedPromiseLike<T> {
+  return new ComputedPromiseLike<T>(executor);
 }
-
-// export const lazyValue = (

@@ -8,20 +8,21 @@ export {
   CallbackShareFunction,
   forceCallbackValue,
   CallbackForceValueError,
-  LazyCallbackShare,
-  lazyCallbackShare,
+  ComputedPromiseLike,
+  computePromiseLike,
 } from './callbacks';
 export { Equatable, EqualityComparer, defaultComparer } from './equality';
 export * from './decorator';
 export * from './error';
 export { FunctionClass } from './function-class';
+export { JsPlatform, currentJsPlatform } from './js-platform';
 export { isObject, isObjectMethod } from './object-utils';
 export {
   MaybePromiseLike,
   isPromiseLike,
   promiseWhenNoCallback,
-  PromiseWithSugar,
   callbackPromiseLike,
+  CallbackPromiseLike,
 } from './promises';
 export { RadixMap, RadixWalkResult } from './radix-map';
 export { SetWithInnerKey } from './set-with-inner-key';

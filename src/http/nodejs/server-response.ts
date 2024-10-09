@@ -3,11 +3,10 @@ import { HttpResponse, HttpResponseHeader } from '../response';
 import { HttpHeaders } from '../headers';
 import { HttpStatusCode } from '../status-code';
 import { VoidCallback } from '../../core';
-import { HttpMessageCloseFunction } from '../message';
 
-export class NodeServerResponseHeaders implements HttpHeaders<HttpResponseHeader | string> {
+export class NodeJsServerResponseHeaders implements HttpHeaders<HttpResponseHeader | string> {
   get [Symbol.toStringTag](): string {
-    return 'NodeServerResponseHeaders';
+    return 'NodeJsServerResponseHeaders';
   }
 
   private _response: ServerResponse;
@@ -71,14 +70,14 @@ export class NodeServerResponseHeaders implements HttpHeaders<HttpResponseHeader
   }
 }
 
-export class NodeServerResponse extends HttpResponse {
+export class NodeJsServerResponse extends HttpResponse {
   private readonly _original: ServerResponse;
 
   get original(): ServerResponse {
     return this._original;
   }
 
-  private readonly _headers: NodeServerResponseHeaders;
+  private readonly _headers: NodeJsServerResponseHeaders;
 
   override get headers(): HttpHeaders<HttpResponseHeader | string> {
     return this._headers;
@@ -96,25 +95,25 @@ export class NodeServerResponse extends HttpResponse {
     this._original.statusCode = value;
   }
 
-  private readonly _close: HttpMessageCloseFunction;
-
-  override get close(): HttpMessageCloseFunction {
-    return this._close;
-  }
-
   constructor(response: ServerResponse) {
     super();
     this._original = response;
-    this._headers = new NodeServerResponseHeaders(response);
-    this._close = new HttpMessageCloseFunction(() => response.end());
-    response.on('close', () => this._close.emit());
+    this._headers = new NodeJsServerResponseHeaders(response);
   }
 
-  override read(): never {
+  read(): never {
     throw new Error('Method not implemented.');
   }
 
-  override write(buffer: Uint8Array, callback?: VoidCallback | undefined): void {
+  write(buffer: Uint8Array, callback?: VoidCallback | undefined): void {
     this._original.write(buffer, callback); // add 'drain' handler
+  }
+
+  on(event: 'close', listener: VoidCallback): void {
+    this._original.on(event, listener);
+  }
+
+  close(): void {
+    this._original.end();
   }
 }

@@ -27,8 +27,6 @@ export abstract class HttpMessage {
     return this.headers.get(HttpMessageHeader.ContentType) as string | undefined; // todo: handle array
   }
 
-  abstract readonly close: HttpMessageCloseFunction;
-
   abstract read(callback: ValueCallback<Uint8Array | undefined>): void;
 
   /**
@@ -36,6 +34,10 @@ export abstract class HttpMessage {
    * @param callback called on flush
    */
   abstract write(chunk: Uint8Array | string, callback?: VoidCallback): void;
+
+  abstract on(event: 'close', listener: VoidCallback): void;
+
+  abstract close(): void;
 }
 
 export class HttpMessageCloseFunction extends ListenableFunction<VoidCallback, void> {

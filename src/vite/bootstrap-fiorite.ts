@@ -4,10 +4,11 @@ import fs from 'node:fs';
 import swc from '@rollup/plugin-swc';
 import { nodeJsExternal } from './node-js-external';
 import type { Application } from '../app';
-import type { HttpServer } from '../http/server';
+import type { HttpServer } from '../http';
 import type { Options as SWCOptions } from '@swc/types';
 import { includeDotNode } from './include-dot-node';
 import { replaceDirname } from './replace-dirname';
+import type { NodeJsHttpServer } from '../http/nodejs';
 
 /**
  * Directory where vite config exists, or project root.
@@ -150,7 +151,7 @@ export const bootstrapFiorite = (projectDir: string, config: {
 
         server.middlewares.use((req, res) => {
           app.withProviderContext(complete => {
-            appServer.handleOriginal(req, res);
+            appServer.platformRunner.then(runner => (runner as NodeJsHttpServer)(req, res));
             res.on('close', complete); // todo: extend lifecycle and perhaps connect to scope lifetime.
           });
         });

@@ -2,13 +2,12 @@ import { HttpQuery, HttpRequest, HttpRequestHeader } from '../request';
 import { HttpHeaders } from '../headers';
 import type { IncomingMessage } from 'http';
 import { HttpMethod } from '../method';
-import { ValueCallback } from '../../core';
+import { ValueCallback, VoidCallback } from '../../core';
 import { TLSSocket } from 'tls';
-import { HttpMessageCloseFunction } from '../message';
 
-export class NodeServerRequestHeaders implements HttpHeaders<HttpRequestHeader | string> {
+export class NodeJsServerRequestHeaders implements HttpHeaders<HttpRequestHeader | string> {
   get [Symbol.toStringTag](): string {
-    return 'NodeServerRequestHeaders';
+    return 'NodeJsServerRequestHeaders';
   }
 
   private _request: IncomingMessage;
@@ -91,7 +90,7 @@ export class NodeServerRequestHeaders implements HttpHeaders<HttpRequestHeader |
 //   }
 // }
 
-export class NodeServerRequest extends HttpRequest {
+export class NodeJsServerRequest extends HttpRequest {
   private readonly _original: IncomingMessage;
 
   get original(): IncomingMessage {
@@ -122,7 +121,7 @@ export class NodeServerRequest extends HttpRequest {
     return this._query;
   }
 
-  private readonly _headers: NodeServerRequestHeaders;
+  private readonly _headers: NodeJsServerRequestHeaders;
 
   override get headers(): HttpHeaders<HttpRequestHeader | string> {
     return this._headers;
@@ -132,12 +131,6 @@ export class NodeServerRequest extends HttpRequest {
     return true;
   }
 
-  private readonly _close: HttpMessageCloseFunction;
-
-  override get close(): HttpMessageCloseFunction {
-    return this._close;
-  }
-
   constructor(request: IncomingMessage) {
     super();
     this._original = request;
@@ -145,12 +138,10 @@ export class NodeServerRequest extends HttpRequest {
     const scheme = request.socket instanceof TLSSocket ? 'https:' : 'http:';
     this._url = new URL(request.url!, scheme + '//' + host);
     this._query = new HttpQuery(this._url.searchParams);
-    this._headers = new NodeServerRequestHeaders(request);
-    this._close = new HttpMessageCloseFunction(() => request.destroy());
-    request.on('close', () => this._close.emit());
+    this._headers = new NodeJsServerRequestHeaders(request);
   }
 
-  override read(callback: ValueCallback<Uint8Array | undefined>): void {
+  read(callback: ValueCallback<Uint8Array | undefined>): void {
     const read = () => {
       const chunk = this._original.read();
       callback(null === chunk ? undefined : chunk);
@@ -159,7 +150,15 @@ export class NodeServerRequest extends HttpRequest {
     this._original.once('readable', read);
   }
 
-  override write(): never {
+  write(): never {
     throw new Error('Method not implemented.');
+  }
+
+  on(event: 'close', listener: VoidCallback): void {
+    this._original.on(event, listener);
+  }
+
+  close(): void {
+    this._original.destroy();
   }
 }

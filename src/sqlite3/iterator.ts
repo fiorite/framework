@@ -1,6 +1,6 @@
 import { Statement } from 'sqlite3';
 import { AsyncLikeIterableIterator } from '../iterable';
-import { callbackPromiseLike, MaybePromiseLike } from '../core';
+import { callbackPromiseLike, MaybePromiseLike, CallbackPromiseLike } from '../core';
 import { DbModelField, DbObject } from '../db';
 import { ModelFieldType } from '../data';
 
@@ -27,7 +27,7 @@ export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
     }, {} as DbObject);
   }
 
-  next(): PromiseLike<IteratorResult<DbObject>> {
+  next(): CallbackPromiseLike<IteratorResult<DbObject>> {
     return callbackPromiseLike(complete => {
       this.#statement.get((error: Error | null, row: DbObject) => {
         if (null !== error) {
@@ -43,7 +43,7 @@ export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
     });
   }
 
-  return(value?: MaybePromiseLike<unknown>): PromiseLike<IteratorResult<DbObject>> {
+  return(value?: MaybePromiseLike<unknown>): CallbackPromiseLike<IteratorResult<DbObject>> {
     return callbackPromiseLike(complete => {
       this.#statement.finalize((error?: Error) => {
         if (error) {

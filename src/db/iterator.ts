@@ -1,6 +1,13 @@
 import { AsyncLikeIterableIterator, iterableToArray, MaybeAsyncLikeIterable } from '../iterable';
 import { DbObject } from './object';
-import { callbackPromiseLike, lazyCallbackShare, LazyCallbackShare, MaybePromiseLike, ValueCallback } from '../core';
+import {
+  CallbackPromiseLike,
+  callbackPromiseLike,
+  MaybePromiseLike,
+  computePromiseLike,
+  ComputedPromiseLike,
+  ValueCallback
+} from '../core';
 import { DbReader } from './reader';
 import { DbModel } from './model';
 import { DbLooseQuery, DbQuery } from './query';
@@ -12,25 +19,25 @@ import { DbWhere, DbWhereOperator } from './where';
  */
 export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
   readonly #query: DbLooseQuery;
-  readonly #share: LazyCallbackShare<AsyncLikeIterableIterator<DbObject>>;
+  readonly #share: ComputedPromiseLike<AsyncLikeIterableIterator<DbObject>>;
 
   constructor(reader: DbReader, model: DbModel, query: DbLooseQuery) {
     this.#query = query;
 
-    this.#share = lazyCallbackShare(complete => {
+    this.#share = computePromiseLike(complete => {
       this.#synchronizeQuery(query2 => {
         complete(reader.read({ model: model.name, query: query2, fields: Object.values(model.fields) }));
       });
     });
   }
 
-  next(): PromiseLike<IteratorResult<DbObject, unknown>> {
+  next(): CallbackPromiseLike<IteratorResult<DbObject, unknown>> {
     return this.#share.value ? this.#share.value.next() : callbackPromiseLike(then => {
-      this.#share(iterator => iterator.next().then(then));
+      this.#share.then(iterator => iterator.next().then(then));
     });
   }
 
-  return(value?: MaybePromiseLike<unknown>): PromiseLike<IteratorResult<DbObject, unknown>> {
+  return(value?: MaybePromiseLike<unknown>): CallbackPromiseLike<IteratorResult<DbObject, unknown>> {
     if (this.#share.value) {
       if (this.#share.value.return) {
         return this.#share.value.return(value);
@@ -44,7 +51,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
     }
 
     return callbackPromiseLike(complete => {
-      this.#share(iterator => {
+      this.#share.then(iterator => {
         if (iterator.return) {
           iterator.return(value).then(complete);
         } else {
