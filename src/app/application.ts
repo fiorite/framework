@@ -1,11 +1,10 @@
 import { ApplicationFeature } from './feature';
 import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
-import { HttpMethod } from '../http';
-import { Route, RouteCallback, RouteDescriptor, RouteMatcher } from '../routing';
+import { HttpServer } from '../http';
+import { Route, RouteMatcher } from '../routing';
 import { Logger } from '../logging';
-import { MaybeArray, MaybePromiseLike, ValueCallback, VoidCallback } from '../core';
+import { MaybeArray, MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
 import { addHttpServer, HttpServerFeature } from './http-server';
-import { HttpServer, HttpServerListener } from '../http/server';
 
 export class Application {
   private readonly _provider: ServiceProvider;
@@ -22,7 +21,7 @@ export class Application {
     return this._provider(HttpServer);
   }
 
-  get routes(): RouteMatcher {
+  get routing(): RouteMatcher {
     return this._provider(RouteMatcher);
   }
 
@@ -34,79 +33,22 @@ export class Application {
     this._provider = provider;
   }
 
-  withProviderContext(callback: (complete: VoidCallback) => void): void {
+  contextualize(callback: (complete: VoidCallback) => void): void {
     runProviderContext(this._provider, callback);
   }
 
-  listen(port: number, callback: ValueCallback<unknown>): HttpServerListener {
-    let listener: HttpServerListener;
-    runProviderContext(this._provider, complete => {
-      listener = this._provider(HttpServer).listen(port, value => {
-        MaybePromiseLike.then(() => callback(value), complete);
+  run(callback: VoidCallback): void;
+  run(): PromiseLike<void>;
+  run(callback?: VoidCallback): unknown {
+    return promiseWhenNoCallback<void>(callback => {
+      runProviderContext(this._provider, complete => {
+        this._provider(HttpServer).listen(
+          this._provider(HttpServerFeature).port,
+          () => MaybePromiseLike.then(() => callback(), complete),
+        );
       });
-    });
-    return listener!;
+    }, callback);
   }
-
-  // region routes
-
-  map(path: string, callback: RouteCallback): this;
-  map(method: HttpMethod | string, path: string, callback: RouteCallback): this;
-  map(...args: unknown[]): this {
-    if (args.length === 2) {
-      const [path, callback] = args as [string, RouteCallback];
-      const route = new RouteDescriptor({ path, callback });
-      this.routes.add(route);
-      return this;
-    }
-
-    if (args.length === 3) {
-      const [method, path, callback] = args as [HttpMethod | string, string, RouteCallback];
-      const route = new RouteDescriptor({ path, method, callback });
-      this.routes.add(route);
-      return this;
-    }
-
-    throw new Error('wrong number of args. see overloads.');
-  }
-
-  mapGet(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Get, path, callback);
-  }
-
-  mapHead(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Head, path, callback);
-  }
-
-  mapPost(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Post, path, callback);
-  }
-
-  mapPut(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Put, path, callback);
-  }
-
-  mapDelete(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Delete, path, callback);
-  }
-
-  mapConnect(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Connect, path, callback);
-  }
-
-  mapOptions(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Options, path, callback);
-  }
-
-  mapTrace(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Trace, path, callback);
-  }
-
-  mapPatch(path: string, callback: RouteCallback): this {
-    return this.map(HttpMethod.Patch, path, callback);
-  }
-
-  // endregion
 }
 
 export function makeApplication(...features: ApplicationFeature[]): Application {
@@ -157,7 +99,7 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     }
 
     if (provider.has(RouteMatcher)) { // todo: probably move somewhere else.
-      setTimeout(() => provider(RouteMatcher).mapDecoratedBy(Route)); // decorators a bit later, postpone to another call stack
+      provider(RouteMatcher).routeSet.addDecoratedBy(Route);
     }
   });
 

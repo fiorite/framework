@@ -32,13 +32,13 @@ export class ObjectMethodCallback<T = unknown> extends FunctionClass<RouteCallba
     };
 
     super((context, next) => {
-      reuseTypeFactory(context.provide, object => {
+      reuseTypeFactory(context.provide!, object => {
         methodFactory(<R>(type2: ServiceType<R>, callback2: ValueCallback<R>) => {
           if (type2 === type) {
             return callback2(object as unknown as R);
           }
 
-          return context.provide(type2, callback2);
+          return context.provide!(type2, callback2);
         }, next);
       });
     });

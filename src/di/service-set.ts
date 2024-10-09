@@ -132,6 +132,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
   }
 
   addSingleton(type: Type): this;
+  addSingleton<T>(type: ServiceType<T>, value: T): this;
   addSingleton<T>(type: ServiceType<T>, implementation: Type<T>): this;
   addSingleton<T>(type: ServiceType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
   addSingleton(...args: unknown[]): this {
@@ -140,8 +141,12 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
       return this.addType(type, type, ServiceBehavior.Singleton);
     }
 
-    if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Singleton);
+    if (args.length === 2) {
+      if (isType(args[1])) {
+        return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Singleton);
+      }
+
+      return this.addValue(args[0] as Type, args[1] as object);
     }
 
     return this.addFactory(
