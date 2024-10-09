@@ -20,11 +20,11 @@ export class HttpServerFeature implements ApplicationFeature {
       .addValue(HttpPipeline, pipeline)
       .addSingleton(HttpServer, (provider: ServiceProvider) => {
         return new HttpServer((context, next) => {
-          const requestServices = provider.makeScopedProvider();
-          const requestContext = new HttpContext(context.request, context.response, requestServices);
-          requestServices(HttpContextHost).apply(requestContext);
+          const scopedProvider = ServiceProvider.createScoped(provider);
+          const requestContext = new HttpContext(context.request, context.response, scopedProvider);
+          scopedProvider(HttpContextHost).apply(requestContext);
           pipeline(requestContext, next);
-          context.response.on('close', () => requestServices.destroyScope());
+          context.response.on('close', () => ServiceProvider.destroyScoped(scopedProvider));
         });
       }, [ServiceProvider])
       .addScoped(HttpContextHost)

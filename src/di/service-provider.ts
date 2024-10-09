@@ -174,6 +174,31 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     },
   };
 
+  static createScoped(from: ServiceProvider): ServiceProvider {
+    if (from._scope) {
+      throw new Error('ServiceProvider has Scope already.');
+    }
+
+    const scoped = new ServiceProvider(from);
+    scoped._scope = new ServiceScope();
+    return scoped;
+  }
+
+  static destroyScoped(of: ServiceProvider): void {
+    if (!of._scope) {
+      throw new Error('ServiceProvider has no Scope.');
+    }
+
+    const scope = of._scope;
+    delete of._scope;
+
+    iterableForEach<[ServiceType, unknown]>(entry => {
+      if (isObjectMethod(entry[1], 'onScopeDestroy')) {
+        entry[1]['onScopeDestroy']();
+      }
+    })(scope);
+  }
+
   private readonly _singletons: Map<ServiceType, unknown>;
 
   private readonly _callbackShare: CallbackShare;
@@ -200,10 +225,9 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
 
   private _touchAddedSingletons?: boolean;
 
-  constructor(descriptors: Iterable<ServiceDescriptor>, scope?: ServiceScope) {
+  constructor(descriptors: Iterable<ServiceDescriptor>) {
     const withReturn = new ServiceProviderWithReturn((type, callback) => this.provide(type, callback));
     super(withReturn);
-    this._scope = scope;
     this._withReturn = withReturn;
 
     if (!(descriptors instanceof ServiceProvider)) { // todo: maybe refactor
@@ -412,29 +436,6 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     });
 
     this.provideAll(descriptors.map(x => x.type), () => callback());
-  }
-
-  makeScopedProvider(): ServiceProvider {
-    if (this._scope) {
-      throw new Error('Sub-scope is not supported');
-    }
-
-    return new ServiceProvider(this, new ServiceScope());
-  }
-
-  destroyScope(): void {
-    if (!this.scope) {
-      throw new Error('No defined scope');
-    }
-
-    const scope = this.scope;
-    delete this._scope;
-
-    iterableForEach<[ServiceType, unknown]>(entry => {
-      if (isObjectMethod(entry[1], 'onScopeDestroy')) {
-        entry[1]['onScopeDestroy']();
-      }
-    })(scope);
   }
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {
