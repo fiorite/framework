@@ -1,10 +1,11 @@
 import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction } from '../di';
 import { HttpServer } from '../http';
 import { Route, RouteMatcher } from '../routing';
-import { Logger } from '../logging';
+import { Logger, LogLevel } from '../logging';
 import { MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
 import { featureHttpServer, httpServerPort } from './http-server';
 import { dbCoreServices } from '../db';
+import { featureConsoleLogger } from './logging';
 
 // todo: make reactive application which extends as it goes.
 export class Application {
@@ -56,6 +57,10 @@ export type ApplicationConfigureFunction = (provider: ServiceProvider) => void;
 
 export function makeApplication(...features: ApplicationConfigureFunction[]): Application {
   const provider = new ServiceProvider();
+  const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
+  provider.addValue(Symbol.for('development'), development);
+  featureConsoleLogger(development ? LogLevel.Debug : undefined)(provider); // todo: make configurable
+
   featureHttpServer()(provider);
   dbCoreServices(provider);
 
