@@ -1,4 +1,4 @@
-# Dependency Injection: `ServiceProvider`
+# Dependency Injection
 
 **What are services?** - reusable parts which follow behavior patterns and can be projected by consumer code.
 
