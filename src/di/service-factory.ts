@@ -122,7 +122,7 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
       ).map((type: AbstractType) => ({ original: type, type, callback: (object: unknown) => object }));
 
       if (callback.length && callback.length !== reflect.length) {
-        throw new Error(`Decorator metadata has not been emitted: ` + callback.length);
+        throw new Error(`Unable to auto-wire "${type.name}". Use @Inherited() or configure it using ServiceProvider: `, type.toString());
       }
 
       parameters = DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {

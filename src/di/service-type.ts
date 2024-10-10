@@ -7,11 +7,11 @@ export namespace ServiceType {
     const type = typeof object;
 
     if ('string' === type) {
-      return '"'+object as string+'"';
+      return '"' + object as string + '"';
     }
 
     if ('symbol' === type) {
-      return 'Symbol('+(object as symbol).toString()+')';
+      return (object as symbol).toString();
     }
 
     return (object as AbstractType).name;

@@ -1,14 +1,6 @@
 import { FunctionClass } from '../core';
-import {
-  HttpMethod,
-  HttpCallback,
-  HttpPipeline,
-  HttpRequestHeader,
-  HttpResponseHeader,
-  HttpStatusCode
-} from '../http';
-import { ApplicationFeature } from './feature';
-import { ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
+import { HttpCallback, HttpMethod, HttpPipeline, HttpRequestHeader, HttpResponseHeader, HttpStatusCode } from '../http';
+import { ApplicationConfigureFunction } from './application';
 
 export class CorsMiddleware extends FunctionClass<HttpCallback> {
   constructor() {
@@ -34,21 +26,12 @@ export class CorsMiddleware extends FunctionClass<HttpCallback> {
   }
 }
 
-export class CorsFeature implements ApplicationFeature {
-  private readonly _middleware: CorsMiddleware;
-
-  constructor(middleware: CorsMiddleware) {
-    this._middleware = middleware;
-  }
-
-  configure(provider: ServiceProvider) {
-    provider.addValue(CorsMiddleware, this._middleware);
-    provider(HttpPipeline).add(this._middleware);
-  }
-}
-
-export function addCors(): CorsFeature {
+// todo: add options
+export function featureCors(): ApplicationConfigureFunction {
   const middleware = new CorsMiddleware();
-  return new CorsFeature(middleware);
+  return provider => {
+    provider.addValue(CorsMiddleware, middleware);
+    provider(HttpPipeline).add(middleware);
+  };
 }
 

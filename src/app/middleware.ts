@@ -1,19 +1,6 @@
-import { ApplicationFeature } from './feature';
-import { ServiceProvider, ServiceProviderWithReturnFunction } from '../di';
 import { HttpCallback, HttpPipeline } from '../http';
+import { ApplicationConfigureFunction } from './application';
 
-export class MiddlewareFeature implements ApplicationFeature {
-  private readonly _callback: HttpCallback;
-
-  constructor(callback: HttpCallback) {
-    this._callback = callback;
-  }
-
-  configure(provider: ServiceProvider) {
-    provider(HttpPipeline).add(this._callback);
-  }
-}
-
-export function addMiddleware(callback: HttpCallback): MiddlewareFeature {
-  return new MiddlewareFeature(callback);
+export function featureMiddleware(callback: HttpCallback): ApplicationConfigureFunction {
+  return provider => provider(HttpPipeline).add(callback);
 }

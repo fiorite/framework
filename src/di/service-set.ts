@@ -54,7 +54,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
 
     const actual = this._innerMap.get(with1.type)!;
 
-    if (!actual || !actual.inherited) {
+    if (!actual || (!actual.inherited && actual.behavior !== with1.behavior)) { // todo: refactor perhaps
       throw new Error('service set does not contain inherited service: ' + ServiceType.toString(with1.type));
     }
 

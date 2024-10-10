@@ -1,10 +1,9 @@
-import { ApplicationFeature } from './feature';
-import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
+import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction } from '../di';
 import { HttpServer } from '../http';
 import { Route, RouteMatcher } from '../routing';
 import { Logger } from '../logging';
-import { MaybeArray, MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
-import { addHttpServer, HttpServerFeature } from './http-server';
+import { MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
+import { featureHttpServer, httpServerPort } from './http-server';
 import { dbCoreServices } from '../db';
 
 // todo: make reactive application which extends as it goes.
@@ -45,7 +44,7 @@ export class Application {
     return promiseWhenNoCallback<void>(callback => {
       runProviderContext(this._provider, complete => {
         this._provider(HttpServer).listen(
-          this._provider(HttpServerFeature).port,
+          this._provider(httpServerPort),
           () => MaybePromiseLike.then(() => callback(), complete),
         );
       });
@@ -53,34 +52,18 @@ export class Application {
   }
 }
 
-export function makeApplication(...features: ApplicationFeature[]): Application {
-  features = features.filter(x => !(x instanceof HttpServerFeature));
+export type ApplicationConfigureFunction = (provider: ServiceProvider) => void;
 
+export function makeApplication(...features: ApplicationConfigureFunction[]): Application {
   const provider = new ServiceProvider();
-  addHttpServer().configure(provider);
-  dbCoreServices.configure!(provider);
-
-  // resolve tree of extendWith
-  // const queue = [...features];
-  // while (queue.length) {
-  //   const feature = queue.shift()!;
-  //   if (feature.extendWith) {
-  //     queue.unshift(...MaybeArray.toArray(feature.extendWith));
-  //   }
-  //   if (!features.includes(feature)) {
-  //     features.unshift(feature);
-  //   }
-  // }
-
-  // const serviceSet = new ServiceSet();
-  //
-  // serviceSet.addDecoratedBy(BehaveLike);
+  featureHttpServer()(provider);
+  dbCoreServices(provider);
 
   runProviderContext(provider, complete => {
-    features.filter(x => x.configure).forEach(x => x.configure!(provider));
+    features.forEach(featureFunction => featureFunction(provider));
     provider.addDecoratedBy(BehaveLike);
     provider.addMissingDependencies();
-    provider._performStabilityChecks();
+    provider._performStabilityCheck();
     const touchSingletons = true;
 
     let completed = false;

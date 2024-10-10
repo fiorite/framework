@@ -1,11 +1,13 @@
-import { ApplicationFeature } from '../app';
+import { ApplicationConfigureFunction } from '../app';
 import { DbConnectionName, DbManager } from './manager';
 import { DbModel } from './model';
 import { DbSequence } from './sequence';
 import { Provide, provide, ProvideDecorator } from '../di';
 
-export const dbCoreServices: ApplicationFeature = {
-  configure: provider => provider.addSingleton(DbManager),
+export const dbCoreServices: ApplicationConfigureFunction = provider => {
+  if (!provider.has(DbManager)) {
+    provider.addSingleton(DbManager);
+  }
 };
 
 export function fromDb<T>(model: DbModel<T>, connection?: DbConnectionName): DbSequence<T> {

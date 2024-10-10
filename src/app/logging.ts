@@ -1,20 +1,15 @@
-import { ServiceProvider } from '../di';
 import { ConsoleLogger, LevelFilter, Logger, LogLevel } from '../logging';
-import { ApplicationFeature } from './feature';
+import { ApplicationConfigureFunction } from './application';
 
-export class ConsoleLoggerFeature implements ApplicationFeature {
-  constructor(readonly level?: LogLevel) {
-  }
+export const logLevel = Symbol.for('LogLevel');
 
-  configure(provider: ServiceProvider) {
+export function featureConsoleLogger(level?: LogLevel): ApplicationConfigureFunction {
+  return provider => {
+    level = level || LogLevel.Info;
+    provider.addValue(logLevel, level);
+
     let logger: Logger = new ConsoleLogger();
-    if (this.level) {
-      logger = new LevelFilter(logger, this.level!);
-    }
+    logger = new LevelFilter(logger, level!);
     provider.addValue(Logger, logger);
-  }
-}
-
-export function addConsoleLogger(level?: LogLevel): ConsoleLoggerFeature {
-  return new ConsoleLoggerFeature(level);
+  };
 }

@@ -1,7 +1,7 @@
-import { addConsoleLogger } from '../app';
+import { featureConsoleLogger } from '../app';
 
 export const logger = {
-  console: addConsoleLogger,
+  console: featureConsoleLogger,
 };
 
 // todo: move log here

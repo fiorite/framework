@@ -1,21 +1,13 @@
 import { ServiceProvider } from '../di';
 import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse, HttpServer } from '../http';
-import { ApplicationFeature } from './feature';
+import { ApplicationConfigureFunction } from './application';
 
-export class HttpServerFeature implements ApplicationFeature {
-  private readonly _port: number;
+export const httpServerPort = Symbol('HttpServer.port');
 
-  get port(): number {
-    return this._port;
-  }
-
-  constructor(port?: number) {
-    this._port = port || Number(process.env['PORT'] || 3000);
-  }
-
-  configure(provider: ServiceProvider) {
+export function featureHttpServer(port?: number): ApplicationConfigureFunction {
+  return provider => {
     const pipeline = new HttpPipeline();
-    provider.addValue(HttpServerFeature, this)
+    provider.addValue(httpServerPort, port || Number(process.env['PORT'] || 3000))
       .addValue(HttpPipeline, pipeline)
       .addSingleton(HttpServer, (provider: ServiceProvider) => {
         return new HttpServer((context, next) => {
@@ -37,9 +29,5 @@ export class HttpServerFeature implements ApplicationFeature {
       .addInherited(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
       .addInherited(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
     ;
-  }
-}
-
-export function addHttpServer(port?: number): HttpServerFeature {
-  return new HttpServerFeature(port);
+  };
 }

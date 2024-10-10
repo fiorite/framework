@@ -1,5 +1,5 @@
-import { addCors, CorsFeature } from '../app';
+import { featureCors, CorsFeature } from '../app';
 
 export function cors(): CorsFeature {
-  return addCors();
+  return featureCors();
 }

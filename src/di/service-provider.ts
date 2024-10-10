@@ -299,7 +299,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
   /**
    * @deprecated method to process all the checks.
    */
-  _performStabilityChecks(): void {
+  _performStabilityCheck(): void {
     this._checkCircularDependencies();
     this._checkBehaviourDependencies();
   }

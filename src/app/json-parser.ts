@@ -1,7 +1,6 @@
 import { HttpBodyResult, HttpCallback, HttpPipeline } from '../http';
-import { ApplicationFeature } from './feature';
 import { FunctionClass } from '../core';
-import { ServiceProvider } from '../di';
+import { ApplicationConfigureFunction } from './application';
 
 export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
   constructor() {
@@ -43,19 +42,10 @@ export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
   }
 }
 
-export class JsonParserFeature implements ApplicationFeature {
-  private readonly _middleware: JsonParserMiddleware;
-
-  constructor() {
-    this._middleware = new JsonParserMiddleware();
-  }
-
-  configure(provider: ServiceProvider) {
-    provider.addScoped(HttpBodyResult).addValue(JsonParserMiddleware, this._middleware);
-    provider(HttpPipeline).add(this._middleware);
-  }
-}
-
-export function addJsonParser(): JsonParserFeature {
-  return new JsonParserFeature();
+export function featureJsonParser(): ApplicationConfigureFunction {
+  const middleware = new JsonParserMiddleware();
+  return provider => {
+    provider.addScoped(HttpBodyResult).addValue(JsonParserMiddleware, middleware);
+    provider(HttpPipeline).add(middleware);
+  };
 }
