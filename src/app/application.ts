@@ -1,4 +1,4 @@
-import { BehaveLike, runProviderContext, ServiceProvider, ServiceProviderWithReturnFunction } from '../di';
+import { BehaveLike, runProviderContext, ServiceProvider, ServiceProvideFunction } from '../di';
 import { HttpServer } from '../http';
 import { Route, RouteMatcher } from '../routing';
 import { Logger, LogLevel } from '../logging';
@@ -15,7 +15,7 @@ export class Application {
     return this._provider;
   }
 
-  get provide(): ServiceProviderWithReturnFunction {
+  get provide(): ServiceProvideFunction {
     return this._provider.withReturn;
   }
 

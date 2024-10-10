@@ -32,19 +32,19 @@ export class ServiceDescriptor<T = unknown> {
     return this._behavior;
   }
 
-  get inherited(): boolean {
+  get isInherited(): boolean {
     return ServiceBehavior.Inherited === this.behavior;
   }
 
-  get singleton(): boolean {
+  get isSingleton(): boolean {
     return ServiceBehavior.Singleton === this.behavior;
   }
 
-  get scoped(): boolean {
+  get isScoped(): boolean {
     return ServiceBehavior.Scoped === this.behavior;
   }
 
-  get prototype(): boolean {
+  get isPrototype(): boolean {
     return ServiceBehavior.Prototype === this.behavior;
   }
 

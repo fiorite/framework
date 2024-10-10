@@ -24,8 +24,8 @@ import { ServiceSet } from './service-set';
 import { BehaveLike } from './decorators';
 
 /**
- * Service provider is build on callbacks.
- * See {@link ServiceProviderWithReturnFunction} signature.
+ * Dependency injection is built with the help of callbacks.
+ * See {@link ServiceProvideFunction} signature.
  *
  * Using {@link Promise} instead of callback (idea):
  * @example ```typescript
@@ -39,36 +39,18 @@ import { BehaveLike } from './decorators';
  *    });
  *  };
  * ```
+ * Core function which accepts service {@link type} and resolves it with {@link callback}.
  */
-export interface ServiceProvideFunction {
-  /**
-   * Core function which accepts service {@link type} and resolves it with {@link callback}.
-   * @param type
-   * @param callback
-   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
-}
+export type ServiceProvideCallback = <T>(type: ServiceType<T>, then: ValueCallback<T>) => void;
 
 /**
  * Provide with return is an attempt to catch a synchronous value out of provide callback.
  * Side effect is {@link Error} throw when service is asynchronous.
+ *
+ * @throws Error when unable to catch a value, thus service considered to be asynchronous, unless one uses callback overload.
  */
-export interface ServiceProviderWithReturnFunction extends ServiceProvideFunction {
-  /**
-   * @throws Error when unable to catch a value, thus service considered to be asynchronous.
-   */<T>(type: ServiceType<T>): T;
-}
-
-/**
- * @mixin ServiceProviderWithReturn
- */
-export interface ServiceProviderWithReturn extends ServiceProviderWithReturnFunction {
-  /**
-   * @inheritdoc
-   */<T>(type: ServiceType<T>): T;
-
-  /**
-   * @inheritdoc
-   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+export interface ServiceProvideFunction extends ServiceProvideCallback {
+  <T>(type: ServiceType<T>): T;
 }
 
 export class NotSynchronousServiceError {
@@ -80,48 +62,7 @@ export class NotSynchronousServiceError {
   }
 }
 
-/**
- * Implementor of {@link ServiceProviderWithReturnFunction} which wraps raw {@link ServiceProvideFunction}.
- */
-export class ServiceProviderWithReturn extends FunctionClass<ServiceProviderWithReturnFunction> {
-  /**
-   * Original implementation of {@link ServiceProvideFunction}.
-   * @private
-   */
-  private readonly _original: ServiceProvideFunction;
-
-  get original(): ServiceProvideFunction {
-    return this._original;
-  }
-
-  constructor(provide: ServiceProvideFunction) {
-    super(<T>(type: ServiceType<T>, callback?: ValueCallback<T>): unknown => {
-      if (callback) {
-        return provide(type, callback);
-      }
-
-      try {
-        return forceCallbackValue(catcher => provide(type, catcher));
-      } catch (error) {
-        if (error instanceof CallbackForceValueError) {
-          throw new NotSynchronousServiceError(type);
-        }
-        throw error;
-      }
-    });
-    this._original = provide;
-  }
-}
-
-export interface ServiceProvider extends ServiceProviderWithReturnFunction {
-  /**
-   * @inheritdoc
-   */<T>(type: ServiceType<T>): T;
-
-  /**
-   * @inheritdoc
-   */<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
-}
+export interface ServiceProvider extends ServiceProvideFunction { }
 
 export class ServiceNotFoundError implements Error {
   readonly name = 'ServiceNotFound';
@@ -141,7 +82,7 @@ export interface OnScopeDestroy {
   onScopeDestroy(): void;
 }
 
-export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunction> implements Iterable<ServiceDescriptor> {
+export class ServiceProvider extends FunctionClass<ServiceProvideFunction> implements Iterable<ServiceDescriptor> {
   private static _behaviorFactories: Record<ServiceBehavior, MapCallback<ServiceDescriptor, ServiceFactoryFunctionWithProvider>> = {
     [ServiceBehavior.Inherited]: (descriptor) => {
       return (provider, callback): void => {
@@ -164,7 +105,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
         }
 
         return provider._callbackShare(ServiceType.toString(descriptor.type), fulfill => {
-          descriptor.factory(provider.provide.bind(provider), fulfill);
+          descriptor.factory(provider._provide.bind(provider), fulfill);
         }, value => {
           provider._singletons.set(descriptor.type, value);
           callback(value);
@@ -179,17 +120,17 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
 
         return provider.scope.through(
           descriptor.type,
-          resolve => descriptor.factory(provider.provide.bind(provider), resolve),
+          resolve => descriptor.factory(provider._provide.bind(provider), resolve),
           callback
         );
       };
     },
     [ServiceBehavior.Prototype]: (descriptor): ServiceFactoryFunctionWithProvider => {
-      return (provider, callback) => descriptor.factory(provider.provide.bind(provider), callback);
+      return (provider, callback) => descriptor.factory(provider._provide.bind(provider), callback);
     },
   };
 
-  static createScoped(from: ServiceProvider): ServiceProvider {
+  static createWithScope(from: ServiceProvider): ServiceProvider {
     if (from._scope) {
       throw new Error('ServiceProvider has Scope already.');
     }
@@ -199,7 +140,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     return scoped;
   }
 
-  static destroyScoped(of: ServiceProvider): void {
+  static destroyScope(of: ServiceProvider): void {
     if (!of._scope) {
       throw new Error('ServiceProvider has no Scope.');
     }
@@ -224,44 +165,25 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     return this._scope;
   }
 
-  private readonly _withReturn: ServiceProviderWithReturn;
-
-  get withReturn(): ServiceProviderWithReturn {
-    return this._withReturn;
-  }
-
-  /**
-   *
-   */
-  get get(): ServiceProviderWithReturn {
-    return this._withReturn;
-  }
-
   private _runtimeMap = new Map<ServiceType, ServiceFactoryFunctionWithProvider>;
 
   private readonly _descriptors: ServiceSet;
 
-  get descriptors(): ServiceSet {
-    return this._descriptors;
-  }
-
-  private _touchAddedSingletons?: boolean;
+  private _preCacheSingletons?: boolean;
 
   private _behavioralMap: Map<Type, ServiceBehavior> = new Map(
     DecoratorRecorder.classSearch(BehaveLike).map(d => [d.path[0] as Type, d.payload])
   );
 
   constructor(descriptors: Iterable<ServiceDescriptor> = []) {
-    const withReturn = new ServiceProviderWithReturn((type, callback) => this.provide(type, callback));
-    super(withReturn);
-    this._withReturn = withReturn;
+    super((...args: unknown[]) => (this.get as Function)(...args));
 
     if (!(descriptors instanceof ServiceProvider)) { // todo: maybe refactor
       this._descriptors = new ServiceSet(descriptors, {
         add: descriptor => {
           this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior](descriptor));
-          if (this._touchAddedSingletons && descriptor.singleton) {
-            this.provide(descriptor.type, emptyCallback);
+          if (this._preCacheSingletons && descriptor.isSingleton) {
+            this._provide(descriptor.type, emptyCallback);
           }
         },
         delete: descriptor => {
@@ -272,7 +194,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
           this._runtimeMap.delete(descriptor.type);
 
           if ( // delete singleton instance
-            descriptor.singleton && this._singletons.has(descriptor.type)
+            descriptor.isSingleton && this._singletons.has(descriptor.type)
           ) {
             this._singletons.delete(descriptor.type);
           }
@@ -305,9 +227,9 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
   }
 
   /**
-   * Raw implementation or {@link ServiceProvideFunction}.
+   * Raw {@link ServiceProvideCallback}, used internally.
    */
-  provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
+  private _provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
     const behaviorFactory = this._runtimeMap.get(type) as ServiceFactoryFunctionWithProvider<T> | undefined;
 
     if (undefined === behaviorFactory) {
@@ -317,9 +239,39 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     return behaviorFactory(this, callback);
   }
 
-  provideAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
-    return ServiceFactoryFunction.all(array)(this.provide.bind(this), callback);
+  get<T>(type: ServiceType<T>): T;
+  get<T>(type: ServiceType<T>, then: ValueCallback<T>): void;
+  get(type: ServiceType, callback?: ValueCallback<unknown>): unknown {
+    if (callback) {
+      return this._provide(type, callback);
+    }
+
+    try {
+      return forceCallbackValue(complete => this._provide(type, complete));
+    } catch (error) {
+      if (error instanceof CallbackForceValueError) {
+        throw new NotSynchronousServiceError(type);
+      }
+      throw error;
+    }
   }
+
+  getAsync<T>(type: ServiceType<T>): PromiseLike<T> {
+    return new Promise((resolve, reject) => {
+      try {
+        this._provide(type, resolve);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  getAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
+    return ServiceFactoryFunction.all(array)(this._provide.bind(this), callback);
+  }
+
+  // todo: add set which will forcefully set the service unless there no dependency done on it.
+  // think of rebuilding stuff, will likely not work.
 
   has(type: ServiceType): boolean {
     return this._descriptors.containsType(type);
@@ -342,13 +294,13 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     const queue: ServiceDescriptor[] = [];
 
     if (descriptors.length) {
-      if (descriptors.some(x => !x.inherited)) {
+      if (descriptors.some(x => !x.isInherited)) {
         throw new Error('requested service is not inherited');
       }
       queue.push(...descriptors);
     } else {
       this._descriptors.forEach(descriptor => {
-        if (descriptor.inherited) {
+        if (descriptor.isInherited) {
           queue.push(descriptor);
         }
       });
@@ -368,7 +320,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
         return x;
       });
 
-      const inheritedDeps = dependencies.filter(x => x.inherited);
+      const inheritedDeps = dependencies.filter(x => x.isInherited);
       if (inheritedDeps.length) {
         inheritedDeps.forEach(inheritedDescriptor => { // clean queue
           const index = queue.findIndex(x => x.type === inheritedDescriptor.type);
@@ -378,7 +330,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
         // put dependencies first and current descriptor in the end.
         queue.unshift(...inheritedDeps, descriptor1);
       } else {
-        const behaviorToInherit = dependencies.some(dependency => dependency.scoped) ?
+        const behaviorToInherit = dependencies.some(dependency => dependency.isScoped) ?
           ServiceBehavior.Scoped : ServiceBehavior.Singleton;
         result.push(descriptor1.inherit(behaviorToInherit));
       }
@@ -417,8 +369,8 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
       //   throw new Error('Inherit behavior is not resolved: ' + ServiceType.toString(dependency1.type));
       // }
 
-      if (declaration.singleton) {
-        const index2 = dependencies.findIndex(x => x.scoped);
+      if (declaration.isSingleton) {
+        const index2 = dependencies.findIndex(x => x.isScoped);
         if (index2 > -1) {
           const dependency2 = dependencies[index2];
           throw new Error(`Faulty behavior dependency. Singleton (${ServiceType.toString(declaration.type)}) cannot depend on Scope (${ServiceType.toString(dependency2.type)}) behavior.`);
@@ -448,16 +400,16 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
   // endregion
 
   preCacheSingletons(callback: VoidCallback): void {
-    this._touchAddedSingletons = true;
+    this._preCacheSingletons = true;
 
     const descriptors: ServiceDescriptor[] = [];
     this._descriptors.forEach(descriptor => {
-      if (descriptor.singleton && !this._singletons.has(descriptor.type)) {
+      if (descriptor.isSingleton && !this._singletons.has(descriptor.type)) {
         descriptors.push(descriptor);
       }
     });
 
-    this.provideAll(descriptors.map(x => x.type), () => callback());
+    this.getAll(descriptors.map(x => x.type), () => callback());
   }
 
   // region add a new service
@@ -612,8 +564,6 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
       ServiceBehavior.Prototype
     );
   }
-
-  // endregion
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {
     return this._descriptors[Symbol.iterator]();

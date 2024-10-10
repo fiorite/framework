@@ -48,13 +48,13 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
   }
 
   replaceInherited(with1: ServiceDescriptor): void {
-    if (with1.inherited) {
+    if (with1.isInherited) {
       throw new Error('unable to replace with inherited');
     }
 
     const actual = this._innerMap.get(with1.type)!;
 
-    if (!actual || (!actual.inherited && actual.behavior !== with1.behavior)) { // todo: refactor perhaps
+    if (!actual || (!actual.isInherited && actual.behavior !== with1.behavior)) { // todo: refactor perhaps
       throw new Error('service set does not contain inherited service: ' + ServiceType.toString(with1.type));
     }
 

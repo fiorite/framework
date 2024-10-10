@@ -11,11 +11,11 @@ export function featureHttpServer(port?: number): ApplicationConfigureFunction {
       .addValue(HttpPipeline, pipeline)
       .addSingleton(HttpServer, (provider: ServiceProvider) => {
         return new HttpServer((context, next) => {
-          const scopedProvider = ServiceProvider.createScoped(provider);
+          const scopedProvider = ServiceProvider.createWithScope(provider);
           const requestContext = new HttpContext(context.request, context.response, scopedProvider);
           scopedProvider(HttpContextHost).apply(requestContext);
           pipeline(requestContext, next);
-          context.response.on('close', () => ServiceProvider.destroyScoped(scopedProvider));
+          context.response.on('close', () => ServiceProvider.destroyScope(scopedProvider));
         });
       }, [ServiceProvider])
       .addScoped(HttpContextHost)

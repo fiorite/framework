@@ -9,16 +9,16 @@ import {
 } from '../core';
 import { ServiceType } from './service-type';
 import { Provide } from './decorators';
-import type { ServiceProvideFunction } from './service-provider';
+import type { ServiceProvideCallback } from './service-provider';
 import 'reflect-metadata';
 
-export type ServiceFactoryFunction<T = unknown> = (provide: ServiceProvideFunction, callback: ValueCallback<T>) => void;
+export type ServiceFactoryFunction<T = unknown> = (provide: ServiceProvideCallback, callback: ValueCallback<T>) => void;
 
 export type ServiceFactoryWithReturnFunction<R, P extends unknown[] = any[]> = (...args: P) => MaybePromiseLike<R>;
 
 export namespace ServiceFactoryFunction {
   export function all(array: readonly ServiceType[]): ServiceFactoryFunction<unknown[]> {
-    return (provide: ServiceProvideFunction, callback: ValueCallback<unknown[]>) => {
+    return (provide: ServiceProvideCallback, callback: ValueCallback<unknown[]>) => {
       if (!array.length) {
         return callback([]);
       }
@@ -122,7 +122,7 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
       ).map((type: AbstractType) => ({ original: type, type, callback: (object: unknown) => object }));
 
       if (callback.length && callback.length !== reflect.length) {
-        throw new Error(`Unable to auto-wire "${type.name}". Use @Inherited() or configure it using ServiceProvider: `, type.toString());
+        throw new Error(`Unable to auto-wire "${type.name}". Use @Inherited() or configure it using ServiceProvider`);
       }
 
       parameters = DecoratorRecorder.parameterSearch(Provide, type, propertyKey).reduce((result, decoration) => {

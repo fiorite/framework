@@ -1,5 +1,5 @@
 import { ServiceType } from './service-type';
-import { ServiceProviderWithReturnFunction } from './service-provider';
+import { ServiceProvideFunction } from './service-provider';
 import { MapCallback } from '../core';
 
 export class ServiceReference<T> {
@@ -20,7 +20,7 @@ export class ServiceReference<T> {
     this.#project = project || ((value: unknown) => value as unknown as T);
   }
 
-  receive(provide: ServiceProviderWithReturnFunction): T {
+  receive(provide: ServiceProvideFunction): T {
     return this.#project(provide(this.#type));
   }
 }

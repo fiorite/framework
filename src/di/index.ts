@@ -24,9 +24,8 @@ export {
 export {
   ServiceProvider,
   ServiceNotFoundError,
+  ServiceProvideCallback,
   ServiceProvideFunction,
-  ServiceProviderWithReturn,
-  ServiceProviderWithReturnFunction,
   OnScopeDestroy,
 } from './service-provider';
 export { ServiceType } from './service-type';
