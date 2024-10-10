@@ -1,4 +1,10 @@
-import { BehaveLike, runProviderContext, ServiceProvider, ServiceProvideFunction } from '../di';
+import {
+  BehaveLike,
+  runProviderContext,
+  ServiceProvider,
+  ServiceProvideFunction,
+  ServiceProvideAsyncFunction, ServiceType
+} from '../di';
 import { HttpServer } from '../http';
 import { Route, RouteMatcher } from '../routing';
 import { Logger, LogLevel } from '../logging';
@@ -15,11 +21,23 @@ export class Application {
     return this._provider;
   }
 
-  get provide(): ServiceProvideFunction {
-    return this._provider.withReturn;
+  get add(): typeof this.provider.add {
+    return this._provider.add.bind(this._provider);
   }
 
-  get server(): HttpServer {
+  get get(): ServiceProvideFunction {
+    return this._provider.get.bind(this._provider);
+  }
+
+  get async(): ServiceProvideAsyncFunction {
+    return this._provider.async.bind(this._provider);
+  }
+
+  get has(): (type: ServiceType) => boolean {
+    return this._provider.has.bind(this._provider);
+  }
+
+  get httpServer(): HttpServer {
     return this._provider(HttpServer);
   }
 

@@ -53,6 +53,8 @@ export interface ServiceProvideFunction extends ServiceProvideCallback {
   <T>(type: ServiceType<T>): T;
 }
 
+export type ServiceProvideAsyncFunction = <T>(type: ServiceType<T>) => PromiseLike<T>;
+
 export class NotSynchronousServiceError {
   readonly name = 'AsynchronousServiceError';
   readonly message: string;
@@ -62,7 +64,8 @@ export class NotSynchronousServiceError {
   }
 }
 
-export interface ServiceProvider extends ServiceProvideFunction { }
+export interface ServiceProvider extends ServiceProvideFunction {
+}
 
 export class ServiceNotFoundError implements Error {
   readonly name = 'ServiceNotFound';
@@ -256,7 +259,11 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     }
   }
 
-  getAsync<T>(type: ServiceType<T>): PromiseLike<T> {
+  getAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
+    return ServiceFactoryFunction.all(array)(this._provide.bind(this), callback);
+  }
+
+  async<T>(type: ServiceType<T>): PromiseLike<T> {
     return new Promise((resolve, reject) => {
       try {
         this._provide(type, resolve);
@@ -266,8 +273,10 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     });
   }
 
-  getAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
-    return ServiceFactoryFunction.all(array)(this._provide.bind(this), callback);
+  asyncAll(array: ServiceType[]): PromiseLike<unknown[]> {
+    return Promise.all(
+      array.map(type => this.async(type))
+    );
   }
 
   // todo: add set which will forcefully set the service unless there no dependency done on it.
@@ -413,6 +422,26 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   }
 
   // region add a new service
+
+  add(object: object): this;
+  add<T>(serviceType: ServiceType<T>, object: T): this;
+  add(type: Type): this;
+  add<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
+  add(...args: unknown[]): this {
+    if (args.length === 1) {
+      if (isType(args[0])) {
+        return this.addType(args[0] as Type);
+      }
+
+      return this.addValue(args[0] as object);
+    }
+
+    if (args.length > 1 && isType(args[1])) {
+      return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as ServiceBehavior);
+    }
+
+    return this.addValue(args[0] as Type, args[1] as object);
+  }
 
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
     decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))

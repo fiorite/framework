@@ -147,7 +147,7 @@ export const bootstrapFiorite = (projectDir: string, config: {
           try {
             const mod = await server.ssrLoadModule(absoluteMainTs);
             app = mod[config.appVar || 'app']; // todo: add check if file exists and error
-            appServer = app.server;
+            appServer = app.httpServer;
           } catch (err) {
             console.error(err);
             throw err;

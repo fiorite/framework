@@ -27,6 +27,7 @@ export {
   ServiceProvideCallback,
   ServiceProvideFunction,
   OnScopeDestroy,
+  ServiceProvideAsyncFunction,
 } from './service-provider';
 export { ServiceType } from './service-type';
 export { serviceRef, ServiceReference } from './service-ref';
