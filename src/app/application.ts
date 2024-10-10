@@ -8,13 +8,39 @@ import {
 import { HttpServer } from '../http';
 import { Route, RouteMatcher } from '../routing';
 import { Logger, LogLevel } from '../logging';
-import { MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
+import { currentJsPlatform, JsPlatform, MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
 import { featureHttpServer, httpServerPort } from './http-server';
 import { dbCoreServices } from '../db';
 import { featureConsoleLogger } from './logging';
 
+class CallbackBusyStack {
+  private _listeners: Function[] = [];
+  private _callbacks = new Set<Function>();
+
+  add(callback: (complete: VoidCallback) => void): void {
+    this._callbacks.add(callback);
+    callback(() => {
+      this._callbacks.delete(callback);
+      if (!this._callbacks.size) {
+        while(this._listeners.length) {
+          this._listeners.shift()!();
+        }
+      }
+    });
+  }
+
+  all(complete: VoidCallback): void {
+    if (!this._callbacks.size) {
+      complete();
+    } else {
+      this._listeners.push(complete);
+    }
+  }
+}
+
 // todo: make reactive application which extends as it goes.
 export class Application {
+  private readonly _taskStack: CallbackBusyStack;
   private readonly _provider: ServiceProvider;
 
   get provider(): ServiceProvider {
@@ -49,8 +75,9 @@ export class Application {
     return this._provider(Logger);
   }
 
-  constructor(provider: ServiceProvider) {
+  constructor(provider: ServiceProvider, taskStack: CallbackBusyStack) {
     this._provider = provider;
+    this._taskStack = taskStack;
   }
 
   call(callback: (complete: VoidCallback) => void): void {
@@ -73,43 +100,40 @@ export class Application {
 
 export type ApplicationConfigureFunction = (provider: ServiceProvider) => void;
 
+
 export function makeApplication(...features: ApplicationConfigureFunction[]): Application {
   const provider = new ServiceProvider();
   const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
   provider.addValue(Symbol.for('development'), development);
   featureConsoleLogger(development ? LogLevel.Debug : undefined)(provider); // todo: make configurable
 
-  featureHttpServer()(provider);
+  const taskStack = new CallbackBusyStack();
+
+  taskStack.add(complete => {
+    featureHttpServer(Number(process.env['PORT'] || 3000), complete)(provider);
+  });
+
   dbCoreServices(provider);
 
   runProviderContext(provider, complete => {
     features.forEach(featureFunction => featureFunction(provider));
     provider.addDecoratedBy(BehaveLike);
     provider.addMissingDependencies();
-    provider._performStabilityCheck();
     const touchSingletons = true;
 
-    let completed = false;
-    let configured = false;
-
-    if (touchSingletons) {
-      provider.preCacheSingletons(() => {
-        completed = true;
-        if (configured) {
-          complete();
-        }
-      });
-    }
-
-    configured = true;
-    if (completed) {
-      complete();
-    }
-
-    if (provider.has(RouteMatcher)) { // todo: probably move somewhere else.
+    if (provider.has(RouteMatcher)) {
       provider(RouteMatcher).routeSet.addDecoratedBy(Route);
     }
+
+    if (touchSingletons) {
+      taskStack.add(complete2 => provider.preCacheSingletons(complete2));
+    }
+
+    taskStack.all(() => {
+      provider._performStabilityCheck();
+      complete();
+    });
   });
 
-  return new Application(provider);
+  return new Application(provider, taskStack);
 }

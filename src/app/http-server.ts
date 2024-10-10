@@ -1,13 +1,15 @@
 import { ServiceProvider } from '../di';
 import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse, HttpServer } from '../http';
 import { ApplicationConfigureFunction } from './application';
+import { currentJsPlatform, emptyCallback, JsPlatform, VoidCallback } from '../core';
+import type { NodeJsServerRequest, NodeJsServerResponse } from '../http/nodejs';
 
 export const httpServerPort = Symbol('HttpServer.port');
 
-export function featureHttpServer(port?: number): ApplicationConfigureFunction {
+export function featureHttpServer(port: number, complete: VoidCallback = emptyCallback): ApplicationConfigureFunction {
   return provider => {
     const pipeline = new HttpPipeline();
-    provider.addValue(httpServerPort, port || Number(process.env['PORT'] || 3000))
+    provider.addValue(httpServerPort, port)
       .addValue(HttpPipeline, pipeline)
       .addSingleton(HttpServer, (provider: ServiceProvider) => {
         return new HttpServer((context, next) => {
@@ -29,5 +31,15 @@ export function featureHttpServer(port?: number): ApplicationConfigureFunction {
       .addInherited(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
       .addInherited(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
     ;
+
+    if (currentJsPlatform === JsPlatform.NodeJs) {
+      import('http').then(m => {
+        provider.addPrototype(m.IncomingMessage, request => (request as NodeJsServerRequest).original, [HttpRequest])
+          .addPrototype(m.ServerResponse, response => (response as NodeJsServerResponse).original, [HttpResponse]);
+        complete();
+      });
+    } else {
+      complete();
+    }
   };
 }
