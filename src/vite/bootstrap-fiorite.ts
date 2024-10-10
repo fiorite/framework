@@ -144,9 +144,14 @@ export const bootstrapFiorite = (projectDir: string, config: {
         fsEvents.forEach(event => server.watcher.on(event, tsFilterEvent));
 
         server.httpServer!.once('listening', async () => {
-          const mod = await server.ssrLoadModule(absoluteMainTs);
-          app = mod[config.appVar || 'app']; // todo: add check if file exists and error
-          appServer = app.server;
+          try {
+            const mod = await server.ssrLoadModule(absoluteMainTs);
+            app = mod[config.appVar || 'app']; // todo: add check if file exists and error
+            appServer = app.server;
+          } catch (err) {
+            console.error(err);
+            throw err;
+          }
         });
 
         server.middlewares.use((req, res) => {

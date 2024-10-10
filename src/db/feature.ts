@@ -5,7 +5,7 @@ import { DbSequence } from './sequence';
 import { Provide, provide, ProvideDecorator } from '../di';
 
 export const dbCoreServices: ApplicationFeature = {
-  registerServices: serviceSet => serviceSet.addSingleton(DbManager),
+  configure: provider => provider.addSingleton(DbManager),
 };
 
 export function fromDb<T>(model: DbModel<T>, connection?: DbConnectionName): DbSequence<T> {

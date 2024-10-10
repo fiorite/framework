@@ -8,7 +8,7 @@ import {
   HttpStatusCode
 } from '../http';
 import { ApplicationFeature } from './feature';
-import { ServiceProviderWithReturnFunction, ServiceSet } from '../di';
+import { ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
 
 export class CorsMiddleware extends FunctionClass<HttpCallback> {
   constructor() {
@@ -41,12 +41,9 @@ export class CorsFeature implements ApplicationFeature {
     this._middleware = middleware;
   }
 
-  registerServices(serviceSet: ServiceSet) {
-    serviceSet.addValue(CorsMiddleware, this._middleware);
-  }
-
-  configure(provide: ServiceProviderWithReturnFunction) {
-    provide(HttpPipeline).add(this._middleware);
+  configure(provider: ServiceProvider) {
+    provider.addValue(CorsMiddleware, this._middleware);
+    provider(HttpPipeline).add(this._middleware);
   }
 }
 

@@ -9,18 +9,17 @@ export function addSqlite3(filename: string, connectionName?: DbConnectionName):
 
   return {
     extendWith: dbCoreServices,
-    registerServices: serviceSet => {
-      serviceSet.addSingleton(databaseSymbol, () => new Database(filename));
-    },
-    configure: provide => {
-      const logger = provide(Logger);
+    configure: provider => {
+      provider.addSingleton(databaseSymbol, () => new Database(filename))
+
+      const logger = provider(Logger);
       const adapter = new Sqlite3DbAdapter(
-        provide<Database>(databaseSymbol),
+        provider<Database>(databaseSymbol),
         (sql, params) => {
           params ? logger.debug('sql: ' + sql + '; params: ' + JSON.stringify(params)) : logger.debug('sql: ' + sql);
         }
       );
-      provide(DbManager).set(connectionName, adapter);
+      provider(DbManager).set(connectionName, adapter);
     },
   };
 }

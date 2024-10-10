@@ -1,5 +1,5 @@
 import { ApplicationFeature } from './feature';
-import { ServiceProviderWithReturnFunction, ServiceSet } from '../di';
+import { ServiceProvider, ServiceProviderWithReturnFunction, ServiceSet } from '../di';
 import { ResultHandleCallback, RouteDescriptor, RouteMatcher, RouteParams, RoutingMiddleware } from '../routing';
 import { HttpCallback, HttpMethod, HttpPipeline } from '../http';
 import { ValueCallback } from '../core';
@@ -13,14 +13,12 @@ export class RoutingFeature implements ApplicationFeature {
     this._middleware = new RoutingMiddleware(this._routeMatcher, handleResult);
   }
 
-  registerServices(serviceSet: ServiceSet) {
-    serviceSet.addScoped(RouteParams)
+  configure(provider: ServiceProvider) {
+    provider.addScoped(RouteParams)
       .addValue(RouteMatcher, this._routeMatcher)
       .addValue(RoutingMiddleware, this._middleware);
-  }
 
-  configure(provide: ServiceProviderWithReturnFunction) {
-    provide(HttpPipeline).add(this._middleware);
+    provider(HttpPipeline).add(this._middleware);
   }
 }
 

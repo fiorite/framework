@@ -1,11 +1,16 @@
 import {
+  AbstractType,
   CallbackForceValueError,
   CallbackShare,
+  DecoratorOuterFunction,
+  DecoratorRecorder,
   emptyCallback,
   forceCallbackValue,
   FunctionClass,
   isObjectMethod,
+  isType,
   MapCallback,
+  Type,
   ValueCallback,
   VoidCallback
 } from '../core';
@@ -13,9 +18,10 @@ import { ServiceType } from './service-type';
 import { ServiceDescriptor } from './service-descriptor';
 import { ServiceBehavior } from './service-behavior';
 import { ServiceScope } from './service-scope';
-import { ServiceFactoryFunction } from './service-factory';
+import { ServiceFactoryFunction, ServiceFactoryWithReturnFunction } from './service-factory';
 import { iterableForEach } from '../iterable';
 import { ServiceSet } from './service-set';
+import { BehaveLike } from './decorators';
 
 /**
  * Service provider is build on callbacks.
@@ -137,9 +143,18 @@ export interface OnScopeDestroy {
 
 export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunction> implements Iterable<ServiceDescriptor> {
   private static _behaviorFactories: Record<ServiceBehavior, MapCallback<ServiceDescriptor, ServiceFactoryFunctionWithProvider>> = {
-    [ServiceBehavior.Inherited]: () => {
-      return (_, descriptor): never => {
-        throw new Error('inherited service is not re-mapped: ' + descriptor.toString());
+    [ServiceBehavior.Inherited]: (descriptor) => {
+      return (provider, callback): void => {
+        provider._makeBehaviorInheritance(descriptor).forEach(resolvedDescriptor => {
+          descriptor = resolvedDescriptor;
+          provider._descriptors.replaceInherited(resolvedDescriptor);
+        });
+
+        descriptor = provider._descriptors.findDescriptor(descriptor.type)!;
+
+        const factoryToSet = ServiceProvider._behaviorFactories[descriptor.behavior](descriptor);
+        provider._runtimeMap.set(descriptor.type, factoryToSet);
+        return factoryToSet(provider, callback);
       };
     },
     [ServiceBehavior.Singleton]: (descriptor): ServiceFactoryFunctionWithProvider => {
@@ -215,6 +230,13 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     return this._withReturn;
   }
 
+  /**
+   *
+   */
+  get get(): ServiceProviderWithReturn {
+    return this._withReturn;
+  }
+
   private _runtimeMap = new Map<ServiceType, ServiceFactoryFunctionWithProvider>;
 
   private readonly _descriptors: ServiceSet;
@@ -225,7 +247,11 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
 
   private _touchAddedSingletons?: boolean;
 
-  constructor(descriptors: Iterable<ServiceDescriptor>) {
+  private _behavioralMap: Map<Type, ServiceBehavior> = new Map(
+    DecoratorRecorder.classSearch(BehaveLike).map(d => [d.path[0] as Type, d.payload])
+  );
+
+  constructor(descriptors: Iterable<ServiceDescriptor> = []) {
     const withReturn = new ServiceProviderWithReturn((type, callback) => this.provide(type, callback));
     super(withReturn);
     this._withReturn = withReturn;
@@ -233,17 +259,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     if (!(descriptors instanceof ServiceProvider)) { // todo: maybe refactor
       this._descriptors = new ServiceSet(descriptors, {
         add: descriptor => {
-          if (descriptor.inherited) {
-            this._makeBehaviorInheritance(descriptor).forEach(resolvedDescriptor => {
-              descriptor = resolvedDescriptor;
-              this._descriptors.replaceInherited(resolvedDescriptor);
-            });
-          }
-
           this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior](descriptor));
-          this._checkCircularDependencies(descriptor);
-          this._checkBehaviourDependencies(descriptor);
-
           if (this._touchAddedSingletons && descriptor.singleton) {
             this.provide(descriptor.type, emptyCallback);
           }
@@ -268,8 +284,6 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
       this._descriptors.forEach((descriptor: ServiceDescriptor) => {
         this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior](descriptor));
       });
-      this._checkCircularDependencies();
-      this._checkBehaviourDependencies();
       this._singletons = new Map();
       this._callbackShare = new CallbackShare();
     } else {
@@ -280,6 +294,14 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
     }
 
     this._runtimeMap.set(ServiceProvider, (_, callback) => callback(this));
+  }
+
+  /**
+   * @deprecated method to process all the checks.
+   */
+  _validatePolicies(): void {
+    this._checkCircularDependencies();
+    this._checkBehaviourDependencies();
   }
 
   /**
@@ -389,11 +411,11 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
       const declaration = queue1.shift()!;
       const dependencies = this._dependenciesToDescriptors(declaration);
 
-      const index1 = dependencies.findIndex(x => x.inherited);
-      if (index1 > -1) {
-        const dependency1 = dependencies[index1];
-        throw new Error('Inherit behavior is not resolved: ' + ServiceType.toString(dependency1.type));
-      }
+      // const index1 = dependencies.findIndex(x => x.inherited);
+      // if (index1 > -1) {
+      //   const dependency1 = dependencies[index1];
+      //   throw new Error('Inherit behavior is not resolved: ' + ServiceType.toString(dependency1.type));
+      // }
 
       if (declaration.singleton) {
         const index2 = dependencies.findIndex(x => x.scoped);
@@ -425,7 +447,7 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
 
   // endregion
 
-  touchAllSingletons(callback: VoidCallback): void {
+  preCacheSingletons(callback: VoidCallback): void {
     this._touchAddedSingletons = true;
 
     const descriptors: ServiceDescriptor[] = [];
@@ -437,6 +459,161 @@ export class ServiceProvider extends FunctionClass<ServiceProviderWithReturnFunc
 
     this.provideAll(descriptors.map(x => x.type), () => callback());
   }
+
+  // region add a new service
+
+  addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
+    decorators.flatMap(decorator => DecoratorRecorder.classSearch(decorator).map(x => x.path[0]))
+      .filter(type => !this._descriptors.containsType(type))
+      .forEach(type => this.addType(type as Type));
+    return this;
+  }
+
+  addMissingDependencies(): this {
+    const queue = Array.from(this);
+    while (queue.length) {
+      const descriptor = queue.shift()!;
+      descriptor.dependencies
+        .filter(dependency => !this._descriptors.containsType(dependency) && dependency !== ServiceProvider)
+        .filter(isType)
+        .map(type => this._addType(type))
+        .forEach(descriptor2 => queue.push(descriptor2));
+    }
+    return this;
+  }
+
+  addType(type: Type): this;
+  addType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
+  addType(...args: unknown[]): this {
+    if (args.length === 1) {
+      this._addType(args[0] as Type);
+    } else {
+      this._addType(args[1] as Type, args[0] as ServiceType, args[2] as ServiceBehavior);
+    }
+    return this;
+  }
+
+  private _addType<T>(implementation: Type<T>, type: ServiceType<T> = implementation, behavior?: ServiceBehavior): ServiceDescriptor {
+    if (!behavior) {
+      behavior = this._behavioralMap.get(implementation) || ServiceBehavior.Inherited;
+    }
+
+    const descriptor = ServiceDescriptor.fromType(type, implementation, behavior);
+    this._descriptors.add(descriptor);
+    return descriptor;
+  }
+
+  addFactory<T>(
+    type: ServiceType<T>,
+    factory: ServiceFactoryWithReturnFunction<T>,
+    dependencies: ServiceType[] = [],
+    behavior?: ServiceBehavior,
+  ): this {
+    const descriptor = ServiceDescriptor.fromFactory(type, factory, dependencies, behavior);
+    this._descriptors.add(descriptor);
+    return this;
+  }
+
+  addValue(object: object): this;
+  addValue<T>(serviceType: ServiceType<T>, object: T): this;
+  addValue(...args: unknown[]): this {
+    this._descriptors.add(
+      args.length === 1 ? ServiceDescriptor.fromValue(args[0] as object) :
+        ServiceDescriptor.fromValue(args[0] as ServiceType<object>, args[1] as object)
+    );
+    return this;
+  }
+
+  addInherited(type: Type): this;
+  addInherited<T>(type: AbstractType<T>, implementation: Type<T>): this;
+  addInherited<T>(type: AbstractType<T>, factory: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addInherited(...args: unknown[]): this {
+    if (args.length === 1) {
+      const type = args[0] as Type;
+      return this.addType(type, type, ServiceBehavior.Inherited);
+    }
+
+    if (isType(args[1])) {
+      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Inherited);
+    }
+
+    return this.addFactory(
+      args[0] as AbstractType,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
+      Array.isArray(args[2]) ? args[2] : [],
+      ServiceBehavior.Inherited
+    );
+  }
+
+  addSingleton(type: Type): this;
+  addSingleton<T>(type: ServiceType<T>, value: T): this;
+  addSingleton<T>(type: ServiceType<T>, implementation: Type<T>): this;
+  addSingleton<T>(type: ServiceType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addSingleton(...args: unknown[]): this {
+    if (args.length === 1) {
+      const type = args[0] as Type;
+      return this.addType(type, type, ServiceBehavior.Singleton);
+    }
+
+    if (args.length === 2) {
+      if (isType(args[1])) {
+        return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Singleton);
+      }
+
+      return this.addValue(args[0] as Type, args[1] as object);
+    }
+
+    return this.addFactory(
+      args[0] as AbstractType,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
+      Array.isArray(args[2]) ? args[2] : [],
+      ServiceBehavior.Singleton
+    );
+  }
+
+  addScoped(type: Type): this;
+  addScoped<T>(type: ServiceType<T>, implementation: Type<T>): this;
+  addScoped<T>(type: ServiceType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addScoped(...args: unknown[]): this {
+    if (args.length === 1) {
+      const type = args[0] as Type;
+      return this.addType(type, type, ServiceBehavior.Scoped);
+    }
+
+    if (isType(args[1])) {
+      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Scoped);
+    }
+
+    return this.addFactory(
+      args[0] as AbstractType,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
+      Array.isArray(args[2]) ? args[2] : [],
+      ServiceBehavior.Scoped
+    );
+  }
+
+  addPrototype(type: Type): this;
+  addPrototype<T>(type: ServiceType<T>, implementation: Type<T>): this;
+  addPrototype<T>(type: ServiceType<T>, callback: ServiceFactoryWithReturnFunction<T>, dependencies?: ServiceType[]): this;
+  addPrototype(...args: unknown[]): this {
+    if (args.length === 1) {
+      const type = args[0] as Type;
+      return this.addType(type, type, ServiceBehavior.Prototype);
+    }
+
+    if (isType(args[1])) {
+      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Prototype);
+    }
+
+    return this.addFactory(
+      args[0] as AbstractType,
+      args[1] as ServiceFactoryWithReturnFunction<unknown>,
+      Array.isArray(args[2]) ? args[2] : [],
+      ServiceBehavior.Prototype
+    );
+  }
+
+  // endregion
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {
     return this._descriptors[Symbol.iterator]();

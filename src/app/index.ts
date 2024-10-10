@@ -1,17 +1,6 @@
 export { makeApplication, Application } from './application';
 export { addCors, CorsMiddleware, CorsFeature } from './cors';
 export {
-  addType,
-  addValue,
-  addFactory,
-  ServiceAddFeature,
-  addPrototype,
-  addDecoratedBy,
-  addSingleton,
-  addScoped,
-  addInherited
-} from './di';
-export {
   ApplicationFeature,
   ApplicationRegisterServicesFunction,
   ApplicationConfigureFunction,

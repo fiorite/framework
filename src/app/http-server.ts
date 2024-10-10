@@ -1,4 +1,4 @@
-import { ServiceProvider, ServiceSet } from '../di';
+import { ServiceProvider } from '../di';
 import { HttpContext, HttpContextHost, HttpPipeline, HttpQuery, HttpRequest, HttpResponse, HttpServer } from '../http';
 import { ApplicationFeature } from './feature';
 
@@ -13,10 +13,9 @@ export class HttpServerFeature implements ApplicationFeature {
     this._port = port || Number(process.env['PORT'] || 3000);
   }
 
-  registerServices(serviceSet: ServiceSet) {
+  configure(provider: ServiceProvider) {
     const pipeline = new HttpPipeline();
-
-    serviceSet.addValue(HttpServerFeature, this)
+    provider.addValue(HttpServerFeature, this)
       .addValue(HttpPipeline, pipeline)
       .addSingleton(HttpServer, (provider: ServiceProvider) => {
         return new HttpServer((context, next) => {

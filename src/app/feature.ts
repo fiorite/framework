@@ -7,12 +7,18 @@ export type ApplicationConfigureFunction = (provider: ServiceProvider) => void;
 
 export interface ApplicationFeature {
   extendWith?: MaybeArray<ApplicationFeature>;
+  /**
+   * @deprecated not used anymore.
+   */
   registerServices?: ApplicationRegisterServicesFunction;
   configure?: ApplicationConfigureFunction;
 }
 
 /** @deprecated use literal perhaps */
 export function applicationFeature(
+  /**
+   * @deprecated not used anymore.
+   */
   registerServices: ApplicationRegisterServicesFunction,
   configure: ApplicationConfigureFunction,
 ): ApplicationFeature {

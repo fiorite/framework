@@ -1,5 +1,5 @@
 import { ApplicationFeature } from './feature';
-import { ServiceProviderWithReturnFunction } from '../di';
+import { ServiceProvider, ServiceProviderWithReturnFunction } from '../di';
 import { HttpCallback, HttpPipeline } from '../http';
 
 export class MiddlewareFeature implements ApplicationFeature {
@@ -9,8 +9,8 @@ export class MiddlewareFeature implements ApplicationFeature {
     this._callback = callback;
   }
 
-  configure(provide: ServiceProviderWithReturnFunction) {
-    provide(HttpPipeline).add(this._callback);
+  configure(provider: ServiceProvider) {
+    provider(HttpPipeline).add(this._callback);
   }
 }
 
