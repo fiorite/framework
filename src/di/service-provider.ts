@@ -427,6 +427,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   add<T>(serviceType: ServiceType<T>, object: T): this;
   add(type: Type): this;
   add<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
+  add<T>(type: Type<T>, dependencies: ServiceType[], behavior?: ServiceBehavior): this;
   add(...args: unknown[]): this {
     if (args.length === 1) {
       if (isType(args[0])) {
@@ -438,6 +439,10 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     if (args.length > 1 && isType(args[1])) {
       return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as ServiceBehavior);
+    }
+
+    if (args.length > 1 && Array.isArray(args[1])) {
+      return this.addFactory(args[0] as ServiceType, (...args: unknown[]) => new (args[0] as Type)(...args), args[1] as ServiceType[], args[2] as ServiceBehavior);
     }
 
     return this.addValue(args[0] as Type, args[1] as object);

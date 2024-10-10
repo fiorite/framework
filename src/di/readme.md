@@ -1,15 +1,71 @@
-# Dependency Injection (DRAFT)
+# Dependency Injection: `ServiceProvider`
 
-```text
-todo:
-[ ] NotSynchronousServiceError add then resolver
-[ ] Add service alias (Prototype with dependency on main service)  
-```
+**What are services?** - reusable parts which follow behavior patterns and can be projected by consumer code.
 
 `emitDecoratorMetadata: true` in `tsconfig.json` is required.
 
----
-**What are services?** - reusable parts which follow behavior patterns and can be projected by consumer code.
+## 1. Getting started
+
+Eveything is built into `ServiceProvider`, simply make an instance and start building dependencies.
+
+```typescript
+import { ServiceProvider } from 'fiorite';
+
+// 0. Create service provider.
+const provider = new ServiceProvider();
+```
+
+Each service has a type `ServiceType<T>`. Servce type could be `string | symbol | Type<T>`. One can decide oneself which style to use.
+
+```typescript
+// 1. Add value as a service with key "numberValue".
+provider.add('numberValue', 100);
+
+// 2.1. Describe a class with the only number #value.
+class MyNumber {
+  constructor(readonly value: number) {
+  }
+}
+
+// 2.2. Add type as a service and specify dependencies.
+provider.add(MyNumber, ['numberValue']);
+
+// 3. Access services and compare them.
+const value1 = provider.get('numberValue'); // 100
+const value2 = provider.get(MyNumber).value; // 100
+console.log(value1 === value2); // true
+```
+
+`ServiceProvider` is `Function` which uses `get` on call.
+
+```typescript
+provider(MyNumber) === provider.get(MyNumber); // true
+```
+
+Methods used to configure `ServiceProvider`:
+
+- `add`
+- `addValue`
+- `addFactory`
+- `addType`
+- `addInherited`
+- `addSingleton`
+- `addScoped`
+- `addPrototype`
+
+Methods used to get service instances or values:
+
+- `get`
+- `getAll`
+- `async` - `Promise` if service binding is asynchronous. `get` will throw an error when unable to get synchronous result. To be safe, two alternatives are there:
+  - `provider.get(type, x => { /* ... */ });` - callback
+  - `const x = await provider.async(type);` - async/await
+- `asyncAll`
+- `()` call as a function is alias of `get`.
+
+## 2. Object-oriented way and behaviors
+
+As app grows, more tools are required. Inspired by ASP.NET, Spring and Angular, Fiorite incorporates DI features like: class/parameter decorators, service behavior (lifetime/lifecycle), global scope binding of `provide()` etc.
 
 ```typescript
 import { Singleton } from 'fiorite';
@@ -22,27 +78,21 @@ export class Incrementor {
 }
 ```
 
-`Singleton` behavior is recommended for the best performance however, it has limitation. Let's, first, dive into other behavior patterns:
+`Singleton` decorator marks class as a singleton service. It means that instance is shared across all requests.
+`Singleton` is recommended for the best performance.
 
-**There three main patterns of behavior** and their TypeScript decorators are:
+`Singleton` is one of **four service behaviors**:
+
 1. `Singleton` - provides the same instance every time it gets asked.
-2. `Scoped` - each, let's say, http request receives a copy of service and shares it within the request.
+2. `Scoped` - each http request receives a copy of service and shares it within the request.
 3. `Prototype` - creates a new service each time it gets provided.
+4. `Inherited` - sets `Scoped` if dependency has it, otherwise applies `Singleton`.
 
-`Singleton` limitation is that it cannot depend on `Scoped` service (e.g. `HttpContext`). 
-In that case, prefer using `Scoped` decorator instead.
+`Singleton` cannot depend on `Scoped` services. If you decide
 
-**There the fourth smart behavior pattern** which has not been mentioned, its name is `Inherited`.
-Service provider analyses dependencies and assign `Scoped` whether dependency tree includes another `Scoped` service, otherwise `Singleton` is applied.
+`Inherited` behaviour can be used as default one because it excludes the necessity of manual decision. Just focus on development matter.
 
-`Inherited` behaviour can be used as default one because it excludes the necessity of managing behaviour manually.
-Trust this moment to Fiorite and focus on development.
-
----
-
-- How to use a service?
-
-In the following example `NumberService` injects `Incrementor` and its behavior is inherited from `Incrementor`.
+e.g. `NumberService` injects `Incrementor` and its behavior is inherited from `Incrementor` which is `Singleton`.
 
 ```typescript
 import { Inherited } from 'fiorite';
@@ -50,16 +100,19 @@ import { Incrementor } from './incrementor';
 
 @Inherited()
 export class NumberService {
-  constructor(readonly incrementor: Incrementor) { }
+  constructor(readonly incrementor: Incrementor) {
+  }
 }
 ```
 
 ---
 
-- Can dependencies be manipulated?
+- Can constructor parameters be manipulated?
 
-The answer is yes, with help of `Provide` decorator. 
-It allows to redefine source type and, optionally, project a new value from it by using map function `(value: T) => R`.
+Yes, with the help of `Provide` decorator:
+
+- first argument is `ServiceType`
+- optionally, second argument, is function which projects new value `(value: T) => R`.
 
 ```typescript
 import { Provide } from 'fiorite';
@@ -71,18 +124,19 @@ export class NumberService {
   constructor(
     @Provide(Incrementor, incrementor => (i: number) => incrementor.increment(i))
     readonly incrementor: IncrementFunction,
-  ) { }
+  ) {
+  }
 }
 ```
 
-First argument points to service to source from and the second is map function. 
-It results into `IncrementFunction` as constructor parameter. 
+First argument points to service to source from and the second is map function.
+It results into `IncrementFunction` as constructor parameter.
 
 ---
 
-- Is it possible to implement own decorator and reuse it later? 
+- How is it possible to reuse complex `Provide` query?
 
-Yes, own decorator can be made like this:
+By defining own decorator like this:
 
 ```typescript
 import { Provide } from 'fiorite';
@@ -100,14 +154,13 @@ export class NumberService {
   constructor(
     @GetIncrementFunction()
     readonly incrementor: IncrementFunction,
-  ) { }
+  ) {
+  }
 }
 ```
 
-This is built on `Provide` and can be reused elsewhere. 
-
-Unfamiliar `.calledBy()` is the way to point out that `GetIncrementFunction` is based on `Provide`. 
-Whether you decide to build more complex pipeline, tracking decorator chain it is recommended. 
+Unfamiliar `.calledBy()` is the method to point out which decorator uses original one.
+Tracking decorator chain, to debug, gets easy:
 
 To access call chain, use:
 
@@ -117,31 +170,30 @@ GetIncrementFunction().callStack; // [Provide, GetIncrementFunction]
 
 ---
 
-- What are `ServiceSet` and `ServiceProvider`?
+- More use cases:
 
-If there is no control over classes to use decorators, configuration can be done with help of `ServiceSet`.
+If there is no control over the classes to decorate it:
 
 ```typescript
-import { ServiceSet, ServiceProvider } from 'fiorite';
-
-const serviceSet = new ServiceSet();
-serviceSet.addValue(URL, new URL('http://localhost/'));
+provider.addValue(URL, new URL('http://localhost/'));
 ```
 
-`addValue` is one of three ways of service binding. The other two are:
- 
+`addValue` is one of three ways of binding. The others are:
+
 - `addType` - is for class constructors. e.g. `serviceSet.addType(NumberService)`,
 - `addFactory` - uses callback to create an instance. Important to set dependencies. e.g.
 
-```typescript
+Also, `add` is one method with multiple overloads which can replace methods listed above.
 
+```typescript
 class StringUrlHost {
-  constructor(readonly value: string) { }
+  constructor(readonly value: string) {
+  }
 }
 
 const localhost = new StringUrlHost('http://localhost/');
 
-serviceSet.addValue(localhost)
+provider.addValue(localhost)
   .addFactory(URL, (host: StringUrlHost) => new URL(host.value), [
     StringUrlHost
   ]);
@@ -156,21 +208,22 @@ There behavior-specific methods in `ServiceSet`:
 
 As well as two advanced ones:
 
-- `includeDependencies` - walks through service dependencies and adds missing ones.
+- `addMissingDependencies` - walks through service dependencies and adds missing ones.
 - `addDecoratedBy` - looks for classes marked by decorator in `DecoratorRecorder` and adds new ones.
 
 ```typescript
 import { BehaveLike } from 'fiorite';
 
-serviceSet.addDecoratedBy(BehaveLike)
-  .includeDependencies();
+serviceSet.addDecoratedBy(BehaveLike).addMissingDependencies();
 ```
 
-`BehaveLike` is base for `Singleton`, `Scoped`, `Prototype` and `Inherited` decorators. 
+`BehaveLike` is base for `Singleton`, `Scoped`, `Prototype` and `Inherited` decorators.
 Basically, `addDecoratedBy` scans every class decorated by `BehaveLike` or its implementors and adds to the list.
 
-In case a specific decorator is made with the help of `makeClassDecorator`, it complies with `addDecoratedBy` and can add services automatically.
+In case a specific decorator is made with the help of `makeClassDecorator` of `core` component, it, surely, complies with `addDecoratedBy` and can add services automatically.
 
-What are left to mention:
-1. Synchronous and Asynchronous services.
-2. How to test.
+```text
+todo:
+[ ] NotSynchronousServiceError add then resolver
+[ ] Add service alias (Prototype with dependency on main service)  
+```
