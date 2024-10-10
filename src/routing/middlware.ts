@@ -16,7 +16,7 @@ export class RoutingMiddleware extends FunctionClass<HttpCallback> {
             throw new Error('multiple routes is not supported rn');
           }
 
-          const params = context.provide(RouteParams);
+          const params = context.provide!(RouteParams);
 
           params.clear();
           Object.entries(result.params).forEach((x) => params.set(x[0], x[1] as any));
@@ -25,7 +25,7 @@ export class RoutingMiddleware extends FunctionClass<HttpCallback> {
 
           if (length < 2) {
             // next is not bound to route callback.
-            const logger = context.provide(Logger);
+            const logger = context.provide!(Logger);
             logger.info('next is not added to main callback, auto-close after sync or promise will be applied');
           }
 

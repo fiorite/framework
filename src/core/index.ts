@@ -8,8 +8,10 @@ export {
   CallbackShareFunction,
   forceCallbackValue,
   CallbackForceValueError,
-  ComputedPromiseLike,
-  computePromiseLike,
+  ComputedCallback,
+  computedCallback,
+  thenableCallback,
+  ThenableCallback,
 } from './callbacks';
 export { Equatable, EqualityComparer, defaultComparer } from './equality';
 export * from './decorator';
@@ -21,8 +23,6 @@ export {
   MaybePromiseLike,
   isPromiseLike,
   promiseWhenNoCallback,
-  callbackPromiseLike,
-  CallbackPromiseLike,
 } from './promises';
 export { RadixMap, RadixWalkResult } from './radix-map';
 export { SetWithInnerKey } from './set-with-inner-key';

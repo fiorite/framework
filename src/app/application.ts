@@ -110,7 +110,7 @@ export function makeApplication(...features: ApplicationConfigureFunction[]): Ap
   const taskStack = new CallbackBusyStack();
 
   taskStack.add(complete => {
-    featureHttpServer(Number(process.env['PORT'] || 3000), complete)(provider);
+    featureHttpServer(Number(currentJsPlatform === 'nodejs' ? (() => process.env['PORT'])() : 3000 || 3000), complete)(provider);
   });
 
   dbCoreServices(provider);

@@ -1,5 +1,5 @@
 import { FunctionClass } from './function-class';
-import { CallbackPromiseLike, MaybePromiseLike } from './promises';
+import { MaybePromiseLike } from './promises';
 
 /**
  * Callback which is free from parameters or return value.
@@ -77,7 +77,32 @@ export const forceCallbackValue = <T>(callback: (catchValue: ValueCallback<T>) =
   return value!;
 };
 
-export class ComputedPromiseLike<T> extends CallbackPromiseLike<T> {
+/**
+ * Neither {@link Promise} nor {@link PromiseLike}. This does not return another instance but `void`.
+ * ES6 is still able to `await` the value, so this works in internal stuff.
+ * **Important:** avoid using it unless you have a clear reason for it.
+ */
+export interface ThenableCallback<T> {
+  then(onfulfilled: ValueCallback<T>): void;
+}
+
+export class ThenableCallback<T> {
+  private readonly _executor: (complete: ValueCallback<T>) => void;
+
+  constructor(executor: (complete: ValueCallback<T>) => void) {
+    this._executor = executor;
+  }
+
+  then(onfulfilled: ValueCallback<T>): void {
+    this._executor(onfulfilled);
+  }
+}
+
+export function thenableCallback<T>(callback: (complete: ValueCallback<T>) => void): ThenableCallback<T> {
+  return new ThenableCallback(callback);
+}
+
+export class ComputedCallback<T> extends ThenableCallback<T> {
   private _completed?: boolean;
 
   get completed(): boolean | undefined {
@@ -122,6 +147,6 @@ export class ComputedPromiseLike<T> extends CallbackPromiseLike<T> {
   }
 }
 
-export function computePromiseLike<T>(executor: (complete: ValueCallback<T>) => void): ComputedPromiseLike<T> {
-  return new ComputedPromiseLike<T>(executor);
+export function computedCallback<T>(executor: (complete: ValueCallback<T>) => void): ComputedCallback<T> {
+  return new ComputedCallback<T>(executor);
 }

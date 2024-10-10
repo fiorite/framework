@@ -123,28 +123,3 @@ export function promiseWhenNoCallback<T>(handler: (complete: ValueCallback<T>) =
     }
   });
 }
-
-/**
- * Neither {@link Promise} nor {@link PromiseLike}. This does not return another instance but `void`.
- * ES6 is still able to `await` the value, so this works in internal stuff.
- * **Important:** avoid using it unless you have a clear reason for it.
- */
-export interface CallbackPromiseLike<T> {
-  then(onfulfilled: ValueCallback<T>): void;
-}
-
-export class CallbackPromiseLike<T> {
-  private readonly _executor: (complete: ValueCallback<T>) => void;
-
-  constructor(executor: (complete: ValueCallback<T>) => void) {
-    this._executor = executor;
-  }
-
-  then(onfulfilled: ValueCallback<T>): void {
-    this._executor(onfulfilled);
-  }
-}
-
-export function callbackPromiseLike<T>(callback: (complete: ValueCallback<T>) => void): CallbackPromiseLike<T> {
-  return new CallbackPromiseLike(callback);
-}

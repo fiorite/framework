@@ -32,7 +32,7 @@ export function Prototype<T>(): BehaveLikeDecorator<T> {
   return BehaveLike(ServiceBehavior.Prototype).calledBy(Prototype);
 }
 
-export type ProvideDecorator<T, R = unknown> = ParameterDecoratorWithPayload<ServiceReference<T, R>>;
+export type ProvideDecorator<T, R = unknown> = ParameterDecoratorWithPayload<ServiceReference<T>>;
 
 export function Provide<T>(type: ServiceType<T>): ProvideDecorator<T>;
 export function Provide<T, R>(type: ServiceType<T>, callback: MapCallback<T, MaybePromiseLike<R>>): ProvideDecorator<T, R>;

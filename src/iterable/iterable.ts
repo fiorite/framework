@@ -4,7 +4,7 @@
  */
 
 import { AsyncLikeIterator, CallbackIterator, getIterator } from './iterator';
-import { callbackPromiseLike, ValueCallback } from '../core';
+import { thenableCallback, ValueCallback } from '../core';
 
 export interface AsyncLikeIterable<T> {
   [Symbol.asyncIterator](): AsyncLikeIterator<T>;
@@ -72,13 +72,13 @@ class MonoIterable<T, R = T> {
         const outerNext = makeNext(iterator1);
         const iterator2: AsyncLikeIterator<R> = {
           next: () => {
-            return callbackPromiseLike(complete => outerNext(complete));
+            return thenableCallback(complete => outerNext(complete));
           }
         };
 
         if (iterator1.return) {
           iterator2.return = () => {
-            return callbackPromiseLike(complete => {
+            return thenableCallback(complete => {
               iterator1.return!(result => complete(result as IteratorResult<R>));
             });
           };

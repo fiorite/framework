@@ -1,7 +1,7 @@
 import {
-  CallbackPromiseLike,
-  ComputedPromiseLike,
-  computePromiseLike,
+  ThenableCallback,
+  ComputedCallback,
+  computedCallback,
   currentJsPlatform,
   FunctionClass,
   JsPlatform,
@@ -14,30 +14,32 @@ export interface HttpServerRunner {
   listen(port: number, listening: VoidCallback): void;
 }
 
+declare const process: any;
+
 export class HttpServer extends FunctionClass<HttpCallback> implements HttpServerRunner {
   private readonly _callback: HttpCallback;
 
-  private readonly _platformRunner: ComputedPromiseLike<HttpServerRunner>;
+  private readonly _platformRunner: ComputedCallback<HttpServerRunner>;
 
-  get platformRunner(): CallbackPromiseLike<HttpServerRunner> {
+  get platformRunner(): ThenableCallback<HttpServerRunner> {
     return this._platformRunner;
   }
 
-  private readonly _nodeJsRunner: ComputedPromiseLike<NodeJsHttpServer>;
+  private readonly _nodeJsRunner: ComputedCallback<NodeJsHttpServer>;
 
-  get nodeJsRunner(): CallbackPromiseLike<NodeJsHttpServer> {
+  get nodeJsRunner(): ThenableCallback<NodeJsHttpServer> {
     return this._nodeJsRunner;
   }
 
   constructor(callback: HttpCallback) {
     super(callback);
     this._callback = callback;
-    this._nodeJsRunner = computePromiseLike(complete => {
+    this._nodeJsRunner = computedCallback(complete => {
       import('./nodejs').then(module => {
         complete(new module.NodeJsHttpServer(this._callback));
       });
     });
-    this._platformRunner = computePromiseLike(complete => {
+    this._platformRunner = computedCallback(complete => {
       if (JsPlatform.NodeJs === currentJsPlatform) {
         return this._nodeJsRunner.then(complete);
       }
