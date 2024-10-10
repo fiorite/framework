@@ -80,7 +80,7 @@ export function makeApplication(...features: ApplicationFeature[]): Application 
     features.filter(x => x.configure).forEach(x => x.configure!(provider));
     provider.addDecoratedBy(BehaveLike);
     provider.addMissingDependencies();
-    provider._validatePolicies();
+    provider._performStabilityChecks();
     const touchSingletons = true;
 
     let completed = false;
