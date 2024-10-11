@@ -15,24 +15,8 @@ export class ObjectMethodCallback<T = unknown> extends FunctionClass<RouteCallba
     const typeFactory = new TypeFactory<T>(type);
     const methodFactory = new ObjectMethodFactory(type, propertyKey);
 
-    const reuseTypeFactory: ServiceFactoryFunction<T> = (provide, callback1) => {
-      let provided = false;
-      try {
-        provide(type, object => {
-          provided = true;
-          callback1(object);
-        });
-      } catch (err) {
-        if (!provided && err instanceof ServiceNotFoundError) {
-          typeFactory(provide, callback1);
-        } else {
-          throw err;
-        }
-      }
-    };
-
     super((context, next) => {
-      reuseTypeFactory(context.provide!, object => {
+      const withObject = (object: object) => {
         methodFactory(<R>(type2: ServiceType<R>, callback2: ValueCallback<R>) => {
           if (type2 === type) {
             return callback2(object as unknown as R);
@@ -40,7 +24,9 @@ export class ObjectMethodCallback<T = unknown> extends FunctionClass<RouteCallba
 
           return context.provide!(type2, callback2);
         }, next);
-      });
+      };
+
+      context.provide!.has(type) ? context.provide!(type, withObject) : typeFactory(context.provide!, withObject as any);
     });
 
     this._typeFactory = typeFactory;

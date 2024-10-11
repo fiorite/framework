@@ -30,7 +30,7 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
     this.#firestore = firestore;
   }
 
-  #fieldKeyToFirestoreKey(key: string | symbol): FieldPath | string {
+  private _fieldKeyToFirestoreKey(key: string | symbol): FieldPath | string {
     return key === firestoreDocumentId ? FieldPath.documentId() : key as string;
   }
 
@@ -43,7 +43,7 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
 
     if (query.where && query.where.length) {
       query.where.forEach(where => {
-        collection = collection.where(String(where.key), where.operator, where.value);
+        collection = collection.where(this._fieldKeyToFirestoreKey(where.key), where.operator, where.value);
       });
       // let filter: Filter;
       // let condition: DbWhereCondition | undefined;
@@ -97,7 +97,7 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
   #findWhere(collection: CollectionReference, where: readonly DbWhere[]) {
     let query: Query = collection;
     for (const entry of where) {
-      query = query.where(this.#fieldKeyToFirestoreKey(entry.key), '==', entry.value);
+      query = query.where(this._fieldKeyToFirestoreKey(entry.key), '==', entry.value);
     }
     return query.get();
   }

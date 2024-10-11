@@ -90,7 +90,9 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     [ServiceBehavior.Inherited]: (descriptor) => {
       return (provider, callback): void => {
         provider._makeBehaviorInheritance(descriptor).forEach(resolvedDescriptor => {
-          descriptor = resolvedDescriptor;
+          if (resolvedDescriptor.type === descriptor.type) { //
+            descriptor = resolvedDescriptor;
+          }
           provider._descriptors.replaceInherited(resolvedDescriptor);
         });
 

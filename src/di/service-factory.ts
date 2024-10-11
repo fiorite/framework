@@ -84,7 +84,7 @@ export class ServiceFactoryWithReturn<T> extends ServiceFactory<T> {
 export interface TargetParameter<T = unknown> {
   readonly original: AbstractType;
   readonly type: ServiceType<T>;
-  readonly callback: MapCallback<T, MaybePromiseLike<unknown>>;
+  readonly project: MapCallback<T, MaybePromiseLike<unknown>>;
 }
 
 type Writeable<T> = { -readonly [P in keyof T]: T[P] }
@@ -119,7 +119,7 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
             Reflect.getMetadata('design:paramtypes', type.prototype, propertyKey) :
             Reflect.getMetadata('design:paramtypes', type)
         ) || []
-      ).map((type: AbstractType) => ({ original: type, type, callback: (object: unknown) => object }));
+      ).map((type: AbstractType) => ({ original: type, type, project: (object: unknown) => object }));
 
       if (callback.length && callback.length !== reflect.length) {
         throw new Error(`Unable to auto-wire "${type.name}". Use @Inherited() or configure it using ServiceProvider`);
@@ -130,13 +130,13 @@ export class TargetParametersFactory extends ServiceFactory<unknown[]> implement
         if (decoration.payload.type) {
           substitution.type = decoration.payload.type;
         }
-        substitution.callback = decoration.payload.project;
+        substitution.project = decoration.payload.project;
         return result;
       }, reflect);
 
       factory = (provide, callback) => {
         ServiceFactoryFunction.all(parameters.map(x => x.type))(provide, args => {
-          MaybePromiseLike.all(() => args.map((x, index) => parameters[index].callback(x)), args2 => {
+          MaybePromiseLike.all(() => args.map((x, index) => parameters[index].project(x)), args2 => {
             args2.forEach((arg, index) => { // todo: refactor in a cool way
               if (!(arg instanceof parameters[index].original) && (arg as any).constructor !== parameters[index].original) {
                 console.warn(`Possibly type issue. ${type.name}#constructor([${index}]: ${parameters[index].original.name}). Actual: ${(arg as any).constructor.name}`);

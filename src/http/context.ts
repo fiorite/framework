@@ -1,4 +1,4 @@
-import { ServiceProvideFunction } from '../di';
+import { ServiceProvideFunction, ServiceProvider } from '../di';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
 import { ValueCallback, VoidCallback } from '../core';
@@ -16,13 +16,13 @@ export class HttpContext {
     return this._response;
   }
 
-  private readonly _provide?: ServiceProvideFunction;
+  private readonly _provide?: ServiceProvider;
 
-  get provide(): ServiceProvideFunction | undefined {
+  get provide(): ServiceProvider | undefined {
     return this._provide;
   }
 
-  constructor(request: HttpRequest, response: HttpResponse, provide?: ServiceProvideFunction) {
+  constructor(request: HttpRequest, response: HttpResponse, provide?: ServiceProvider) {
     this._request = request;
     this._response = response;
     this._provide = provide;

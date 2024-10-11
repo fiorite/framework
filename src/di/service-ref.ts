@@ -3,25 +3,25 @@ import { ServiceProvideFunction } from './service-provider';
 import { MapCallback } from '../core';
 
 export class ServiceReference<T> {
-  readonly #type: ServiceType;
+  private readonly _type: ServiceType;
 
   get type(): ServiceType {
-    return this.#type;
+    return this._type;
   }
 
-  readonly #project: MapCallback<unknown, T>;
+  private readonly _project: MapCallback<unknown, T>;
 
-  project(): MapCallback<unknown, T> {
-    return this.#project;
+  get project(): MapCallback<unknown, T> {
+    return this._project;
   }
 
   constructor(type: ServiceType, project?: MapCallback<unknown, T>) {
-    this.#type = type;
-    this.#project = project || ((value: unknown) => value as unknown as T);
+    this._type = type;
+    this._project = project || function returnSelf(value: unknown) { return value as unknown as T };
   }
 
   receive(provide: ServiceProvideFunction): T {
-    return this.#project(provide(this.#type));
+    return this._project(provide(this._type));
   }
 }
 
