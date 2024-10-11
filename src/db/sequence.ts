@@ -11,7 +11,7 @@ import { DbModel } from './model';
 import { DbModelField } from './model-field';
 import { DbLooseQuery, DbQuery, } from './query';
 import {
-  thenableCallback,
+  callbackWithThen,
   EqualityComparer,
   MaybePromiseLike,
   promiseWhenNoCallback,
@@ -304,7 +304,7 @@ export class DbSequence<T> extends DbSequenceQuery<T> {
         callback();
         return;
       }
-      return thenableCallback(then => then(void 0));
+      return callbackWithThen(then => then(void 0));
     }
 
     return promiseWhenNoCallback<void>(callback => {

@@ -1,5 +1,5 @@
 import {
-  ThenableCallback,
+  CallbackWithThen,
   ComputedCallback,
   computedCallback,
   currentJsPlatform,
@@ -21,13 +21,13 @@ export class HttpServer extends FunctionClass<HttpCallback> implements HttpServe
 
   private readonly _platformRunner: ComputedCallback<HttpServerRunner>;
 
-  get platformRunner(): ThenableCallback<HttpServerRunner> {
+  get platformRunner(): CallbackWithThen<HttpServerRunner> {
     return this._platformRunner;
   }
 
   private readonly _nodeJsRunner: ComputedCallback<NodeJsHttpServer>;
 
-  get nodeJsRunner(): ThenableCallback<NodeJsHttpServer> {
+  get nodeJsRunner(): CallbackWithThen<NodeJsHttpServer> {
     return this._nodeJsRunner;
   }
 

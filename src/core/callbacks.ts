@@ -86,7 +86,7 @@ export interface ThenableCallback<T> {
   then(onfulfilled: ValueCallback<T>): void;
 }
 
-export class ThenableCallback<T> {
+export class CallbackWithThen<T> {
   private readonly _executor: (complete: ValueCallback<T>) => void;
 
   constructor(executor: (complete: ValueCallback<T>) => void) {
@@ -98,11 +98,11 @@ export class ThenableCallback<T> {
   }
 }
 
-export function thenableCallback<T>(callback: (complete: ValueCallback<T>) => void): ThenableCallback<T> {
-  return new ThenableCallback(callback);
+export function callbackWithThen<T>(callback: (complete: ValueCallback<T>) => void): CallbackWithThen<T> {
+  return new CallbackWithThen(callback);
 }
 
-export class ComputedCallback<T> extends ThenableCallback<T> {
+export class ComputedCallback<T> extends CallbackWithThen<T> {
   private _completed?: boolean;
 
   get completed(): boolean | undefined {
@@ -117,6 +117,12 @@ export class ComputedCallback<T> extends ThenableCallback<T> {
 
   private _listeners?: ValueCallback<T>[];
 
+  static preCache<T>(executor: (complete: ValueCallback<T>) => void): ComputedCallback<T> {
+    const callback = new ComputedCallback(executor);
+    callback.then(emptyCallback);
+    return callback;
+  }
+
   constructor(executor: (complete: ValueCallback<T>) => void) {
     super((callback2: ValueCallback<T>) => {
       if (this._completed) {
@@ -130,10 +136,11 @@ export class ComputedCallback<T> extends ThenableCallback<T> {
           const complete = (value: T) => {
             this._value = value;
             this._completed = true;
-            while (this._listeners!.length) {
-              this._listeners!.shift()!(value);
-            }
+            const listeners = this._listeners!;
             delete this._listeners;
+            while (listeners.length) {
+              listeners.shift()!(value);
+            }
           };
 
           if (executor.length) {
@@ -149,4 +156,32 @@ export class ComputedCallback<T> extends ThenableCallback<T> {
 
 export function computedCallback<T>(executor: (complete: ValueCallback<T>) => void): ComputedCallback<T> {
   return new ComputedCallback<T>(executor);
+}
+
+export class CallbackQueue {
+  private _data: Function[] = [];
+
+  add(callback: (complete: VoidCallback) => void): void {
+    this._data.push(callback);
+
+    if (this._data.length === 1) {
+      const complete = () => {
+        this._data.shift(); // remove
+        if (this._data.length) {
+          this._data[0](complete);
+        }
+      };
+      this._data[0](complete);
+    }
+  }
+
+  on(_event: 'empty', listener: VoidCallback) {
+
+    console.log(this._data);
+    this._data.length ? this.add(done => {
+      console.log('empty');
+      listener();
+      done();
+    }) : listener();
+  }
 }

@@ -21,15 +21,15 @@ export function featureHttpServer(port: number, complete: VoidCallback = emptyCa
         });
       }, [ServiceProvider])
       .addScoped(HttpContextHost)
-      .addInherited(HttpContext, (host: HttpContextHost) => {
+      .addPrototype(HttpContext, (host: HttpContextHost) => {
         if (!host.context) {
           throw new Error('HttpContext is missing');
         }
         return host.context;
       }, [HttpContextHost])
-      .addInherited(HttpRequest, (context: HttpContext) => context.request, [HttpContext])
-      .addInherited(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
-      .addInherited(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
+      .addPrototype(HttpRequest, (context: HttpContext) => context.request, [HttpContext])
+      .addPrototype(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
+      .addPrototype(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
     ;
 
     if (currentJsPlatform === JsPlatform.NodeJs) {

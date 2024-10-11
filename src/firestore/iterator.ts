@@ -1,6 +1,6 @@
 import { AsyncLikeIterableIterator } from '../iterable';
 import { Readable } from 'stream';
-import { ThenableCallback, thenableCallback } from '../core';
+import { CallbackWithThen, callbackWithThen } from '../core';
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { firestoreDocumentId } from './document';
 import { DbObject } from '../db';
@@ -15,8 +15,8 @@ export class FirestoreDbIterator implements AsyncLikeIterableIterator<DbObject> 
     this.#includeDocumentId = includeDocumentId;
   }
 
-  next(): ThenableCallback<IteratorResult<DbObject, unknown>> {
-    return thenableCallback(complete => {
+  next(): CallbackWithThen<IteratorResult<DbObject, unknown>> {
+    return callbackWithThen(complete => {
       const removeListeners = () => {
         this.#stream.off('data', dataListener);
         this.#stream.off('end', endListener);
@@ -45,8 +45,8 @@ export class FirestoreDbIterator implements AsyncLikeIterableIterator<DbObject> 
     });
   }
 
-  return(): ThenableCallback<IteratorResult<DbObject, unknown>> {
-    return thenableCallback(complete => {
+  return(): CallbackWithThen<IteratorResult<DbObject, unknown>> {
+    return callbackWithThen(complete => {
       this.#stream.destroy();
       complete({ value: undefined, done: true });
     });

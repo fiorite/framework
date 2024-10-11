@@ -1,13 +1,20 @@
-import { DecoratorOuterFunction, DecoratorRecorder, isType, SetWithInnerKey, Type, VoidCallback } from '../core';
+import {
+  DecoratorOuterFunction,
+  DecoratorRecorder,
+  EventEmitter,
+  isType,
+  SetWithInnerKey,
+  Type,
+  VoidCallback
+} from '../core';
 import { RouteDescriptor } from './route-descriptor';
 import { iterableForEach } from '../iterable';
-import { EventEmitter } from '../core/event-emitter';
 import { RouteCallback } from './callback';
 import { HttpMethod } from '../http';
 import { TypeRoutes } from './route';
 
 export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
-  private readonly _changeEmitter = new EventEmitter();
+  private readonly _changeEmitter = new EventEmitter<{ change: void }>();
 
   constructor(descriptors: Iterable<RouteDescriptor>, onChange?: VoidCallback) {
     const routeToString = (route: RouteDescriptor) => route.toString();
@@ -33,7 +40,7 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
       }
 
       super.add(value);
-      this._changeEmitter.emit('change');
+      this._changeEmitter.emit('change', void 0);
       return this;
     }
 
@@ -63,12 +70,12 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
 
   override clear(): void {
     super.clear();
-    this._changeEmitter.emit('change');
+    this._changeEmitter.emit('change', void 0);
   }
 
   override delete(value: RouteDescriptor): boolean {
     if (super.delete(value)) {
-      this._changeEmitter.emit('change');
+      this._changeEmitter.emit('change', void 0);
       return true;
     }
 

@@ -1,47 +1,30 @@
 import {
   BehaveLike,
   runProviderContext,
-  ServiceProvider,
+  ServiceProvideAsyncFunction,
   ServiceProvideFunction,
-  ServiceProvideAsyncFunction, ServiceType
+  ServiceProvider,
+  ServiceType
 } from '../di';
 import { HttpServer } from '../http';
 import { Route, RouteMatcher } from '../routing';
 import { Logger, LogLevel } from '../logging';
-import { currentJsPlatform, JsPlatform, MaybePromiseLike, promiseWhenNoCallback, VoidCallback } from '../core';
+import {
+  CallbackQueue,
+  ComputedCallback,
+  currentJsPlatform,
+  MaybePromiseLike,
+  promiseWhenNoCallback,
+  VoidCallback
+} from '../core';
 import { featureHttpServer, httpServerPort } from './http-server';
 import { dbCoreServices } from '../db';
 import { featureConsoleLogger } from './logging';
 
-class CallbackBusyStack {
-  private _listeners: Function[] = [];
-  private _callbacks = new Set<Function>();
-
-  add(callback: (complete: VoidCallback) => void): void {
-    this._callbacks.add(callback);
-    callback(() => {
-      this._callbacks.delete(callback);
-      if (!this._callbacks.size) {
-        while(this._listeners.length) {
-          this._listeners.shift()!();
-        }
-      }
-    });
-  }
-
-  all(complete: VoidCallback): void {
-    if (!this._callbacks.size) {
-      complete();
-    } else {
-      this._listeners.push(complete);
-    }
-  }
-}
-
 // todo: make reactive application which extends as it goes.
 export class Application {
-  private readonly _taskStack: CallbackBusyStack;
   private readonly _provider: ServiceProvider;
+  private readonly _queue: CallbackQueue;
 
   get provider(): ServiceProvider {
     return this._provider;
@@ -75,30 +58,36 @@ export class Application {
     return this._provider(Logger);
   }
 
-  constructor(provider: ServiceProvider, taskStack: CallbackBusyStack) {
+  constructor(provider: ServiceProvider, queue: CallbackQueue) {
     this._provider = provider;
-    this._taskStack = taskStack;
+    this._queue = queue;
   }
 
   call(callback: (complete: VoidCallback) => void): void {
     runProviderContext(this._provider, callback);
   }
 
+  ready(callback: VoidCallback): void {
+    this._queue.on('empty', callback);
+  }
+
   run(callback: VoidCallback): void;
   run(): PromiseLike<void>;
   run(callback?: VoidCallback): unknown {
     return promiseWhenNoCallback<void>(callback => {
-      runProviderContext(this._provider, complete => {
-        this._provider(HttpServer).listen(
-          this._provider(httpServerPort),
-          () => MaybePromiseLike.then(() => callback(), complete),
-        );
+      this._queue.on('empty', () => {
+        runProviderContext(this._provider, complete => {
+          this._provider(HttpServer).listen(
+            this._provider(httpServerPort),
+            () => MaybePromiseLike.then(() => callback(), complete),
+          );
+        });
       });
     }, callback);
   }
 }
 
-export type ApplicationConfigureFunction = (provider: ServiceProvider) => void;
+export type ApplicationConfigureFunction = (provider: ServiceProvider) => MaybePromiseLike<unknown>;
 
 
 export function makeApplication(...features: ApplicationConfigureFunction[]): Application {
@@ -106,34 +95,38 @@ export function makeApplication(...features: ApplicationConfigureFunction[]): Ap
   const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
   provider.addValue(Symbol.for('development'), development);
   featureConsoleLogger(development ? LogLevel.Debug : undefined)(provider); // todo: make configurable
+  dbCoreServices(provider);
 
-  const taskStack = new CallbackBusyStack();
+  // enqueue all the features:
 
-  taskStack.add(complete => {
+  const queue = new CallbackQueue();
+
+  const runnerLoader = ComputedCallback.preCache<void>(complete => {
     featureHttpServer(Number(currentJsPlatform === 'nodejs' ? (() => process.env['PORT'])() : 3000 || 3000), complete)(provider);
   });
 
-  dbCoreServices(provider);
+  runProviderContext(provider, closeGlobalContext => {
+    features.forEach(featureFn => queue.add(done => MaybePromiseLike.then(() => featureFn(provider), done)));
 
-  runProviderContext(provider, complete => {
-    features.forEach(featureFunction => featureFunction(provider));
-    provider.addDecoratedBy(BehaveLike);
-    provider.addMissingDependencies();
-    const touchSingletons = true;
+    queue.add(finishTask => {
+      provider.addDecoratedBy(BehaveLike);
+      provider.addMissingDependencies();
 
-    if (provider.has(RouteMatcher)) {
-      provider(RouteMatcher).routeSet.addDecoratedBy(Route);
-    }
+      if (provider.has(RouteMatcher)) {
+        provider(RouteMatcher).routeSet.addDecoratedBy(Route);
+      }
 
-    if (touchSingletons) {
-      taskStack.add(complete2 => provider.preCacheSingletons(complete2));
-    }
+      provider.preCacheSingletons(finishTask);
+    });
 
-    taskStack.all(() => {
+    queue.add(finishTask => {
       provider._performStabilityCheck();
-      complete();
+      closeGlobalContext();
+      finishTask();
     });
   });
 
-  return new Application(provider, taskStack);
+  queue.add(done => runnerLoader.then(done));
+
+  return new Application(provider, queue);
 }

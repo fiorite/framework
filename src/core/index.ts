@@ -10,10 +10,12 @@ export {
   CallbackForceValueError,
   ComputedCallback,
   computedCallback,
-  thenableCallback,
-  ThenableCallback,
+  callbackWithThen,
+  CallbackWithThen,
+  CallbackQueue,
 } from './callbacks';
 export { Equatable, EqualityComparer, defaultComparer } from './equality';
+export { EventEmitter, SingleEventEmitter } from './events';
 export * from './decorator';
 export * from './error';
 export { FunctionClass } from './function-class';

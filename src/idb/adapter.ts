@@ -1,6 +1,6 @@
 import { DbObject, DbReadContext, DbReader } from '../db';
 import { AsyncLikeIterableIterator } from '../iterable';
-import { ThenableCallback, ComputedCallback } from '../core';
+import { CallbackWithThen, ComputedCallback } from '../core';
 
 // todo: investigate this and implement
 
@@ -47,7 +47,7 @@ export class IdbDbIterator implements AsyncLikeIterableIterator<DbObject> {
     this._cursor = cursor;
   }
 
-  next(): ThenableCallback<IteratorResult<DbObject, unknown>> {
+  next(): CallbackWithThen<IteratorResult<DbObject, unknown>> {
     return new CallbackPromiseLike<IteratorResult<DbObject, unknown>>(complete => {
       this._cursor.then(value => {
         console.log(value);
