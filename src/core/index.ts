@@ -15,7 +15,6 @@ export {
   CallbackQueue,
 } from './callbacks';
 export { Equatable, EqualityComparer, defaultComparer } from './equality';
-export { EventEmitter, SingleEventEmitter } from './events';
 export * from './decorator';
 export * from './error';
 export { FunctionClass } from './function-class';
@@ -29,5 +28,5 @@ export {
 export { RadixMap, RadixWalkResult } from './radix-map';
 export { SetWithInnerKey } from './set-with-inner-key';
 export { ListenableFunction, ListenableFunctionListener } from './listener';
-export { AbstractType, Type, isType } from './type';
+export { AbstractType, Type, isType, isInstance } from './type';
 export { Utf16Sequence, utf16 } from './utf16';

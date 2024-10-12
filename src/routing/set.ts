@@ -1,7 +1,6 @@
 import {
   DecoratorOuterFunction,
   DecoratorRecorder,
-  EventEmitter,
   isType,
   SetWithInnerKey,
   Type,
@@ -12,6 +11,7 @@ import { iterableForEach } from '../iterable';
 import { RouteCallback } from './callback';
 import { HttpMethod } from '../http';
 import { TypeRoutes } from './route';
+import { EventEmitter } from '../events';
 
 export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
   private readonly _changeEmitter = new EventEmitter<{ change: void }>();

@@ -4,6 +4,7 @@ export { FromRequest, FromQuery, FromHeader, FromBody } from './decorator';
 export { HttpError } from './error';
 export { HttpHeaders } from './headers';
 export { HttpMessageHeader, HttpMessage, HttpMessageCloseFunction } from './message';
+export { HttpMessageWriter } from './message-writer';
 export { HttpMethod } from './method';
 export { HttpPipeline } from './pipeline';
 export { HttpRequestHeader, HttpRequest, HttpQuery } from './request';

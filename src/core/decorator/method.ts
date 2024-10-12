@@ -1,17 +1,17 @@
-import { DecoratorOuterFunction } from './typing';
+import { DecoratorOuterFunction, MethodDecorator2 } from './typing';
 import { DecoratorWithPayload } from './with-payload';
 
-export interface MethodDecoratorWithPayload<TPayload> extends DecoratorWithPayload<TPayload, MethodDecorator> {
-  (target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor): void;
+export interface MethodDecoratorWithPayload<TPayload, TFunction = Function> extends DecoratorWithPayload<TPayload, MethodDecorator2<TFunction>> {
+  (target: Object, propertyKey: string | symbol, descriptor: TypedPropertyDescriptor<TFunction>): void;
 }
 
-export class MethodDecoratorWithPayload<TPayload> extends DecoratorWithPayload<TPayload, MethodDecorator> {
+export class MethodDecoratorWithPayload<TPayload, TFunction = Function> extends DecoratorWithPayload<TPayload, MethodDecorator2<TFunction>> {
 }
 
-export function makeMethodDecorator<TPayload>(
-  decorator: DecoratorOuterFunction<MethodDecorator>,
+export function makeMethodDecorator<TPayload, TFunction = Function>(
+  decorator: DecoratorOuterFunction<MethodDecorator2<TFunction>>,
   payload: TPayload,
   include: readonly MethodDecorator[] = [],
-): MethodDecoratorWithPayload<TPayload> {
+): MethodDecoratorWithPayload<TPayload, TFunction> {
   return new MethodDecoratorWithPayload(decorator, payload, include);
 }

@@ -3,6 +3,7 @@ export * from './core';
 export * from './data';
 export * from './db';
 export * from './di';
+export * from './events';
 export * from './http';
 export * from './iterable';
 export * from './logging';

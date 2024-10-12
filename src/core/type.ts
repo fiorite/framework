@@ -16,8 +16,12 @@ export interface Type<T = any> extends AbstractType<T> {
  * Check if object is constructable.
  */
 export function isType<T>(object: unknown): object is Type<T> {
-  return typeof object === 'function' &&
-    !!object.prototype &&
-    !!object.prototype.constructor &&
-    object.prototype.constructor === object;
+  return typeof object === 'function' && !!object.prototype && !!object.prototype.constructor;
+}
+
+/**
+ * Check if object is constructable.
+ */
+export function isInstance<T>(object: unknown): object is T {
+  return null !== object && undefined !== object && Function !== object.constructor;
 }

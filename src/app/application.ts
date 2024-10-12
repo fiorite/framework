@@ -20,6 +20,7 @@ import {
 import { featureHttpServer, httpServerPort } from './http-server';
 import { dbCoreServices } from '../db';
 import { featureConsoleLogger } from './logging';
+import { addEventEmitter } from '../events';
 
 // todo: make reactive application which extends as it goes.
 export class Application {
@@ -89,13 +90,13 @@ export class Application {
 
 export type ApplicationConfigureFunction = (provider: ServiceProvider) => MaybePromiseLike<unknown>;
 
-
 export function makeApplication(...features: ApplicationConfigureFunction[]): Application {
   const provider = new ServiceProvider();
   const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
   provider.addValue(Symbol.for('development'), development);
   featureConsoleLogger(development ? LogLevel.Debug : undefined)(provider); // todo: make configurable
   dbCoreServices(provider);
+  addEventEmitter()(provider);
 
   // enqueue all the features:
 
