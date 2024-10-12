@@ -1,10 +1,10 @@
-import { CallbackWithThen, MaybePromiseLike, ValueCallback } from '../core';
+import { FutureCallback, MaybePromiseLike, ValueCallback } from '../core';
 import type { AsyncLikeIterable } from './iterable';
 
 export interface AsyncLikeIterator<T, TReturn = unknown> {
-  next(): CallbackWithThen<IteratorResult<T, TReturn>>;
+  next(): FutureCallback<IteratorResult<T, TReturn>>;
 
-  return?(value?: MaybePromiseLike<TReturn>): CallbackWithThen<IteratorResult<T, TReturn>>;
+  return?(value?: MaybePromiseLike<TReturn>): FutureCallback<IteratorResult<T, TReturn>>;
 }
 
 export interface CallbackIterator<T> {

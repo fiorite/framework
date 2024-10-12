@@ -4,7 +4,7 @@ import { FunctionClass, Type } from '../core';
 import {
   ServiceFactory,
   ServiceFactoryWithReturn,
-  ServiceFactoryWithReturnFunction,
+  ServiceFactoryFunction,
   TypeFactory,
   ValueFactory
 } from './service-factory';
@@ -68,7 +68,7 @@ export class ServiceDescriptor<T = unknown> {
 
   static fromFactory<T>(
     type: ServiceType<T>,
-    factory: ServiceFactoryWithReturnFunction<T>,
+    factory: ServiceFactoryFunction<T>,
     dependencies: ServiceType[] = [],
     behavior?: ServiceBehavior,
   ): ServiceDescriptor<T> {

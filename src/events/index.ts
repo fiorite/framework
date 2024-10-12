@@ -1,4 +1,4 @@
-export { addEventEmitter } from './di';
+export { addEventEmitter } from './provider';
 export { EventEmitter } from './emitter';
 export { emit } from './emit';
-export { On } from './on';
+export { OnEvent } from './on';

@@ -1,6 +1,6 @@
 import { AbstractType, makeMethodDecorator, MaybePromiseLike, MethodDecoratorWithPayload } from '../core';
 
-type OnEvent<T> = string | symbol | number | AbstractType<T>;
+type EventName<T> = string | symbol | number | AbstractType<T>;
 type OnMethod<T> = (event: T, ...args: unknown[]) => MaybePromiseLike<void>;
 
 /**
@@ -9,6 +9,6 @@ type OnMethod<T> = (event: T, ...args: unknown[]) => MaybePromiseLike<void>;
  * - Unlisted service is Prototype,
  * @constructor
  */
-export const On = <T>(event: OnEvent<T>): MethodDecoratorWithPayload<OnEvent<T>, OnMethod<T>> => {
-  return makeMethodDecorator<OnEvent<T>, OnMethod<T>>(On, event);
+export const OnEvent = <T>(event: EventName<T>): MethodDecoratorWithPayload<EventName<T>, OnMethod<T>> => {
+  return makeMethodDecorator<EventName<T>, OnMethod<T>>(OnEvent, event);
 };

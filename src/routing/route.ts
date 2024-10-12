@@ -1,6 +1,6 @@
 import { DecoratorRecorder, FunctionClass, Type, ValueCallback } from '../core';
 import { Route, RoutePrefix } from './decorators';
-import { ObjectMethodFactory, ServiceFactoryFunction, ServiceNotFoundError, ServiceType, TypeFactory } from '../di';
+import { ObjectMethodFactory, ServiceFactoryCallback, ServiceNotFoundError, ServiceType, TypeFactory } from '../di';
 import { RouteDescriptor } from './route-descriptor';
 import { RouteCallback } from './callback';
 

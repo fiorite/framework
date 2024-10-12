@@ -1,3 +1,4 @@
+export * from './reflect';
 export { arraySequenceEqual, arrayRange, MaybeArray } from './array-utils';
 export {
   ValueCallback,
@@ -10,9 +11,11 @@ export {
   CallbackForceValueError,
   ComputedCallback,
   computedCallback,
-  callbackWithThen,
-  CallbackWithThen,
+  futureCallback,
+  FutureCallback,
   CallbackQueue,
+  future,
+  computed,
 } from './callbacks';
 export { Equatable, EqualityComparer, defaultComparer } from './equality';
 export * from './decorator';

@@ -57,8 +57,8 @@ export class DecoratorRecorder {
     classType?: Type,
     propertyKey?: string | symbol
   ): readonly DecoratorEvent<
-    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
-    MethodDecorator, [Object, string | symbol, PropertyDescriptor]
+    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P, Function>> ? P : unknown,
+    MethodDecorator, [Type, string | symbol, PropertyDescriptor]
   >[] {
     return DecoratorRecorder.instance.methodSearch(decorator, classType, propertyKey);
   }
@@ -134,7 +134,7 @@ export class DecoratorRecorder {
     propertyKey?: string | symbol
   ): readonly DecoratorEvent<
     TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
-    MethodDecorator, [Object, string | symbol, PropertyDescriptor]
+    MethodDecorator, [Type, string | symbol, PropertyDescriptor]
   >[] {
     const callback = classType ? (
       propertyKey ? (

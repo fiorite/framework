@@ -86,7 +86,7 @@ export interface ThenableCallback<T> {
   then(onfulfilled: ValueCallback<T>): void;
 }
 
-export class CallbackWithThen<T> {
+export class FutureCallback<T> {
   private readonly _executor: (complete: ValueCallback<T>) => void;
 
   constructor(executor: (complete: ValueCallback<T>) => void) {
@@ -98,11 +98,14 @@ export class CallbackWithThen<T> {
   }
 }
 
-export function callbackWithThen<T>(callback: (complete: ValueCallback<T>) => void): CallbackWithThen<T> {
-  return new CallbackWithThen(callback);
+export function futureCallback<T>(callback: (done: ValueCallback<T>) => void, execute?: boolean): FutureCallback<T> {
+  return new FutureCallback(callback);
 }
 
-export class ComputedCallback<T> extends CallbackWithThen<T> {
+/** @experimental */
+export const future = futureCallback;
+
+export class ComputedCallback<T> extends FutureCallback<T> {
   private _completed?: boolean;
 
   get completed(): boolean | undefined {
@@ -157,6 +160,9 @@ export class ComputedCallback<T> extends CallbackWithThen<T> {
 export function computedCallback<T>(executor: (complete: ValueCallback<T>) => void): ComputedCallback<T> {
   return new ComputedCallback<T>(executor);
 }
+
+/** @experimental */
+export const computed = computedCallback;
 
 export class CallbackQueue {
   private _data: Function[] = [];

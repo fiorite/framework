@@ -1,4 +1,4 @@
-import { CallbackWithThen, ValueCallback } from '../core';
+import { FutureCallback, ValueCallback } from '../core';
 import { IterableOperatorFunction } from './operator';
 
 export function iterableToArray<T>(callback: ValueCallback<T[]>): IterableOperatorFunction<T, void> {
@@ -8,7 +8,7 @@ export function iterableToArray<T>(callback: ValueCallback<T[]>): IterableOperat
     } else {
       const array: T[] = [];
       const iterator = iterable[Symbol.asyncIterator]();
-      const next = (source: CallbackWithThen<IteratorResult<T>> = iterator.next()) => {
+      const next = (source: FutureCallback<IteratorResult<T>> = iterator.next()) => {
         source.then(result => {
           if (result.done) {
             callback(array);

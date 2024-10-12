@@ -1,8 +1,8 @@
 import { AsyncLikeIterableIterator, iterableToArray, MaybeAsyncLikeIterable } from '../iterable';
 import { DbObject } from './object';
 import {
-  CallbackWithThen,
-  callbackWithThen,
+  FutureCallback,
+  futureCallback,
   MaybePromiseLike,
   computedCallback,
   ComputedCallback,
@@ -31,18 +31,18 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
     });
   }
 
-  next(): CallbackWithThen<IteratorResult<DbObject, unknown>> {
-    return this.#share.value ? this.#share.value.next() : callbackWithThen(then => {
+  next(): FutureCallback<IteratorResult<DbObject, unknown>> {
+    return this.#share.value ? this.#share.value.next() : futureCallback(then => {
       this.#share.then(iterator => iterator.next().then(then));
     });
   }
 
-  return(value?: MaybePromiseLike<unknown>): CallbackWithThen<IteratorResult<DbObject, unknown>> {
+  return(value?: MaybePromiseLike<unknown>): FutureCallback<IteratorResult<DbObject, unknown>> {
     if (this.#share.value) {
       if (this.#share.value.return) {
         return this.#share.value.return(value);
       } else {
-        return callbackWithThen(complete => {
+        return futureCallback(complete => {
           value ? MaybePromiseLike.then(() => value, value2 => {
             complete({ done: true, value: value2 });
           }) : complete({ done: true, value: undefined });
@@ -50,7 +50,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
       }
     }
 
-    return callbackWithThen(complete => {
+    return futureCallback(complete => {
       this.#share.then(iterator => {
         if (iterator.return) {
           iterator.return(value).then(complete);
@@ -69,7 +69,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
 
       MaybePromiseLike.all(() => {
         return wheres.map(where => {
-          return callbackWithThen(then => {
+          return futureCallback(then => {
             MaybePromiseLike.then(() => where.value, value2 => {
               [DbWhereOperator.In, DbWhereOperator.NotIn].includes(where.operator) ?
                 iterableToArray(then)(value2 as MaybeAsyncLikeIterable<unknown>) : then(value2);

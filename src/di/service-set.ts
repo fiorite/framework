@@ -39,11 +39,11 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
     this._behavioralMap = new Map(behavioralMap);
   }
 
-  containsType(type: ServiceType): boolean {
-    return this._innerMap.has(type);
+  override has(value: ServiceDescriptor | ServiceType): boolean {
+    return value instanceof ServiceDescriptor ? super.has(value) : this._innerMap.has(value);
   }
 
-  findDescriptor(type: ServiceType): ServiceDescriptor | undefined {
+  get(type: ServiceType): ServiceDescriptor | undefined {
     return this._innerMap.get(type);
   }
 

@@ -5,17 +5,19 @@ export {
   Scoped,
   Prototype,
   BehaveLikeDecorator,
-  Provide,
-  ProvideDecorator
 } from './decorators';
 export { ServiceBehavior } from './service-behavior';
 export { ServiceDescriptor } from './service-descriptor';
 export { ServiceSet } from './service-set';
 export {
-  ServiceFactoryFunction,
+  Provide,
+  ProvideDecorator
+} from './provide';
+export {
+  ServiceFactoryCallback,
   ServiceFactory,
   ServiceFactoryWithReturn,
-  ServiceFactoryWithReturnFunction,
+  ServiceFactoryFunction,
   ValueFactory,
   TypeFactory,
   TargetParametersFactory,

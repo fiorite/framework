@@ -1,11 +1,12 @@
 import { AbstractType, Type, ValueCallback } from '../core';
 
-export class EventEmitter<T = Record<string | symbol, unknown>> {
+export class EventEmitter<T = unknown> {
   private readonly _listeners = new Map<string | symbol | number | Function, Map<Function, Function>>();
 
   emit<K extends keyof T>(event: K, value: T[K]): boolean;
-  emit<R>(event: AbstractType<R>, value: R): boolean;
+  emit<P>(event: AbstractType<P>, value: P): boolean;
   emit(event: object): boolean;
+  emit<P>(event: string | symbol | number | Function, value: P): boolean;
   emit(...args: unknown[]): boolean {
     let event: string | symbol | number | Function, value: unknown;
 
@@ -36,14 +37,15 @@ export class EventEmitter<T = Record<string | symbol, unknown>> {
   }
 
 
+  on<P>(event: string | symbol | number, callback: ValueCallback<P>): this;
   on<K extends keyof T>(event: K, callback: ValueCallback<T[K]>): this;
-  on<R>(event: Type<R>, callback: ValueCallback<R>): this;
+  on<P>(event: AbstractType<P>, callback: ValueCallback<P>): this;
   on(event: string | symbol | number | Function, callback: Function): this {
     this._on(event, callback, callback);
     return this;
   }
 
-  off<O>(event: Type<O>, callback: ValueCallback<O>): this;
+  off<P>(event: AbstractType<P>, callback: ValueCallback<P>): this;
   off<K extends keyof T>(event: K, callback: ValueCallback<T[K]>): this;
   off(event: string | symbol | number | Function, callback: Function): this {
     let listeners = this._listeners.get(event);
@@ -57,6 +59,7 @@ export class EventEmitter<T = Record<string | symbol, unknown>> {
     return this;
   }
 
+  once<P>(event: string | symbol | number, callback: ValueCallback<P>): this;
   once<R>(event: Type<R>, callback: ValueCallback<R>): this;
   once<K extends keyof T>(event: K, callback: ValueCallback<T[K]>): this;
   once(event: string | symbol | number | Function, callback: Function): this {
