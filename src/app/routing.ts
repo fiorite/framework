@@ -18,6 +18,6 @@ export function addRouting(provider: ServiceProvider): void {
   provider(HttpPipeline).add(middleware);
 }
 
-export function addTransformer<T, R>(type: Type<T>, transform: TransformCallback<T, R>): ApplicationConfigureFunction {
-  return provide => provide(TransferNormalizer).add(makeTransformer(type, transform));
+export function addNormalizer<T, R>(type: Type<T>, normalize: TransformCallback<T, R>): ApplicationConfigureFunction {
+  return provide => provide(TransferNormalizer).add(makeTransformer(type, normalize));
 }
