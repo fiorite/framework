@@ -1,9 +1,10 @@
-import { RouteMatcher, RouteParams, RoutingMiddleware } from '../routing';
-import { HttpPipeline } from '../http';
+import { ServiceConfigureFunction, ServiceProvider } from '../di';
+import { RouteMatcher } from './route-matcher';
 import { makeTransformer, TransferNormalizer, TransformCallback } from '../data';
-import { ServiceProvider } from '../di';
+import { RoutingMiddleware } from './middlware';
+import { RouteParams } from './route-params';
+import { HttpPipeline } from '../http';
 import { Type } from '../core';
-import { ApplicationConfigureFunction } from './application';
 
 export function addRouting(provider: ServiceProvider): void {
   const routeMatcher = new RouteMatcher([]);
@@ -18,6 +19,6 @@ export function addRouting(provider: ServiceProvider): void {
   provider(HttpPipeline).add(middleware);
 }
 
-export function addNormalizer<T, R>(type: Type<T>, normalize: TransformCallback<T, R>): ApplicationConfigureFunction {
+export function addNormalizer<T, R>(type: Type<T>, normalize: TransformCallback<T, R>): ServiceConfigureFunction {
   return provide => provide(TransferNormalizer).add(makeTransformer(type, normalize));
 }

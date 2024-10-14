@@ -1,14 +1,15 @@
 import {
   BehaveLike,
   runProviderContext,
+  ServiceConfigureFunction,
   ServiceProvideAsyncFunction,
   ServiceProvideFunction,
   ServiceProvider,
   ServiceType
 } from '../di';
-import { HttpServer } from '../http';
-import { Route, RouteMatcher } from '../routing';
-import { Logger, LogLevel } from '../logging';
+import { addCors, addHttpServer, addJsonParser, HttpServer, httpServerPort } from '../http';
+import { addRouting, Route, RouteMatcher } from '../routing';
+import { addConsoleLogger, Logger, LogLevel } from '../logging';
 import {
   CallbackQueue,
   ComputedCallback,
@@ -17,13 +18,8 @@ import {
   promiseWhenNoCallback,
   VoidCallback
 } from '../core';
-import { addHttpServer, httpServerPort } from './http-server';
 import { addDbManager } from '../db';
-import { addConsoleLogger } from './logging';
 import { addEvents } from '../events';
-import { addRouting } from './routing';
-import { addCors } from './cors';
-import { addJsonParser } from './json-parser';
 
 // todo: make reactive application which extends as it goes.
 export class Application {
@@ -75,9 +71,9 @@ export class Application {
     this._queue.on('empty', callback);
   }
 
-  run(callback: VoidCallback): void;
-  run(): PromiseLike<void>;
-  run(callback?: VoidCallback): unknown {
+  start(callback: VoidCallback): void;
+  start(): PromiseLike<void>;
+  start(callback?: VoidCallback): unknown {
     return promiseWhenNoCallback<void>(callback => {
       this._queue.on('empty', () => {
         runProviderContext(this._provider, complete => {
@@ -91,9 +87,7 @@ export class Application {
   }
 }
 
-export type ApplicationConfigureFunction = (provider: ServiceProvider) => MaybePromiseLike<unknown>;
-
-export function makeApplication(...features: ApplicationConfigureFunction[]): Application {
+export function makeApplication(...features: ServiceConfigureFunction[]): Application {
   const provider = new ServiceProvider();
   const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
   provider.addValue(Symbol.for('development'), development);

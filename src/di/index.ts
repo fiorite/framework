@@ -7,6 +7,7 @@ export {
   BehaveLikeDecorator,
 } from './decorators';
 export { ServiceBehavior } from './service-behavior';
+export { ServiceConfigureFunction } from './service-configure';
 export { ServiceDescriptor } from './service-descriptor';
 export { ServiceSet } from './service-set';
 export {

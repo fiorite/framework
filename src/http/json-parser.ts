@@ -1,6 +1,8 @@
-import { HttpBodyResult, HttpCallback, HttpPipeline } from '../http';
 import { FunctionClass } from '../core';
+import { HttpCallback } from './callback';
+import { HttpBodyResult } from './result';
 import { ServiceProvider } from '../di';
+import { HttpPipeline } from './pipeline';
 
 export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
   constructor() {

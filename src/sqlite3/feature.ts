@@ -1,10 +1,10 @@
-import { ApplicationConfigureFunction } from '../app';
 import { Database } from 'sqlite3';
 import { DbConnectionName, DbManager } from '../db';
 import { Sqlite3DbAdapter } from './adapter';
 import { Logger } from '../logging';
+import { ServiceConfigureFunction } from '../di';
 
-export function addSqlite3(filename: string, connectionName?: DbConnectionName): ApplicationConfigureFunction {
+export function addSqlite3(filename: string, connectionName?: DbConnectionName): ServiceConfigureFunction {
   const databaseSymbol = Symbol(`sqlite3.Database(${String(connectionName || 'default')}):${filename}`);
 
   return provider => {

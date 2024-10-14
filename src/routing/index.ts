@@ -29,6 +29,7 @@ export {
   HttpPut,
 } from './decorators';
 export { RoutingMiddleware, ResultHandleCallback } from './middlware';
+export { param } from './minimal';
 export {
   StatusCodeResult,
   RouteResult,
@@ -57,3 +58,4 @@ export {
   RoutePathSegment, StaticPathSegment, DynamicPathSegment, NullPathSegment, CatchAllPathSegment
 } from './route-path-segment';
 export { RouteSet } from './route-set';
+export { addNormalizer, addRouting } from './routing';

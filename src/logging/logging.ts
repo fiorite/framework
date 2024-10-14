@@ -1,5 +1,8 @@
-import { ConsoleLogger, LevelFilter, Logger, LogLevel } from '../logging';
 import { ServiceProvider } from '../di';
+import { LogLevel } from './level';
+import { ConsoleLogger } from './console';
+import { Logger } from './logger';
+import { LevelFilter } from './level-filter';
 
 export const logLevel = Symbol.for('LogLevel');
 

@@ -1,6 +1,11 @@
 import { FunctionClass } from '../core';
-import { HttpCallback, HttpMethod, HttpPipeline, HttpRequestHeader, HttpResponseHeader, HttpStatusCode } from '../http';
+import { HttpCallback } from './callback';
+import { HttpResponseHeader } from './response';
+import { HttpMethod } from './method';
+import { HttpStatusCode } from './status-code';
+import { HttpRequestHeader } from './request';
 import { ServiceProvider } from '../di';
+import { HttpPipeline } from './pipeline';
 
 export class CorsMiddleware extends FunctionClass<HttpCallback> {
   constructor() {
@@ -26,7 +31,6 @@ export class CorsMiddleware extends FunctionClass<HttpCallback> {
   }
 }
 
-// todo: add options
 export function addCors(provider: ServiceProvider): void {
   const middleware = new CorsMiddleware();
   provider.addValue(CorsMiddleware, middleware);
