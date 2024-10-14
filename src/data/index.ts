@@ -13,4 +13,4 @@ export {
   ObjectValidator,
   RecordValidator,
   ArrayValidator
-} from './validator';
+} from './validation';
