@@ -15,12 +15,11 @@ const errorFallback: VoidCallback = () => {
 };
 
 const defaultFallback: HttpCallback = (context, next) => {
-  if (!context.response.headersSent && undefined === context.response.statusCode) {
-    context.response.statusCode = HttpStatusCode.NotFound;
+  if (!context.response.headersSent) {
+    context.response.statusCode = HttpStatusCode.NotImplemented;
   }
 
   context.response.close();
-
   next();
 };
 

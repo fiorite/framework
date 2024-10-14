@@ -1,4 +1,4 @@
-import { DecoratorFunction, DecoratorOuterFunction } from './typing';
+import { DecoratorFunction, DecoratorOuterFunction, MethodDecorator2 } from './typing';
 import { isType, Type } from '../type';
 import type { ParameterDecoratorWithPayload } from './parameter';
 import type { MethodDecoratorWithPayload } from './method';
@@ -52,13 +52,13 @@ export class DecoratorRecorder {
     return DecoratorRecorder.instance.propertySearch(decorator, classType, propertyKey);
   }
 
-  static methodSearch<TDecorator extends DecoratorOuterFunction<MethodDecorator>>(
+  static methodSearch<TDecorator extends DecoratorOuterFunction<MethodDecorator2>>(
     decorator: TDecorator,
     classType?: Type,
     propertyKey?: string | symbol
   ): readonly DecoratorEvent<
-    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P, Function>> ? P : unknown,
-    MethodDecorator, [Type, string | symbol, PropertyDescriptor]
+    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P, (...args: any[]) => any>> ? P : unknown,
+    MethodDecorator2, [Type, string | symbol, PropertyDescriptor]
   >[] {
     return DecoratorRecorder.instance.methodSearch(decorator, classType, propertyKey);
   }
@@ -128,13 +128,13 @@ export class DecoratorRecorder {
     return this._data.filter(callback) as any;
   }
 
-  methodSearch<TDecorator extends DecoratorOuterFunction<MethodDecorator>>(
+  methodSearch<TDecorator extends DecoratorOuterFunction<MethodDecorator2>>(
     decorator: TDecorator,
     classType?: Type,
     propertyKey?: string | symbol
   ): readonly DecoratorEvent<
-    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P>> ? P : unknown,
-    MethodDecorator, [Type, string | symbol, PropertyDescriptor]
+    TDecorator extends DecoratorOuterFunction<MethodDecoratorWithPayload<infer P, (...args: any[]) => any>> ? P : unknown,
+    MethodDecorator2, [Type, string | symbol, PropertyDescriptor]
   >[] {
     const callback = classType ? (
       propertyKey ? (

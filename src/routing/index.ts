@@ -1,7 +1,4 @@
 export {
-  RouteCallback,
-} from './callback';
-export {
   RouteParameterConstraint,
   NumberParameterConstraint,
   DigitParameterConstraint,
@@ -39,11 +36,7 @@ export {
   ok,
   NoContentResult,
   noContent
-} from './result';
-export {
-  TypeRoutes,
-  ObjectMethodCallback,
-} from './route';
+} from './route-result';
 export {
   RouteMatcher,
   RouteMatchResult,
@@ -63,3 +56,4 @@ export {
 export {
   RoutePathSegment, StaticPathSegment, DynamicPathSegment, NullPathSegment, CatchAllPathSegment
 } from './route-path-segment';
+export { RouteSet } from './route-set';

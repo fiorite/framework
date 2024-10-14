@@ -9,8 +9,8 @@ import {
   RoutePathMatcher,
   StaticRouteComponentMatcher
 } from './route-path-matcher';
-import { RouteCallback } from './callback';
-import { RouteSet } from './set';
+import { RouteSet } from './route-set';
+import { RouteActionFunction } from './route-action';
 
 export class ComponentNode {
   // private _data: RouteCallback[] = [];
@@ -114,49 +114,49 @@ export class RouteMatcher {
     }
   }
 
-  private _add(method: HttpMethod | string, path: string, callback: RouteCallback): this {
-    this._routeSet.add(method, path, callback);
+  private _add(method: HttpMethod | string, path: string, action: RouteActionFunction): this {
+    this._routeSet.add(method, path, action);
     return this;
   }
 
-  all(path: string, callback: RouteCallback): this {
-    this._routeSet.add(path, callback);
+  all(path: string, action: RouteActionFunction): this {
+    this._routeSet.add(path, action);
     return this;
   }
 
-  get(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Get, path, callback);
+  get(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Get, path, action);
   }
 
-  head(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Head, path, callback);
+  head(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Head, path, action);
   }
 
-  post(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Post, path, callback);
+  post(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Post, path, action);
   }
 
-  put(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Put, path, callback);
+  put(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Put, path, action);
   }
 
-  delete(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Delete, path, callback);
+  delete(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Delete, path, action);
   }
 
-  connect(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Connect, path, callback);
+  connect(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Connect, path, action);
   }
 
-  options(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Options, path, callback);
+  options(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Options, path, action);
   }
 
-  trace(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Trace, path, callback);
+  trace(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Trace, path, action);
   }
 
-  patch(path: string, callback: RouteCallback): this {
-    return this._add(HttpMethod.Patch, path, callback);
+  patch(path: string, action: RouteActionFunction): this {
+    return this._add(HttpMethod.Patch, path, action);
   }
 }

@@ -429,6 +429,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   // region add a new service
 
+  //  todo: fix
   add(object: object): this;
   add<T>(serviceType: ServiceType<T>, object: T): this;
   add(type: Type): this;
@@ -605,7 +606,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     );
   }
 
-  instantiateIfMissing<T>(type: Type<T>, result: ValueCallback<T>): void {
+  prototypeWhenMissing<T>(type: Type<T>, result: ValueCallback<T>): void {
     if (this.has(type)) {
       return this.get(type, result);
     }

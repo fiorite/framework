@@ -1,6 +1,6 @@
 import { HttpMethod } from '../http';
-import { RouteCallback } from './callback';
 import { RoutePath } from './route-path';
+import { RouteActionFunction } from './route-action';
 
 export class RouteDescriptor {
   private readonly _path: RoutePath;
@@ -9,29 +9,25 @@ export class RouteDescriptor {
     return this._path;
   }
 
-  private readonly _callback: RouteCallback;
+  private readonly _action: RouteActionFunction;
 
-  get callback(): RouteCallback {
-    return this._callback;
+  get action(): RouteActionFunction {
+    return this._action;
   }
 
-  private readonly _method?: HttpMethod | string;
+  private readonly _httpMethod?: HttpMethod | string;
 
-  get method(): HttpMethod | string | undefined {
-    return this._method;
+  get httpMethod(): HttpMethod | string | undefined {
+    return this._httpMethod;
   }
 
-  constructor(object: {
-    readonly path: RoutePath | string;
-    readonly callback: RouteCallback;
-    readonly method?: HttpMethod | string;
-  }) {
-    this._path = object.path instanceof RoutePath ? object.path : new RoutePath(object.path);
-    this._method = object.method;
-    this._callback = object.callback;
+  constructor(path: RoutePath | string, action: RouteActionFunction, httpMethod?: HttpMethod | string) {
+    this._path = path instanceof RoutePath ? path : new RoutePath(path);
+    this._action = action;
+    this._httpMethod = httpMethod;
   }
 
   toString(): string {
-    return [this.method || '*', this.path.value].join(' ');
+    return [this.httpMethod || '*', this.path.value].join(' ');
   }
 }

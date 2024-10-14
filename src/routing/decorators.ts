@@ -1,11 +1,13 @@
 import { Inherited, Provide, ProvideDecorator } from '../di';
 import {
   ClassDecoratorWithPayload,
+  DecoratorRecorder,
   makeClassDecorator,
   makeMethodDecorator,
   MapCallback,
   MaybePromiseLike,
-  MethodDecoratorWithPayload
+  MethodDecoratorWithPayload,
+  Type
 } from '../core';
 import { HttpMethod } from '../http';
 import { RouteParams } from './route-params';
@@ -24,6 +26,16 @@ export class RoutePrefixPayload {
 
 export function RoutePrefix<T>(path: string): ClassDecoratorWithPayload<RoutePrefixPayload, T> {
   return makeClassDecorator(RoutePrefix, new RoutePrefixPayload(path), [Inherited().calledBy(RoutePrefix)]);
+}
+
+export namespace RoutePrefix {
+  export function join(type: Type, separator = '/') {
+    return DecoratorRecorder.classSearch(RoutePrefix, type)
+      .map(x => x.payload.path)
+      .filter(x => !!x && x.trim().length)
+      .reverse()
+      .join(separator);
+  }
 }
 
 export class RoutePayload {

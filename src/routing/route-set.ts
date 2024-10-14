@@ -1,17 +1,9 @@
-import {
-  DecoratorOuterFunction,
-  DecoratorRecorder,
-  isType,
-  SetWithInnerKey,
-  Type,
-  VoidCallback
-} from '../core';
+import { DecoratorOuterFunction, DecoratorRecorder, isType, SetWithInnerKey, Type, VoidCallback } from '../core';
 import { RouteDescriptor } from './route-descriptor';
 import { iterableForEach } from '../iterable';
-import { RouteCallback } from './callback';
 import { HttpMethod } from '../http';
-import { TypeRoutes } from './route';
 import { EventEmitter } from '../events';
+import { ReflectedAction, RouteActionFunction } from './route-action';
 
 export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
   private readonly _changeEmitter = new EventEmitter<{ change: void }>();
@@ -25,8 +17,8 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
     }
   }
 
-  override add(path: string, callback: RouteCallback): this;
-  override add(method: HttpMethod | string, path: string, callback: RouteCallback): this;
+  override add(path: string, action: RouteActionFunction): this;
+  override add(httpMethod: HttpMethod | string, path: string, action: RouteActionFunction): this;
   override add(value: RouteDescriptor): this;
   /**
    * @deprecated experimental
@@ -46,7 +38,7 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
 
     if (isType(args[0])) {
       for (const type of args) {
-        for (const route of new TypeRoutes(type as Type)) {
+        for (const route of ReflectedAction.forType(type as Type)) {
           this.add(route);
         }
       }
@@ -54,14 +46,14 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
     }
 
     if (args.length === 2) {
-      const [path, callback] = args as [string, RouteCallback];
-      const route = new RouteDescriptor({ path, callback });
+      const [path, callback] = args as [string, RouteActionFunction];
+      const route = new RouteDescriptor(path, callback);
       return this.add(route);
     }
 
     if (args.length === 3) {
-      const [method, path, callback] = args as [HttpMethod | string, string, RouteCallback];
-      const route = new RouteDescriptor({ path, method, callback });
+      const [httpMethod, path, action] = args as [HttpMethod | string, string, RouteActionFunction];
+      const route = new RouteDescriptor(path, action, httpMethod);
       return this.add(route);
     }
 
@@ -92,7 +84,7 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
         return result;
       }, [] as Function[]);
     for (const type of types) {
-      for (const route of new TypeRoutes(type as Type)) {
+      for (const route of ReflectedAction.forType(type as Type)) {
         this.add(route);
       }
     }

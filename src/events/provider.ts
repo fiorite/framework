@@ -16,7 +16,7 @@ export function addEventEmitter(): ApplicationConfigureFunction {
         (_, result) => result([]);
 
       emitter.on(record.payload as string | symbol | number, event => { // todo: add analyzer component and point out that events cannot be handled in Scoped behavior.
-        provider.instantiateIfMissing(record.path[0], instance => {
+        provider.prototypeWhenMissing(record.path[0], instance => {
           params(provider, args => instance[record.path[1]](event, ...args));
         });
       });
