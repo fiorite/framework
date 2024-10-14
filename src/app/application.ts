@@ -17,10 +17,13 @@ import {
   promiseWhenNoCallback,
   VoidCallback
 } from '../core';
-import { featureHttpServer, httpServerPort } from './http-server';
-import { dbCoreServices } from '../db';
-import { featureConsoleLogger } from './logging';
-import { addEventEmitter } from '../events';
+import { addHttpServer, httpServerPort } from './http-server';
+import { addDbManager } from '../db';
+import { addConsoleLogger } from './logging';
+import { addEvents } from '../events';
+import { addRouting } from './routing';
+import { addCors } from './cors';
+import { addJsonParser } from './json-parser';
 
 // todo: make reactive application which extends as it goes.
 export class Application {
@@ -94,17 +97,22 @@ export function makeApplication(...features: ApplicationConfigureFunction[]): Ap
   const provider = new ServiceProvider();
   const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
   provider.addValue(Symbol.for('development'), development);
-  featureConsoleLogger(development ? LogLevel.Debug : undefined)(provider); // todo: make configurable
-  dbCoreServices(provider);
-  addEventEmitter()(provider);
+  addConsoleLogger(provider, development ? LogLevel.Debug : undefined); // todo: make configurable
+  addDbManager(provider);
+  addEvents(provider);
 
   // enqueue all the features:
 
   const queue = new CallbackQueue();
 
-  const runnerLoader = ComputedCallback.preCache<void>(complete => {
-    featureHttpServer(Number(currentJsPlatform === 'nodejs' ? (() => process.env['PORT'])() : 3000 || 3000), complete)(provider);
+  const runnerLoader = ComputedCallback.preCache<void>(done => {
+    const port = Number(currentJsPlatform === 'nodejs' ? (() => process.env['PORT'])() : 3000 || 3000);
+    addHttpServer(provider, port, done);
   });
+
+  addRouting(provider);
+  addCors(provider);
+  addJsonParser(provider);
 
   runProviderContext(provider, closeGlobalContext => {
     features.forEach(featureFn => queue.add(done => MaybePromiseLike.then(() => featureFn(provider), done)));
@@ -128,6 +136,5 @@ export function makeApplication(...features: ApplicationConfigureFunction[]): Ap
   });
 
   queue.add(done => runnerLoader.then(done));
-
   return new Application(provider, queue);
 }

@@ -1,14 +1,13 @@
-import { ApplicationConfigureFunction } from '../app';
 import { DbConnectionName, DbManager } from './manager';
 import { DbModel } from './model';
 import { DbSequence } from './sequence';
-import { Provide, provide, ProvideDecorator } from '../di';
+import { Provide, provide, ProvideDecorator, ServiceProvider } from '../di';
 
-export const dbCoreServices: ApplicationConfigureFunction = provider => {
+export function addDbManager(provider: ServiceProvider) {
   if (!provider.has(DbManager)) {
     provider.addSingleton(DbManager);
   }
-};
+}
 
 export function fromDb<T>(model: DbModel<T>, connection?: DbConnectionName): DbSequence<T> {
   const adapter = provide(DbManager).get(connection);

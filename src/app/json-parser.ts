@@ -1,6 +1,6 @@
 import { HttpBodyResult, HttpCallback, HttpPipeline } from '../http';
 import { FunctionClass } from '../core';
-import { ApplicationConfigureFunction } from './application';
+import { ServiceProvider } from '../di';
 
 export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
   constructor() {
@@ -42,10 +42,8 @@ export class JsonParserMiddleware extends FunctionClass<HttpCallback> {
   }
 }
 
-export function featureJsonParser(): ApplicationConfigureFunction {
+export function addJsonParser(provider: ServiceProvider): void {
   const middleware = new JsonParserMiddleware();
-  return provider => {
-    provider.addScoped(HttpBodyResult).addValue(JsonParserMiddleware, middleware);
-    provider(HttpPipeline).add(middleware);
-  };
+  provider.addScoped(HttpBodyResult).addValue(JsonParserMiddleware, middleware);
+  provider(HttpPipeline).add(middleware);
 }

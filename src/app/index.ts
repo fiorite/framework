@@ -1,7 +1,7 @@
 export { makeApplication, Application, ApplicationConfigureFunction } from './application';
-export { featureCors, CorsMiddleware } from './cors';
-export { featureJsonParser, JsonParserMiddleware } from './json-parser';
-export { featureConsoleLogger } from './logging';
-export { featureMiddleware } from './middleware';
+export { addCors, CorsMiddleware } from './cors';
+export { addJsonParser, JsonParserMiddleware } from './json-parser';
+export { addConsoleLogger } from './logging';
+export { addMiddleware } from './middleware';
 export { addRouting } from './routing';
-export { featureHttpServer } from './http-server';
+export { addHttpServer } from './http-server';
