@@ -73,6 +73,27 @@ export class RouteMatcher {
     return this._routeSet;
   }
 
+  get add() {
+    return (method: HttpMethod | string, path: string, action: RouteActionFunction) => {
+      this._routeSet.add(method, path, action);
+      return this;
+    }
+  }
+
+  get all(): (path: string, action: RouteActionFunction) => this {
+    return (path, action) => {
+      this._routeSet.add(path, action);
+      return this;
+    }
+  }
+
+  get get(): (path: string, action: RouteActionFunction) => this {
+    return (path, action) => {
+      this._routeSet.add(HttpMethod.Get, path, action);
+      return this;
+    }
+  }
+
   constructor(descriptors: Iterable<RouteDescriptor>) {
     this._routeSet = new RouteSet(descriptors, () => this._mapMatcher());
     this._mapMatcher();
@@ -114,49 +135,35 @@ export class RouteMatcher {
     }
   }
 
-  private _add(method: HttpMethod | string, path: string, action: RouteActionFunction): this {
-    this._routeSet.add(method, path, action);
-    return this;
-  }
-
-  all(path: string, action: RouteActionFunction): this {
-    this._routeSet.add(path, action);
-    return this;
-  }
-
-  get(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Get, path, action);
-  }
-
   head(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Head, path, action);
+    return this.add(HttpMethod.Head, path, action);
   }
 
   post(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Post, path, action);
+    return this.add(HttpMethod.Post, path, action);
   }
 
   put(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Put, path, action);
+    return this.add(HttpMethod.Put, path, action);
   }
 
   delete(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Delete, path, action);
+    return this.add(HttpMethod.Delete, path, action);
   }
 
   connect(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Connect, path, action);
+    return this.add(HttpMethod.Connect, path, action);
   }
 
   options(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Options, path, action);
+    return this.add(HttpMethod.Options, path, action);
   }
 
   trace(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Trace, path, action);
+    return this.add(HttpMethod.Trace, path, action);
   }
 
   patch(path: string, action: RouteActionFunction): this {
-    return this._add(HttpMethod.Patch, path, action);
+    return this.add(HttpMethod.Patch, path, action);
   }
 }

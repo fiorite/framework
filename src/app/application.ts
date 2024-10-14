@@ -63,7 +63,7 @@ export class Application {
     this._queue = queue;
   }
 
-  call(callback: (complete: VoidCallback) => void): void {
+  within(callback: (complete: VoidCallback) => void): void {
     runProviderContext(this._provider, callback);
   }
 
@@ -132,3 +132,5 @@ export function makeApplication(...features: ServiceConfigureFunction[]): Applic
   queue.add(done => runnerLoader.then(done));
   return new Application(provider, queue);
 }
+
+export const make = { application: makeApplication };

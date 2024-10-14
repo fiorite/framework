@@ -1,1 +1,1 @@
-export { makeApplication, Application } from './application';
+export { makeApplication, Application, make } from './application';

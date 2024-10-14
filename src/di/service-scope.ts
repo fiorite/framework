@@ -5,17 +5,17 @@ export class ServiceScope implements Iterable<[ServiceType, unknown]> {
   readonly #scoped = new Map<ServiceType, unknown>();
   readonly #callbackShare = new CallbackShare();
 
-  through<T>(type: ServiceType<T>, complete: (callback: ValueCallback<T>) => void, then: ValueCallback<T>): void {
+  through<T>(type: ServiceType<T>, result: (callback: ValueCallback<T>) => void, done: ValueCallback<T>): void {
     if (this.#scoped.has(type)) {
-      return then(this.#scoped.get(type) as T);
+      return done(this.#scoped.get(type) as T);
     }
 
     this.#callbackShare(ServiceType.toString(type), callback => {
-      complete(instance => {
+      result(instance => {
         this.#scoped.set(type, instance);
         callback(instance);
       });
-    }, then);
+    }, done);
   }
 
   [Symbol.iterator](): Iterator<[ServiceType, unknown]> {

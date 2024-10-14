@@ -8,3 +8,5 @@ export function emit(event: object): boolean;
 export function emit(...args: unknown[]): boolean {
   return (provide(EventEmitter).emit as Function)(...args);
 }
+
+// todo: add on/once/off

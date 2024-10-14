@@ -155,7 +155,7 @@ export const bootstrapFiorite = (projectDir: string, config: {
         });
 
         server.middlewares.use((req, res) => {
-          app.call(complete => {
+          app.within(complete => {
             appServer.platformRunner.then(runner => (runner as NodeJsHttpServer)(req, res));
             res.on('close', complete); // todo: extend lifecycle and perhaps connect to scope lifetime.
           });
