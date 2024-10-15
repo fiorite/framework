@@ -191,7 +191,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       this._serviceSet = new ServiceSet(descriptors, {
         add: descriptor => {
           this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior](descriptor));
-          if (this._preCacheSingletons && descriptor.isSingleton) {
+          if (this._preCacheSingletons && descriptor.singletonBehavior) {
             this._provide(descriptor.type, emptyCallback);
           }
         },
@@ -203,7 +203,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
           this._runtimeMap.delete(descriptor.type);
 
           if ( // delete singleton instance
-            descriptor.isSingleton && this._singletons.has(descriptor.type)
+            descriptor.singletonBehavior && this._singletons.has(descriptor.type)
           ) {
             this._singletons.delete(descriptor.type);
           }
@@ -309,13 +309,13 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     const queue: ServiceDescriptor[] = [];
 
     if (descriptors.length) {
-      if (descriptors.some(x => !x.isInherited)) {
+      if (descriptors.some(x => !x.inheritedBehavior)) {
         throw new Error('requested service is not inherited');
       }
       queue.push(...descriptors);
     } else {
       this._serviceSet.forEach(descriptor => {
-        if (descriptor.isInherited) {
+        if (descriptor.inheritedBehavior) {
           queue.push(descriptor);
         }
       });
@@ -335,7 +335,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
         return x;
       });
 
-      const inheritedDeps = dependencies.filter(x => x.isInherited);
+      const inheritedDeps = dependencies.filter(x => x.inheritedBehavior);
       if (inheritedDeps.length) {
         inheritedDeps.forEach(inheritedDescriptor => { // clean queue
           const index = queue.findIndex(x => x.type === inheritedDescriptor.type);
@@ -345,7 +345,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
         // put dependencies first and current descriptor in the end.
         queue.unshift(...inheritedDeps, descriptor1);
       } else {
-        const behaviorToInherit = dependencies.some(dependency => dependency.isScoped) ?
+        const behaviorToInherit = dependencies.some(dependency => dependency.scopedBehavior) ?
           ServiceBehavior.Scoped : ServiceBehavior.Singleton;
         result.push(descriptor1.inherit(behaviorToInherit));
       }
@@ -384,8 +384,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       //   throw new Error('Inherit behavior is not resolved: ' + ServiceType.toString(dependency1.type));
       // }
 
-      if (declaration.isSingleton) {
-        const index2 = dependencies.findIndex(x => x.isScoped);
+      if (declaration.singletonBehavior) {
+        const index2 = dependencies.findIndex(x => x.scopedBehavior);
         if (index2 > -1) {
           const dependency2 = dependencies[index2];
           throw new Error(`Faulty behavior dependency. Singleton (${ServiceType.toString(declaration.type)}) cannot depend on Scope (${ServiceType.toString(dependency2.type)}) behavior.`);
@@ -419,7 +419,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     const descriptors: ServiceDescriptor[] = [];
     this._serviceSet.forEach(descriptor => {
-      if (descriptor.isSingleton && !this._singletons.has(descriptor.type)) {
+      if (descriptor.singletonBehavior && !this._singletons.has(descriptor.type)) {
         descriptors.push(descriptor);
       }
     });

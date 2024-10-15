@@ -8,14 +8,14 @@ export class EmptyIterableError {
   readonly message = 'No elements in a sequence.';
 }
 
-export function iterableFirst<T>(callback: ValueCallback<T>): IterableOperatorFunction<T, void> {
+export function iterableFirst<T>(done: ValueCallback<T>): IterableOperatorFunction<T, void> {
   return iterable => {
     const iterator = getIterator(iterable);
     iterator.next(result => {
       if (result.done) {
         throw new EmptyIterableError();
       }
-      callback(result.value);
+      done(result.value);
       if (iterator.return) {
         iterator.return(emptyCallback);
       }

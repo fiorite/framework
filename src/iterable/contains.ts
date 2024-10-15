@@ -9,7 +9,6 @@ export function iterableContains<T>(value: PromiseLike<T>, callback: ValueCallba
 export function iterableContains<T>(value: T, callback: ValueCallback<boolean>, comparer?: EqualityComparer<T>): IterableOperatorFunction<T, void>;
 export function iterableContains<T>(value: MaybePromiseLike<T>, callback: ValueCallback<boolean>, comparer: EqualityComparer<T> = defaultComparer): IterableOperatorFunction<T, void> {
   return iterable => {
-    let counter = 0;
     const iterator = getIterator(iterable);
     const completePositive = () => {
       callback(true);
