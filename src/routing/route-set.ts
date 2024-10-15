@@ -4,6 +4,7 @@ import { iterableForEach } from '../iterable';
 import { HttpMethod } from '../http';
 import { EventEmitter } from '../events';
 import { ReflectedAction, RouteActionFunction } from './route-action';
+import { log } from '../logging';
 
 export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
   private readonly _changeEmitter = new EventEmitter<{ change: void }>();
@@ -86,6 +87,7 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
     for (const type of types) {
       for (const route of ReflectedAction.forType(type as Type)) {
         this.add(route);
+        log.debug(`route-add: ${route.toString()}`);
       }
     }
     return this;
