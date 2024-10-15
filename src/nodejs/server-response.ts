@@ -1,8 +1,8 @@
 import type { ServerResponse } from 'node:http';
-import { HttpResponse, HttpResponseHeader } from '../response';
-import { HttpHeaders } from '../headers';
-import { HttpStatusCode } from '../status-code';
-import { VoidCallback } from '../../core';
+import { HttpResponse, HttpResponseHeader } from '../http/response';
+import { HttpHeaders } from '../http/headers';
+import { HttpStatusCode } from '../http/status-code';
+import { VoidCallback } from '../core';
 
 export class NodeJsServerResponseHeaders implements HttpHeaders<HttpResponseHeader | string> {
   get [Symbol.toStringTag](): string {

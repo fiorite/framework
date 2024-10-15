@@ -6,7 +6,6 @@ export { HttpError } from './error';
 export { HttpHeaders } from './headers';
 export { JsonParserMiddleware, addJsonParser } from './json-parser';
 export { HttpMessageHeader, HttpMessage, HttpMessageCloseFunction } from './message';
-export { HttpMessageWriter } from './message-writer';
 export { HttpMethod } from './method';
 export { addMiddleware } from './middleware';
 export { HttpPipeline } from './pipeline';

@@ -14,21 +14,21 @@ export type ModelFieldTypeToJs = {
 
 /** @deprecated will be used outside */
 export abstract class ModelField implements Equatable {
-  readonly #type: ModelFieldType;
+  private readonly _type: ModelFieldType;
 
   get type(): ModelFieldType {
-    return this.#type;
+    return this._type;
   }
 
-  readonly #optional: boolean;
+  private readonly _optional: boolean;
 
   get optional(): boolean {
-    return this.#optional;
+    return this._optional;
   }
 
   protected constructor(type: ModelFieldType, optional?: boolean) {
-    this.#type = type;
-    this.#optional = Boolean(optional);
+    this._type = type;
+    this._optional = Boolean(optional);
   }
 
   equals(other: unknown): other is this {

@@ -1,20 +1,20 @@
 import { Statement } from 'sqlite3';
 import { AsyncLikeIterableIterator } from '../iterable';
-import { futureCallback, MaybePromiseLike, FutureCallback } from '../core';
+import { futureCallback, MaybePromiseLike, PromiseLikeCallback } from '../core';
 import { DbModelField, DbObject } from '../db';
 import { ModelFieldType } from '../data';
 
 export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
-  readonly #fields: readonly DbModelField[];
-  readonly #statement: Statement;
+  private readonly _fields: readonly DbModelField[];
+  private readonly _statement: Statement;
 
   constructor(fields: readonly DbModelField[], statement: Statement) {
-    this.#fields = fields;
-    this.#statement = statement;
+    this._fields = fields;
+    this._statement = statement;
   }
 
-  #transform(object: DbObject): DbObject { // todo: move to data manipulator instance.
-    return this.#fields.reduce((result, field) => { // add name <=> key transformation
+  private _transform(object: DbObject): DbObject { // todo: move to data manipulator instance.
+    return this._fields.reduce((result, field) => { // add name <=> key transformation
       const value = object[field.name as any];
       if (null === value) {
         result[field.name as any] = undefined;
@@ -27,9 +27,9 @@ export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
     }, {} as DbObject);
   }
 
-  next(): FutureCallback<IteratorResult<DbObject>> {
+  next(): PromiseLikeCallback<IteratorResult<DbObject>> {
     return futureCallback(complete => {
-      this.#statement.get((error: Error | null, row: DbObject) => {
+      this._statement.get((error: Error | null, row: DbObject) => {
         if (null !== error) {
           throw error;
         }
@@ -37,15 +37,15 @@ export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
         complete(
           undefined === row ?
             { value: undefined, done: true } : // todo: think of return type, maybe
-            { value: this.#transform(row), done: false }
+            { value: this._transform(row), done: false }
         );
       });
     });
   }
 
-  return(value?: MaybePromiseLike<unknown>): FutureCallback<IteratorResult<DbObject>> {
+  return(value?: MaybePromiseLike<unknown>): PromiseLikeCallback<IteratorResult<DbObject>> {
     return futureCallback(complete => {
-      this.#statement.finalize((error?: Error) => {
+      this._statement.finalize((error?: Error) => {
         if (error) {
           throw error;
         }

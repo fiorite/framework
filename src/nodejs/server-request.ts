@@ -1,8 +1,8 @@
-import { HttpQuery, HttpRequest, HttpRequestHeader } from '../request';
-import { HttpHeaders } from '../headers';
+import { HttpQuery, HttpRequest, HttpRequestHeader } from '../http/request';
+import { HttpHeaders } from '../http/headers';
 import type { IncomingMessage } from 'http';
-import { HttpMethod } from '../method';
-import { ValueCallback, VoidCallback } from '../../core';
+import { HttpMethod } from '../http/method';
+import { ValueCallback, VoidCallback } from '../core';
 import { TLSSocket } from 'tls';
 
 export class NodeJsServerRequestHeaders implements HttpHeaders<HttpRequestHeader | string> {

@@ -43,15 +43,15 @@ export class ServiceFactory<T> extends FunctionClass<ServiceFactoryCallback<T>> 
 }
 
 export class ValueFactory<T> extends ServiceFactory<T> {
-  readonly #value: T;
+  private readonly _value: T;
 
   get value(): T {
-    return this.#value;
+    return this._value;
   }
 
   constructor(value: T) {
     super((_, callback) => callback(value), []);
-    this.#value = value;
+    this._value = value;
   }
 }
 

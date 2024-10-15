@@ -1,21 +1,21 @@
 export class HttpBodyResult<T> {
-  #completed = false;
+  private _done = false;
 
-  get completed(): boolean {
-    return this.#completed;
+  get done(): boolean {
+    return this._done;
   }
 
-  #value?: T;
+  private _value?: T;
 
   get value(): T | undefined {
-    return this.#value;
+    return this._value;
   }
 
   complete(value: T): void {
-    if (this.#completed) {
+    if (this._done) {
       throw new Error('body is fulfilled already.');
     }
-    this.#completed = true;
-    this.#value = value;
+    this._done = true;
+    this._value = value;
   }
 }

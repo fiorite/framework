@@ -16,7 +16,7 @@ import { firestoreDocumentId } from './document';
 import { VoidCallback } from '../core';
 
 export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
-  #firestore: Firestore;
+  private _firestore: Firestore;
 
   get reader(): this {
     return this;
@@ -27,7 +27,7 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
   }
 
   constructor(firestore: Firestore) {
-    this.#firestore = firestore;
+    this._firestore = firestore;
   }
 
   private _fieldKeyToFirestoreKey(key: string | symbol): FieldPath | string {
@@ -36,7 +36,7 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
 
   read({ model, query, fields }: DbReadContext): FirestoreDbIterator {
     const fieldNames = fields.map(x => x.name);
-    let collection: Query = this.#firestore.collection(model).select(
+    let collection: Query = this._firestore.collection(model).select(
       ...fieldNames.filter(field => typeof field === 'string') as string[]
     );
     const includeDocumentId = fieldNames.includes(firestoreDocumentId);
@@ -73,7 +73,7 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
   }
 
   create({ object, model }: DbCreateContext, callback: VoidCallback): void {
-    const collection = this.#firestore.collection(model);
+    const collection = this._firestore.collection(model);
 
     if (firestoreDocumentId in object) {
       // todo: add object key filter, leave strings,
@@ -94,7 +94,7 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
     }
   }
 
-  #findWhere(collection: CollectionReference, where: readonly DbWhere[]) {
+  private _findWhere(collection: CollectionReference, where: readonly DbWhere[]) {
     let query: Query = collection;
     for (const entry of where) {
       query = query.where(this._fieldKeyToFirestoreKey(entry.key), '==', entry.value);
@@ -103,8 +103,8 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
   }
 
   update({ model, modified, where }: DbUpdateContext, callback: VoidCallback): void {
-    const collection = this.#firestore.collection(model);
-    this.#findWhere(collection, where).then(snapshot => {
+    const collection = this._firestore.collection(model);
+    this._findWhere(collection, where).then(snapshot => {
       if (snapshot.size !== 1) {
         throw new Error('either no documents or more than one, no good.');
       } else {
@@ -117,8 +117,8 @@ export class FirestoreDbAdapter implements DbAdapter, DbReader, DbWriter {
   }
 
   delete({ model, where }: DbDeleteContext, callback: VoidCallback): void {
-    const collection = this.#firestore.collection(model);
-    this.#findWhere(collection, where).then(snapshot => {
+    const collection = this._firestore.collection(model);
+    this._findWhere(collection, where).then(snapshot => {
       if (snapshot.size !== 1) {
         throw new Error('either no documents or more than one, no good.');
       } else {

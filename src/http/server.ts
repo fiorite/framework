@@ -1,5 +1,5 @@
 import {
-  FutureCallback,
+  PromiseLikeCallback,
   ComputedCallback,
   computedCallback,
   currentJsPlatform,
@@ -8,7 +8,7 @@ import {
   VoidCallback, emptyCallback
 } from '../core';
 import { HttpCallback } from './callback';
-import type { NodeJsHttpServer, NodeJsServerRequest, NodeJsServerResponse } from './nodejs';
+import type { NodeJsHttpServer, NodeJsServerRequest, NodeJsServerResponse } from '../nodejs';
 import { ServiceProvider } from '../di';
 import { HttpPipeline } from './pipeline';
 import { HttpContext, HttpContextHost } from './context';
@@ -24,13 +24,13 @@ export class HttpServer extends FunctionClass<HttpCallback> implements HttpServe
 
   private readonly _platformRunner: ComputedCallback<HttpServerRunner>;
 
-  get platformRunner(): FutureCallback<HttpServerRunner> {
+  get platformRunner(): PromiseLikeCallback<HttpServerRunner> {
     return this._platformRunner;
   }
 
   private readonly _nodeJsRunner: ComputedCallback<NodeJsHttpServer>;
 
-  get nodeJsRunner(): FutureCallback<NodeJsHttpServer> {
+  get nodeJsRunner(): PromiseLikeCallback<NodeJsHttpServer> {
     return this._nodeJsRunner;
   }
 
@@ -38,7 +38,7 @@ export class HttpServer extends FunctionClass<HttpCallback> implements HttpServe
     super(callback);
     this._callback = callback;
     this._nodeJsRunner = computedCallback(complete => {
-      import('./nodejs').then(module => {
+      import('../nodejs').then(module => {
         complete(new module.NodeJsHttpServer(this._callback));
       });
     });

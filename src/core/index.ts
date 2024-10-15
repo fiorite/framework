@@ -12,7 +12,7 @@ export {
   ComputedCallback,
   computedCallback,
   futureCallback,
-  FutureCallback,
+  PromiseLikeCallback,
   CallbackQueue,
   future,
   computed,

@@ -1,8 +1,8 @@
-import { emptyCallback, FunctionClass, VoidCallback } from '../../core';
+import { emptyCallback, FunctionClass, VoidCallback } from '../core';
 import { createServer, IncomingMessage, RequestListener, Server, ServerResponse } from 'node:http';
-import { HttpCallback } from '../callback';
-import { HttpContext } from '../context';
-import type { HttpServerRunner } from '../server';
+import { HttpCallback } from '../http/callback';
+import { HttpContext } from '../http/context';
+import type { HttpServerRunner } from '../http/server';
 import { NodeJsServerRequest } from './server-request';
 import { NodeJsServerResponse } from './server-response';
 

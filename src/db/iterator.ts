@@ -1,7 +1,7 @@
 import { AsyncLikeIterableIterator, iterableToArray, MaybeAsyncLikeIterable } from '../iterable';
 import { DbObject } from './object';
 import {
-  FutureCallback,
+  PromiseLikeCallback,
   futureCallback,
   MaybePromiseLike,
   computedCallback,
@@ -18,29 +18,29 @@ import { DbWhere, DbWhereOperator } from './where';
  * Experimental feature, idea to have rich functionality and write less in adapter code.
  */
 export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
-  readonly #query: DbLooseQuery;
-  readonly #share: ComputedCallback<AsyncLikeIterableIterator<DbObject>>;
+  private readonly _query: DbLooseQuery;
+  private readonly _share: ComputedCallback<AsyncLikeIterableIterator<DbObject>>;
 
   constructor(reader: DbReader, model: DbModel, query: DbLooseQuery) {
-    this.#query = query;
+    this._query = query;
 
-    this.#share = computedCallback(complete => {
-      this.#synchronizeQuery(query2 => {
+    this._share = computedCallback(complete => {
+      this._synchronizeQuery(query2 => {
         complete(reader.read({ model: model.name, query: query2, fields: Object.values(model.fields) }));
       });
     });
   }
 
-  next(): FutureCallback<IteratorResult<DbObject, unknown>> {
-    return this.#share.value ? this.#share.value.next() : futureCallback(then => {
-      this.#share.then(iterator => iterator.next().then(then));
+  next(): PromiseLikeCallback<IteratorResult<DbObject, unknown>> {
+    return this._share.value ? this._share.value.next() : futureCallback(then => {
+      this._share.then(iterator => iterator.next().then(then));
     });
   }
 
-  return(value?: MaybePromiseLike<unknown>): FutureCallback<IteratorResult<DbObject, unknown>> {
-    if (this.#share.value) {
-      if (this.#share.value.return) {
-        return this.#share.value.return(value);
+  return(value?: MaybePromiseLike<unknown>): PromiseLikeCallback<IteratorResult<DbObject, unknown>> {
+    if (this._share.value) {
+      if (this._share.value.return) {
+        return this._share.value.return(value);
       } else {
         return futureCallback(complete => {
           value ? MaybePromiseLike.then(() => value, value2 => {
@@ -51,7 +51,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
     }
 
     return futureCallback(complete => {
-      this.#share.then(iterator => {
+      this._share.then(iterator => {
         if (iterator.return) {
           iterator.return(value).then(complete);
         } else {
@@ -63,9 +63,9 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
     });
   }
 
-  #synchronizeQuery(callback: ValueCallback<DbQuery>): void {
-    if (this.#query.where) {
-      const wheres = Array.from(this.#query.where);
+  private _synchronizeQuery(callback: ValueCallback<DbQuery>): void {
+    if (this._query.where) {
+      const wheres = Array.from(this._query.where);
 
       MaybePromiseLike.all(() => {
         return wheres.map(where => {
@@ -81,14 +81,14 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
         values.forEach((value, index) => {
           whereArray.push(new DbWhere(wheres[index].key, wheres[index].operator as any, value/*, wheres[index].condition*/));
         });
-        callback({ ...this.#query as DbQuery, where: whereArray });
+        callback({ ...this._query as DbQuery, where: whereArray });
       });
     } else {
-      callback({ ...this.#query as DbQuery });
+      callback({ ...this._query as DbQuery });
     }
   }
 
   [Symbol.asyncIterator](): AsyncLikeIterableIterator<DbObject> {
-    return this.#share.value || this;
+    return this._share.value || this;
   }
 }

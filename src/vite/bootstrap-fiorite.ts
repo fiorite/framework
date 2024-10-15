@@ -8,7 +8,7 @@ import type { HttpServer } from '../http';
 import type { Options as SWCOptions } from '@swc/types';
 import { includeDotNode } from './include-dot-node';
 import { replaceDirname } from './replace-dirname';
-import type { NodeJsHttpServer } from '../http/nodejs';
+import type { NodeJsHttpServer } from '../nodejs';
 
 /**
  * Directory where vite config exists, or project root.

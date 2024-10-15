@@ -20,22 +20,22 @@ import { AsyncLikeIterable } from './iterable';
 import { iterableContains } from './contains';
 
 export class AsyncSequence<T> implements AsyncLikeIterable<T> {
-  readonly #iterable: AsyncLikeIterable<T>;
-  readonly #comparer: EqualityComparer<T>;
+  private readonly _iterable: AsyncLikeIterable<T>;
+  private readonly _comparer: EqualityComparer<T>;
 
   constructor(iterable: AsyncLikeIterable<T>, comparer: EqualityComparer<T> = defaultComparer) {
-    this.#iterable = iterable;
-    this.#comparer = comparer;
+    this._iterable = iterable;
+    this._comparer = comparer;
   }
 
-  #project<R>(operator: IterableProjectFunction<T, R>, comparer: EqualityComparer<R>): AsyncSequence<R> {
+  private _operate<R>(operator: IterableProjectFunction<T, R>, comparer: EqualityComparer<R>): AsyncSequence<R> {
     return new AsyncSequence(operator(this), comparer);
   }
 
   contains(value: MaybePromiseLike<T>, callback: ValueCallback<boolean>): void;
   contains(value: MaybePromiseLike<T>): PromiseLike<boolean>;
   contains(value: MaybePromiseLike<T>, callback?: ValueCallback<boolean>): unknown {
-    return promiseWhenNoCallback(callback => iterableContains(value as T, callback, this.#comparer)(this), callback);
+    return promiseWhenNoCallback(callback => iterableContains(value as T, callback, this._comparer)(this), callback);
   }
 
   count(callback: ValueCallback<number>): void;
@@ -45,7 +45,7 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
   }
 
   filter(predicate: MapCallback<T, MaybePromiseLike<unknown>>): AsyncSequence<T> {
-    return this.#project(iterableFilter<T>(predicate), this.#comparer);
+    return this._operate(iterableFilter<T>(predicate), this._comparer);
   }
 
   first(callback: ValueCallback<T>): void;
@@ -69,15 +69,15 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
   }
 
   map<R>(callback: MapCallback<T, MaybePromiseLike<R>>, comparer: EqualityComparer<R> = defaultComparer): AsyncSequence<R> {
-    return this.#project(iterableMap(callback) as IterableProjectFunction<T, R>, comparer);
+    return this._operate(iterableMap(callback) as IterableProjectFunction<T, R>, comparer);
   }
 
   skip(count: number): AsyncSequence<T> {
-    return this.#project(iterableSkip<T>(count), this.#comparer);
+    return this._operate(iterableSkip<T>(count), this._comparer);
   }
 
   take(count: number): AsyncSequence<T> {
-    return this.#project(iterableTake<T>(count), this.#comparer);
+    return this._operate(iterableTake<T>(count), this._comparer);
   }
 
   toArray(): PromiseLike<T[]>;
@@ -87,6 +87,6 @@ export class AsyncSequence<T> implements AsyncLikeIterable<T> {
   }
 
   [Symbol.asyncIterator]() {
-    return this.#iterable[Symbol.asyncIterator]();
+    return this._iterable[Symbol.asyncIterator]();
   }
 }

@@ -1,5 +1,4 @@
 import { ValueCallback } from './callbacks';
-import { Type } from './type';
 
 export type MaybePromiseLike<T> = PromiseLike<T> | T;
 

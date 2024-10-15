@@ -1,6 +1,6 @@
 import { DbObject, DbReadContext, DbReader } from '../db';
 import { AsyncLikeIterableIterator } from '../iterable';
-import { FutureCallback, ComputedCallback } from '../core';
+import { ComputedCallback, PromiseLikeCallback } from '../core';
 
 // todo: investigate this and implement
 
@@ -47,8 +47,8 @@ export class IdbDbIterator implements AsyncLikeIterableIterator<DbObject> {
     this._cursor = cursor;
   }
 
-  next(): FutureCallback<IteratorResult<DbObject, unknown>> {
-    return new CallbackPromiseLike<IteratorResult<DbObject, unknown>>(complete => {
+  next(): PromiseLikeCallback<IteratorResult<DbObject, unknown>> {
+    return new PromiseLikeCallback<IteratorResult<DbObject, unknown>>(complete => {
       this._cursor.then(value => {
         console.log(value);
       });

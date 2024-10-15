@@ -2,16 +2,16 @@ import { ModelField, ModelFieldType, ModelFieldTypeToJs } from '../data';
 import { DbPrimitiveValue } from './object';
 
 export class DbModelField extends ModelField {
-  readonly #name: string | symbol;
+  private readonly _name: string | symbol;
 
   get name(): string | symbol {
-    return this.#name;
+    return this._name;
   }
 
-  readonly #default?: ModelFieldTypeToJs[typeof this.type];
+  private readonly _default?: ModelFieldTypeToJs[typeof this.type];
 
   get default(): ModelFieldTypeToJs[typeof this.type] | undefined {
-    return this.#default;
+    return this._default;
   }
 
   constructor(
@@ -21,8 +21,8 @@ export class DbModelField extends ModelField {
     default1?: ModelFieldTypeToJs[typeof type]
   ) {
     super(type, optional);
-    this.#name = name;
-    this.#default = default1;
+    this._name = name;
+    this._default = default1;
   }
 
   override equals(other: unknown): other is this {
@@ -39,37 +39,37 @@ export class DbModelFieldBuilder<T extends DbPrimitiveValue = DbPrimitiveValue> 
     readonly field: DbModelField,
     readonly keyMark?: boolean;
   } {
-    const field = new DbModelField(builder.#name || propertyKey, builder.#type, builder.#optional, builder.#default);
-    return { field, keyMark: builder.#keyMark };
+    const field = new DbModelField(builder._name || propertyKey, builder._type, builder._optional, builder._default);
+    return { field, keyMark: builder.  _keyMark };
   }
 
-  #type: ModelFieldType;
-  #name?: string | symbol;
-  #optional?: boolean;
-  #keyMark?: boolean;
-  #default?: DbPrimitiveValue | undefined;
+  private _type: ModelFieldType;
+  private _name?: string | symbol;
+  private _optional?: boolean;
+  private _keyMark?: boolean;
+  private _default?: DbPrimitiveValue | undefined;
 
   get optional(): this {
-    this.#optional = true;
+    this._optional = true;
     return this;
   }
 
   get key(): this {
-    this.#keyMark = true;
+    this.  _keyMark = true;
     return this;
   }
 
   constructor(type: ModelFieldType) {
-    this.#type = type;
+    this._type = type;
   }
 
   name(value: string | symbol): this {
-    this.#name = value;
+    this._name = value;
     return this;
   }
 
   default(value: T | undefined): this { // todo: add function as value generator as an alternative to primitive
-    this.#default = value;
+    this._default = value;
     return this;
   }
 }

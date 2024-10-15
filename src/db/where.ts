@@ -15,22 +15,22 @@ export enum DbWhereOperator {
 // }
 
 export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
-  readonly #key: string | symbol;
+  private readonly _key: string | symbol;
 
   get key(): string | symbol {
-    return this.#key;
+    return this._key;
   }
 
-  readonly #operator: DbWhereOperator;
+  private readonly _operator: DbWhereOperator;
 
   get operator(): DbWhereOperator {
-    return this.#operator;
+    return this._operator;
   }
 
-  readonly #value: typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T;
+  private readonly _value: typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T;
 
   get value(): typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T {
-    return this.#value;
+    return this._value;
   }
 
   // readonly #condition: DbWhereCondition;
@@ -42,14 +42,14 @@ export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
   constructor(key: string | symbol, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: TIterable/*, condition?: DbWhereCondition*/);
   constructor(key: string | symbol, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: T | undefined/*, condition?: DbWhereCondition*/);
   constructor(key: string | symbol, operator: DbWhereOperator | string, value: unknown/*, condition: DbWhereCondition = DbWhereCondition.And*/) {
-    this.#key = key;
-    this.#operator = operator as DbWhereOperator;
-    this.#value = value as typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T;
+    this._key = key;
+    this._operator = operator as DbWhereOperator;
+    this._value = value as typeof this.operator extends DbWhereOperator.In | DbWhereOperator.NotIn ? TIterable : T;
     // this.#condition = condition;
   }
 
   withKey(value: string): DbWhere<T, TIterable> {
-    return new DbWhere<T, TIterable>(value, this.#operator as any, this.#value/*, this.#condition*/);
+    return new DbWhere<T, TIterable>(value, this._operator as any, this._value/*, this.#condition*/);
   }
 }
 

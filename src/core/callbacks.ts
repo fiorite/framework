@@ -37,17 +37,17 @@ export interface CallbackShare {
  * result is shared among all {@link then} up until callback completes.
  */
 export class CallbackShare extends FunctionClass<CallbackShareFunction> {
-  #queue = new Map<string | symbol | number, ValueCallback<unknown>[]>();
+  private readonly _queue = new Map<string | symbol | number, ValueCallback<unknown>[]>();
 
   constructor() {
     super((key, complete, then) => {
-      if (this.#queue.has(key)) {
-        this.#queue.get(key)!.push(then as ValueCallback<unknown>);
+      if (this._queue.has(key)) {
+        this._queue.get(key)!.push(then as ValueCallback<unknown>);
       } else {
-        this.#queue.set(key, [then as ValueCallback<unknown>]);
+        this._queue.set(key, [then as ValueCallback<unknown>]);
         complete(value => {
-          const array = (this.#queue.get(key) || []);
-          this.#queue.delete(key);
+          const array = (this._queue.get(key) || []);
+          this._queue.delete(key);
           array.forEach(callback2 => callback2(value));
         });
       }
@@ -86,7 +86,7 @@ export interface ThenableCallback<T> {
   then(onfulfilled: ValueCallback<T>): void;
 }
 
-export class FutureCallback<T> {
+export class PromiseLikeCallback<T> {
   private readonly _executor: (complete: ValueCallback<T>) => void;
 
   constructor(executor: (complete: ValueCallback<T>) => void) {
@@ -98,14 +98,14 @@ export class FutureCallback<T> {
   }
 }
 
-export function futureCallback<T>(callback: (done: ValueCallback<T>) => void, execute?: boolean): FutureCallback<T> {
-  return new FutureCallback(callback);
+export function futureCallback<T>(callback: (done: ValueCallback<T>) => void, execute?: boolean): PromiseLikeCallback<T> {
+  return new PromiseLikeCallback(callback);
 }
 
 /** @experimental */
 export const future = futureCallback;
 
-export class ComputedCallback<T> extends FutureCallback<T> {
+export class ComputedCallback<T> extends PromiseLikeCallback<T> {
   private _completed?: boolean;
 
   get completed(): boolean | undefined {
