@@ -42,7 +42,7 @@ export class SetWithInnerKey<T, K = T> implements Set<T> {
     return this._innerMap.delete(this._keySelector(value));
   }
 
-  forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void { // todo: handle thisArg?
+  forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, _thisArg?: any): void { // todo: handle thisArg?
     return this._innerMap.forEach(value => callbackfn(value, value, this));
   }
 

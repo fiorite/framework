@@ -20,9 +20,9 @@ export namespace RouteActionFunction {
 }
 
 export class ReflectedAction extends FunctionClass<RouteActionCallback> {
-  private readonly _type: Type;
-  private readonly _propertyKey: string | symbol;
-  private readonly _objectMethodFactory: ObjectMethodFactory<unknown>;
+  // private readonly _type: Type;
+  // private readonly _propertyKey: string | symbol;
+  // private readonly _objectMethodFactory: ObjectMethodFactory<unknown>;
 
   static forType(value: Type): RouteDescriptor[] {
     const prefix = RoutePrefix.join(value);
@@ -49,8 +49,8 @@ export class ReflectedAction extends FunctionClass<RouteActionCallback> {
       });
     });
 
-    this._type = type;
-    this._propertyKey = propertyKey;
-    this._objectMethodFactory = methodFactory;
+    // this._type = type;
+    // this._propertyKey = propertyKey;
+    // this._objectMethodFactory = methodFactory;
   }
 }

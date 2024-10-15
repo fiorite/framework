@@ -13,7 +13,7 @@ export {
   CallbackForceValueError,
   ComputedCallback,
   computedCallback,
-  futureCallback,
+  promiseLikeCallback,
   PromiseLikeCallback,
   CallbackQueue,
   future,

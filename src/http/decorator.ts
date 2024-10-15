@@ -5,13 +5,13 @@ import { HttpContext } from './context';
 import { HttpBodyResult } from './result';
 import { HttpHeaders } from './headers';
 
-export function FromRequest<R>(callback: MapCallback<HttpRequest, MaybePromiseLike<R>>): ProvideDecorator<HttpContext, MaybePromiseLike<R>> {
-  return Provide(HttpContext, context => callback(context.request)).calledBy(FromRequest);
+export function FromRequest<R>(callback: MapCallback<HttpRequest, MaybePromiseLike<R>>): ProvideDecorator<MaybePromiseLike<R>> {
+  return Provide(HttpContext, context => callback(context.request)).calledBy(FromRequest) as any;
 }
 
-export function FromQuery(key: string): ProvideDecorator<HttpContext, string | undefined>;
-export function FromQuery<R>(key: string, callback: MapCallback<string | undefined, MaybePromiseLike<R>>): ProvideDecorator<HttpContext, MaybePromiseLike<R>>;
-export function FromQuery<R>(callback: MapCallback<HttpQuery, R>): ProvideDecorator<HttpContext, MaybePromiseLike<R>>;
+export function FromQuery(key: string): ProvideDecorator<string | undefined>;
+export function FromQuery<R>(key: string, callback: MapCallback<string | undefined, MaybePromiseLike<R>>): ProvideDecorator<MaybePromiseLike<R>>;
+export function FromQuery<R>(callback: MapCallback<HttpQuery, R>): ProvideDecorator<MaybePromiseLike<R>>;
 export function FromQuery(...args: unknown[]) {
   let callback: MapCallback<HttpQuery, unknown>;
   if (1 === args.length) {
@@ -31,9 +31,9 @@ export function FromQuery(...args: unknown[]) {
   return FromRequest(request => callback(request.query)).calledBy(FromQuery);
 }
 
-export function FromHeader(key: string): ProvideDecorator<HttpContext, string | string[] | number | undefined>;
-export function FromHeader<R>(key: string, callback: MapCallback<string | string[] | number | undefined, MaybePromiseLike<R>>): ProvideDecorator<HttpContext, MaybePromiseLike<R>>;
-export function FromHeader<R>(callback: MapCallback<HttpHeaders, R>): ProvideDecorator<HttpContext, MaybePromiseLike<R>>;
+export function FromHeader(key: string): ProvideDecorator<string | string[] | number | undefined>;
+export function FromHeader<R>(key: string, callback: MapCallback<string | string[] | number | undefined, MaybePromiseLike<R>>): ProvideDecorator<MaybePromiseLike<R>>;
+export function FromHeader<R>(callback: MapCallback<HttpHeaders, R>): ProvideDecorator<MaybePromiseLike<R>>;
 export function FromHeader(...args: unknown[]) {
   let callback: MapCallback<HttpHeaders, unknown>;
   if (1 === args.length) {
@@ -54,7 +54,7 @@ export function FromHeader(...args: unknown[]) {
 }
 
 export function FromBody<T>(): ProvideDecorator<HttpBodyResult<T>, T | undefined>;
-export function FromBody<T, R>(callback: MapCallback<T | undefined, MaybePromiseLike<R>>): ProvideDecorator<HttpBodyResult<T>, MaybePromiseLike<R>>;
+export function FromBody<T, R>(callback: MapCallback<T | undefined, MaybePromiseLike<R>>): ProvideDecorator<MaybePromiseLike<R>>;
 export function FromBody(...args: unknown[]) {
   let callback: MapCallback<unknown, unknown> = value => value;
   if (1 === args.length) {

@@ -1,14 +1,13 @@
 import { PluginOption } from 'vite';
 import path from 'path';
 import fs from 'node:fs';
-import swc from '@rollup/plugin-swc';
 import { nodeJsExternal } from './node-js-external';
 import type { Application } from '../app';
 import type { HttpServer } from '../http';
-import type { Options as SWCOptions } from '@swc/types';
 import { includeDotNode } from './include-dot-node';
 import { replaceDirname } from './replace-dirname';
 import type { NodeJsHttpServer } from '../nodejs';
+import typescript from 'rollup-plugin-typescript2';
 
 /**
  * Directory where vite config exists, or project root.
@@ -21,7 +20,6 @@ export const bootstrapFiorite = (projectDir: string, config: {
   readonly rollupExternal?: string[];
   readonly appVar?: string; // 'app' is default
   readonly importAll?: boolean | string | string[];
-  readonly swcOpts?: SWCOptions;
 } = {}): PluginOption[] => {
   const srcDir = config.srcDir || path.resolve(projectDir + '/src');
   const absoluteMainTs = path.resolve(srcDir, config.mainTs || 'main.ts');
@@ -75,28 +73,30 @@ export const bootstrapFiorite = (projectDir: string, config: {
 
   // const importDir = typeof importAll === ;
 
-  const tsCompiler = swc(config.swcOpts || {
-    swc: {
-      cwd: projectDir,
-      module: {
-        type: 'nodenext',
-      },
-      jsc: {
-        parser: {
-          syntax: 'typescript',
-          decorators: true,
-        },
-        target: 'esnext',
-        transform: {
-          legacyDecorator: true,
-          decoratorMetadata: true,
-        },
-      },
-    },
-  });
+  // const tsCompiler =
 
-  const transformTs = (code: string, id: string, options?: { ssr?: boolean; }) =>
-    (tsCompiler.transform as Function)(code, id, options);
+  // const tsCompiler = swc(config.swcOpts || {
+  //   swc: {
+  //     cwd: projectDir,
+  //     module: {
+  //       type: 'nodenext',
+  //     },
+  //     jsc: {
+  //       parser: {
+  //         syntax: 'typescript',
+  //         decorators: true,
+  //       },
+  //       target: 'esnext',
+  //       transform: {
+  //         legacyDecorator: true,
+  //         decoratorMetadata: true,
+  //       },
+  //     },
+  //   },
+  // });
+
+  // const transformTs = (code: string, id: string, options?: { ssr?: boolean; }) =>
+  //   (tsCompiler.transform as Function)(code, id, options);
 
   return [
     {
@@ -107,13 +107,14 @@ export const bootstrapFiorite = (projectDir: string, config: {
           noExternal: env.command === 'build' ? true : undefined,
         },
         build: {
-          ssr: true,
+          ssr: false,
           outDir,
           rollupOptions: {
             input: absoluteMainTs,
             external: config.rollupExternal || nodeJsExternal,
           },
           emptyOutDir: true,
+          // sourcemap: true,
         },
         esbuild: false,
         server: {
@@ -161,16 +162,18 @@ export const bootstrapFiorite = (projectDir: string, config: {
           });
         });
       },
-      transform: (code, id, options) => {
+      transform: (code, id) => {
         if (id.endsWith('.ts')) {
           if (autoImportEnabled && id === absoluteMainTs) {
-            code = makeAutoImportCode() + code;
+            return makeAutoImportCode() + code;
           }
-
-          return transformTs(code, id, options);
+          // return transformTs(code, id, options);
         }
+        return;
+        // return code;
       },
     } as PluginOption,
+    typescript({ cwd: projectDir }),
     includeDotNode(),
     replaceDirname(),
   ];

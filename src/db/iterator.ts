@@ -2,7 +2,7 @@ import { AsyncLikeIterableIterator, iterableToArray, MaybeAsyncLikeIterable } fr
 import { DbObject } from './object';
 import {
   PromiseLikeCallback,
-  futureCallback,
+  promiseLikeCallback,
   MaybePromiseLike,
   computedCallback,
   ComputedCallback,
@@ -32,7 +32,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
   }
 
   next(): PromiseLikeCallback<IteratorResult<DbObject, unknown>> {
-    return this._share.value ? this._share.value.next() : futureCallback(then => {
+    return this._share.value ? this._share.value.next() : promiseLikeCallback(then => {
       this._share.then(iterator => iterator.next().then(then));
     });
   }
@@ -42,7 +42,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
       if (this._share.value.return) {
         return this._share.value.return(value);
       } else {
-        return futureCallback(complete => {
+        return promiseLikeCallback(complete => {
           value ? MaybePromiseLike.then(() => value, value2 => {
             complete({ done: true, value: value2 });
           }) : complete({ done: true, value: undefined });
@@ -50,7 +50,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
       }
     }
 
-    return futureCallback(complete => {
+    return promiseLikeCallback(complete => {
       this._share.then(iterator => {
         if (iterator.return) {
           iterator.return(value).then(complete);
@@ -69,7 +69,7 @@ export class MiddleDbIterator implements AsyncLikeIterableIterator<DbObject> {
 
       MaybePromiseLike.all(() => {
         return wheres.map(where => {
-          return futureCallback(then => {
+          return promiseLikeCallback(then => {
             MaybePromiseLike.then(() => where.value, value2 => {
               [DbWhereOperator.In, DbWhereOperator.NotIn].includes(where.operator) ?
                 iterableToArray(then)(value2 as MaybeAsyncLikeIterable<unknown>) : then(value2);

@@ -20,10 +20,8 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "@rollup/plugin-swc": "^0.4.0",
-    "@rollup/plugin-typescript": "^12.1.0",
-    "@swc/core": "^1.7.26",
     "@types/node": "^18.18.0",
+    "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "~5.4.2",
     "vite": "^5.4.9"
   }

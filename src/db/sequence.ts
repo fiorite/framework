@@ -12,7 +12,7 @@ import { DbModelField } from './model-field';
 import { DbLooseQuery, DbQuery, } from './query';
 import {
   EqualityComparer,
-  futureCallback,
+  promiseLikeCallback,
   MaybePromiseLike,
   promiseWhenNoCallback,
   ValueCallback,
@@ -304,7 +304,7 @@ export class DbSequence<T> extends DbSequenceQuery<T> {
         callback();
         return;
       }
-      return futureCallback(then => then(void 0));
+      return promiseLikeCallback(then => then(void 0));
     }
 
     return promiseWhenNoCallback<void>(callback => {

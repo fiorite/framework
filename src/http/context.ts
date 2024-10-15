@@ -1,4 +1,4 @@
-import { ServiceProvideFunction, ServiceProvider } from '../di';
+import { ServiceProvider } from '../di';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
 import { ValueCallback, VoidCallback } from '../core';

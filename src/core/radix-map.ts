@@ -77,11 +77,11 @@ export class RadixMap<T> implements Map<string, T> {
     return this;
   }
 
-  delete(path: string): boolean {
+  delete(_path: string): boolean {
     throw new Error('Method not implemented.');
   }
 
-  forEach(callbackfn: (value: T, key: string, map: Map<string, T>) => void, thisArg?: any): void {
+  forEach(_callbackfn: (value: T, key: string, map: Map<string, T>) => void, _thisArg?: any): void {
     throw new Error('Method not implemented.');
   }
 

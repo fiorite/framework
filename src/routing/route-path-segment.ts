@@ -162,9 +162,9 @@ export class DynamicPathSegment extends RoutePathSegment {
   }
 }
 
-enum SyntaxType {
-  Colon,
-}
+// enum SyntaxType {
+//   Colon,
+// }
 
 export class CatchAllPathSegment extends RoutePathSegment {
   private readonly _name?: string;

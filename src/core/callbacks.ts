@@ -82,7 +82,7 @@ export const forceCallbackValue = <T>(callback: (catchValue: ValueCallback<T>) =
  * ES6 is still able to `await` the value, so this works in internal stuff.
  * **Important:** avoid using it unless you have a clear reason for it.
  */
-export interface ThenableCallback<T> {
+export interface PromiseLikeCallback<T> {
   then(onfulfilled: ValueCallback<T>): void;
 }
 
@@ -98,12 +98,12 @@ export class PromiseLikeCallback<T> {
   }
 }
 
-export function futureCallback<T>(callback: (done: ValueCallback<T>) => void, execute?: boolean): PromiseLikeCallback<T> {
+export function promiseLikeCallback<T>(callback: (done: ValueCallback<T>) => void): PromiseLikeCallback<T> {
   return new PromiseLikeCallback(callback);
 }
 
 /** @experimental */
-export const future = futureCallback;
+export const future = promiseLikeCallback;
 
 export class ComputedCallback<T> extends PromiseLikeCallback<T> {
   private _completed?: boolean;

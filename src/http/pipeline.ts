@@ -35,11 +35,11 @@ export class HttpPipeline extends FunctionClass<HttpCallback> implements Set<Htt
   }
 
   private _callback: HttpCallback;
-  private readonly _fallback: HttpCallback;
+  // private readonly _fallback: HttpCallback;
 
   constructor(array: Iterable<HttpCallback> = [], fallback: HttpCallback = defaultFallback) {
     super((context, next) => this._callback(context, () => fallback(context, next)));
-    this._fallback = fallback;
+    // this._fallback = fallback;
     this._callback = errorFallback;
     this._array.push(...array);
     this._rebuild();

@@ -1,8 +1,6 @@
 import { ServiceDescriptor } from './service-descriptor';
 import { ServiceType } from './service-type';
-import { BehaveLike } from './decorators';
-import { ServiceBehavior } from './service-behavior';
-import { DecoratorRecorder, emptyCallback, SetWithInnerKey, Type, ValueCallback, VoidCallback } from '../core';
+import { emptyCallback, SetWithInnerKey, ValueCallback, VoidCallback } from '../core';
 
 interface ServiceSetEvents {
   readonly add: ValueCallback<ServiceDescriptor>,
@@ -16,7 +14,8 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
   }
 
   private readonly _eventListeners: ServiceSetEvents;
-  private readonly _behavioralMap = new Map<Type, ServiceBehavior>();
+
+  // private readonly _behavioralMap = new Map<Type, ServiceBehavior>();
 
   constructor(
     descriptors: Iterable<ServiceDescriptor> = [],
@@ -25,8 +24,8 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
       readonly delete: ValueCallback<ServiceDescriptor>,
       readonly clear: VoidCallback,
     }> = {},
-    behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
-      .map(d => [d.path[0] as Type, d.payload]),
+    // behavioralMap: Iterable<[Type, ServiceBehavior]> = DecoratorRecorder.classSearch(BehaveLike)
+    //   .map(d => [d.path[0] as Type, d.payload]),
   ) {
     const getServiceType = (def: ServiceDescriptor) => def.type;
     super(getServiceType);
@@ -36,7 +35,7 @@ export class ServiceSet extends SetWithInnerKey<ServiceDescriptor, ServiceType> 
       delete: eventListeners.delete || emptyCallback as any,
       clear: eventListeners.clear || emptyCallback,
     };
-    this._behavioralMap = new Map(behavioralMap);
+    // this._behavioralMap = new Map(behavioralMap);
   }
 
   override has(value: ServiceDescriptor | ServiceType): boolean {

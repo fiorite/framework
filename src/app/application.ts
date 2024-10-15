@@ -89,6 +89,7 @@ export class Application {
 
 export function makeApplication(...features: ServiceConfigureFunction[]): Application {
   const provider = new ServiceProvider();
+  // @ts-ignore
   const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
   provider.addValue(Symbol.for('development'), development);
   addConsoleLogger(provider, development ? LogLevel.Debug : undefined); // todo: make configurable
