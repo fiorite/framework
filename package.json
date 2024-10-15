@@ -2,7 +2,7 @@
   "name": "fiorite",
   "author": "Yevhen Melnychenko",
   "description": "Fiorite - concept of a framework powered by modern approaches",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.18.0",
+    "@rollup/plugin-typescript": "^12.1.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "~5.4.2",
     "vite": "^5.4.9"

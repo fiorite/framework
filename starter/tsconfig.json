@@ -10,7 +10,7 @@
     ],
     "declaration": true,
     "moduleResolution": "node",
-    "sourceMap": true,
+    "sourceMap": false,
     "outDir": "dist",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true

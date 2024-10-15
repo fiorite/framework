@@ -4,6 +4,6 @@
     "build": "vite -c vite.config.ts build"
   },
   "dependencies": {
-    "fiorite": "^0.0.5"
+    "fiorite": "^0.0.6"
   }
 }

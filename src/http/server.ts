@@ -39,7 +39,7 @@ export class HttpServer extends FunctionClass<HttpCallback> implements HttpServe
     this._callback = callback;
     this._nodeJsRunner = computedCallback(complete => {
       // @ts-ignore
-      import('../nodejs').then(module => {
+      import('../nodejs/server').then(module => {
         complete(new module.NodeJsHttpServer(this._callback));
       });
     });

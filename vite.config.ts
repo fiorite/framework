@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import typescript from 'rollup-plugin-typescript2';
+import typescript from '@rollup/plugin-typescript';
 import { nodeJsExternal } from './src/vite';
 
 export default defineConfig({
@@ -20,6 +20,7 @@ export default defineConfig({
         'firestore': __dirname + '/src/firestore/index.ts',
       },
     },
+    sourcemap: true,
     minify: true,
     assetsDir: 'common',
     emptyOutDir: true,
