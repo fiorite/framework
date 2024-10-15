@@ -1,12 +1,14 @@
 export * from './reflect';
 export { arraySequenceEqual, arrayRange, MaybeArray } from './array-utils';
-export {
+export type {
   ValueCallback,
   VoidCallback,
   MapCallback,
+  CallbackShareFunction,
+} from './callbacks';
+export {
   emptyCallback,
   CallbackShare,
-  CallbackShareFunction,
   forceCallbackValue,
   CallbackForceValueError,
   ComputedCallback,
@@ -17,7 +19,8 @@ export {
   future,
   computed,
 } from './callbacks';
-export { Equatable, EqualityComparer, defaultComparer } from './equality';
+export type { Equatable, EqualityComparer } from './equality';
+export { defaultComparer } from './equality';
 export * from './decorator';
 export * from './error';
 export { FunctionClass } from './function-class';
@@ -28,8 +31,9 @@ export {
   isPromiseLike,
   promiseWhenNoCallback,
 } from './promises';
-export { RadixMap, RadixWalkResult } from './radix-map';
+export type { RadixWalkResult } from './radix-map';
+export { RadixMap } from './radix-map';
 export { SetWithInnerKey } from './set-with-inner-key';
-export { ListenableFunction, ListenableFunctionListener } from './listener';
-export { AbstractType, Type, isType, isInstance } from './type';
+export type { AbstractType, Type } from './type';
+export { isType, isInstance } from './type';
 export { Utf16Sequence, utf16 } from './utf16';

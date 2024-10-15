@@ -3,7 +3,7 @@
  * this doesn't require {@link Promise} result but {@link PromiseLike} which can be substituted with non-promise code.
  */
 
-import { AsyncLikeIterator, CallbackIterator, getIterator } from './iterator';
+import { AsyncLikeIterator, CallbackBasedIterator, getIterator } from './iterator';
 import { futureCallback, ValueCallback } from '../core';
 
 export interface AsyncLikeIterable<T> {
@@ -30,14 +30,14 @@ class MonoIterable<T, R = T> {
   // static from<T, R = T>(iterable: Iterable<T> | AsyncLikeIterator<T>, makeNext: (iterator: MonoIterator<T>) => (complete: ValueCallback<IteratorResult<R>>) => void,): Iterable<T> | AsyncLikeIterator<T>;
   static from<T, R = T>(
     iterable: Iterable<T> | AsyncLikeIterable<T>,
-    makeNext: (iterator: CallbackIterator<T>) => (complete: ValueCallback<IteratorResult<R>>) => void,
+    makeNext: (iterator: CallbackBasedIterator<T>) => (complete: ValueCallback<IteratorResult<R>>) => void,
   ): typeof iterable extends Iterable<T> ? Iterable<R> : AsyncLikeIterable<R> {
     return new MonoIterable(iterable as any, makeNext) as unknown as typeof iterable extends Iterable<T> ? Iterable<R> : AsyncLikeIterable<R>;
   }
 
   private constructor(
     iterable: Iterable<T> | AsyncIterable<T>,
-    makeNext: (iterator: CallbackIterator<T>) => (complete: ValueCallback<IteratorResult<R>>) => void,
+    makeNext: (iterator: CallbackBasedIterator<T>) => (complete: ValueCallback<IteratorResult<R>>) => void,
   ) {
     if (Symbol.iterator in iterable) {
       this[Symbol.iterator] = () => {
@@ -92,7 +92,7 @@ class MonoIterable<T, R = T> {
 
 export function makeIterable<T, R = T>(
   iterable: Iterable<T> | AsyncLikeIterable<T>,
-  prepNext: (iterator: CallbackIterator<T>) => (complete: ValueCallback<IteratorResult<R>>) => void,
+  prepNext: (iterator: CallbackBasedIterator<T>) => (complete: ValueCallback<IteratorResult<R>>) => void,
 ): typeof iterable extends Iterable<T> ? Iterable<R> : AsyncLikeIterable<R> {
   return MonoIterable.from(iterable, prepNext);
 }

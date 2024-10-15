@@ -1,5 +1,5 @@
 import { HttpHeaders } from './headers';
-import { ListenableFunction, ValueCallback, VoidCallback } from '../core';
+import { ValueCallback, VoidCallback } from '../core';
 
 /** @source https://en.wikipedia.org/wiki/List_of_HTTP_header_fields */
 export enum HttpMessageHeader {
@@ -38,7 +38,4 @@ export abstract class HttpMessage {
   abstract on(event: 'close', listener: VoidCallback): void;
 
   abstract close(): void;
-}
-
-export class HttpMessageCloseFunction extends ListenableFunction<VoidCallback, void> {
 }

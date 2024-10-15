@@ -1,4 +1,4 @@
-import { PromiseLikeCallback, MaybePromiseLike, ValueCallback } from '../core';
+import { MaybePromiseLike, PromiseLikeCallback, ValueCallback } from '../core';
 import type { AsyncLikeIterable } from './iterable';
 
 export interface AsyncLikeIterator<T, TReturn = unknown> {
@@ -7,7 +7,7 @@ export interface AsyncLikeIterator<T, TReturn = unknown> {
   return?(value?: MaybePromiseLike<TReturn>): PromiseLikeCallback<IteratorResult<T, TReturn>>;
 }
 
-export interface CallbackIterator<T> {
+export interface CallbackBasedIterator<T> {
   readonly async?: boolean;
 
   readonly iterator: Iterator<T> | AsyncLikeIterator<T>;
@@ -17,12 +17,12 @@ export interface CallbackIterator<T> {
   return?(callback?: ValueCallback<IteratorResult<T>>): void;
 }
 
-export function getIterator<T>(iterable: Iterable<T> | AsyncLikeIterable<T>): CallbackIterator<T> {
+export function getIterator<T>(iterable: Iterable<T> | AsyncLikeIterable<T>): CallbackBasedIterator<T> {
   return new MonoIterator<T>(iterable);
 }
 
 /** @deprecated todo: refactor */
-class MonoIterator<T> implements CallbackIterator<T> {
+class MonoIterator<T> implements CallbackBasedIterator<T> {
   private readonly _async?: boolean;
 
   get async(): boolean | undefined {
