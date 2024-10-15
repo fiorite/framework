@@ -2,6 +2,16 @@
 
 Trying to prepare `0.0.1` release at the time.
 
+Entries to be split:
+```
+- fiorite - anything code related
+- fiorite/vite - development plugins
+- fiorite/sqlite3 
+- fiorite/nodejs - http adapter
+- fiorite/idb - if done for browser
+- fiorite/firestore - firebase
+```
+
 ---
 
 ***As for v0.0.* source base is under testing in a real project, test coverage and documentation will be implemented later. During this period there no stability nor breaking changes guarantee.**
