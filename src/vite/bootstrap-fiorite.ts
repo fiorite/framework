@@ -25,7 +25,7 @@ export const bootstrapFiorite = (projectDir: string, config: {
 } = {}): PluginOption[] => {
   const srcDir = config.srcDir || path.resolve(projectDir + '/src');
   const absoluteMainTs = path.resolve(srcDir, config.mainTs || 'main.ts');
-  const outDir = config.outDir || path.resolve(projectDir, '/dist');
+  const outDir = config.outDir || projectDir + '/dist';
 
   // region automatic import
 

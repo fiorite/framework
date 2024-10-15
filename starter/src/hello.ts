@@ -7,7 +7,7 @@ import { Inherited, HttpGet } from 'fiorite';
 }
 
 class HelloController {
-  @HttpGet() handleSlash(service: HelloService) {
+  @HttpGet() provideMessage(service: HelloService) {
     return service.produceMessage();
   }
 }

@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "start": "vite -c vite.config.ts",
+    "build": "vite -c vite.config.ts build"
+  },
+  "dependencies": {
+    "fiorite": "^0.0.5"
+  }
+}

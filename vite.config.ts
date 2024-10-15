@@ -11,6 +11,7 @@ export default defineConfig({
     outDir: __dirname + '/dist',
     ssr: true,
     lib: {
+      formats: ['cjs'],
       entry: {
         'index': __dirname + '/src/index.ts',
         'nodejs': __dirname + '/src/nodejs/index.ts',
