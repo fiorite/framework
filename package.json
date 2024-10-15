@@ -2,20 +2,21 @@
   "name": "fiorite",
   "author": "Yevhen Melnychenko",
   "description": "Fiorite - concept of a framework powered by modern approaches",
-  "version": "0.0.0",
+  "version": "0.0.3",
   "license": "MIT",
+  "main": "index.mjs",
   "repository": {
     "type": "git",
     "url": "https://github.com/fiorite/framework.git"
   },
   "scripts": {
-    "build": "vite -c vite.config.ts build"
+    "build": "vite -c vite.config.ts build && cp package.json dist/package.json && cp LICENSE dist/LICENSE && cp README.md dist/README.md",
+    "publish": "cd dist && npm publish"
   },
   "dependencies": {
     "reflect-metadata": "^0.2.2"
   },
   "peerDependencies": {
-    "firebase": "^10.13.1",
     "firebase-admin": "^12.5.0",
     "sqlite3": "^5.1.7"
   },

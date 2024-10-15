@@ -1,8 +1,6 @@
 # Fiorite Concept
 
-Trying to prepare `0.0.1` release at the time.
-
-Entries to be split:
+Entries:
 ```
 - fiorite - anything code related
 - fiorite/vite - development plugins
@@ -14,8 +12,7 @@ Entries to be split:
 
 ---
 
-***As for v0.0.* source base is under testing in a real project, test coverage and documentation will be implemented later. During this period there no stability nor breaking changes guarantee.**
-
+**As for v0.0.n source base is under testing in a real project, test coverage and documentation will be implemented later. During this period there no stability nor breaking changes guarantee.**
 Ideas what is the very first version should be done in a form of a plan.
 
 In order to try it, run `npm install fiorite --save` and start exploring.

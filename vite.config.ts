@@ -19,17 +19,13 @@ export default defineConfig({
         'nodejs': __dirname + '/src/nodejs/index.ts',
         'sqlite3': __dirname + '/src/sqlite3/index.ts',
         'vite': __dirname + '/src/vite/index.ts',
-        // 'firestore': __dirname + '/src/firestore/index.ts',
+        'firestore': __dirname + '/src/firestore/index.ts',
       },
-      external: [...nodeJsExternal, 'sqlite3', 'firebase', 'firebase-admin', 'vite', '@rollup/plugin-swc', '@swc/types'],
+      external: [...nodeJsExternal, 'sqlite3', 'firebase-admin/firestore', 'vite', '@rollup/plugin-swc', '@swc/types'],
     }
   },
   plugins: [
-    typescript({
-      compilerOptions: {
-
-      },
-    })
+    typescript()
   ],
 });
 
