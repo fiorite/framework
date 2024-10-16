@@ -1,4 +1,6 @@
-import { Inherited, Provide, ProvideDecorator } from '../di';
+// noinspection ES6PreferShortImport
+import { Inherited } from '../di/decorators';
+import { Provide, ProvideDecorator } from '../di';
 import {
   ClassDecoratorWithPayload,
   DecoratorRecorder,

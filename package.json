@@ -9,14 +9,12 @@
     "url": "https://github.com/fiorite/framework.git"
   },
   "scripts": {
-    "build": "vite -c vite.config.ts build && cp package.json dist/package.json && cp LICENSE dist/LICENSE && cp README.md dist/README.md",
+    "build": "./build.sh",
     "publish": "cd dist && npm publish"
-  },
-  "dependencies": {
-    "reflect-metadata": "^0.2.2"
   },
   "peerDependencies": {
     "firebase-admin": "^12.5.0",
+    "reflect-metadata": "^0.2.2",
     "sqlite3": "^5.1.7"
   },
   "peerDependenciesMeta": {
@@ -28,9 +26,10 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^18.18.0",
+    "@rollup/plugin-swc": "^0.4.0",
     "@rollup/plugin-typescript": "^12.1.0",
-    "rollup-plugin-typescript2": "^0.36.0",
+    "@swc/core": "^1.7.36",
+    "@types/node": "^18.18.0",
     "typescript": "~5.4.2",
     "vite": "^5.4.9"
   }

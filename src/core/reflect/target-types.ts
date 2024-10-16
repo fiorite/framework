@@ -1,5 +1,7 @@
 import { Type } from '../type';
 import 'reflect-metadata';
+import { DecoratorRecorder } from '../decorator';
+import { BehaveLike } from '../../di';
 
 export function reflectTargetTypes(type: Type, propertyKey?: string | symbol): Type[] {
   const types = propertyKey ?
@@ -7,7 +9,8 @@ export function reflectTargetTypes(type: Type, propertyKey?: string | symbol): T
     Reflect.getMetadata('design:paramtypes', type);
 
   if (undefined === types) {
-    throw new Error('Target is not decorated by anything: '+type.name+(propertyKey ? '#'+propertyKey.toString()+'(...))' : 'constructor(...)'));
+    console.log(DecoratorRecorder.classSearch(BehaveLike, type));
+    throw new Error('Target is not decorated: '+type.name+(propertyKey ? '#'+propertyKey.toString()+'(...))' : '#constructor(...)'));
   }
 
   return types;

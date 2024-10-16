@@ -1,3 +1,5 @@
+declare const window: unknown;
+
 export enum JsPlatform {
   Browser = 'browser',
   NodeJs = 'nodejs',

@@ -7,7 +7,7 @@ import type { HttpServer } from '../http';
 import { includeDotNode } from './include-dot-node';
 import { replaceDirname } from './replace-dirname';
 import type { NodeJsHttpServer } from '../nodejs';
-import typescript from 'rollup-plugin-typescript2';
+import swc from '@rollup/plugin-swc';
 
 /**
  * Directory where vite config exists, or project root.
@@ -71,32 +71,28 @@ export const bootstrapFiorite = (projectDir: string, config: {
 
   // endregion
 
-  // const importDir = typeof importAll === ;
+  const tsCompiler = swc({
+    swc: {
+      cwd: projectDir,
+      module: {
+        type: 'nodenext',
+      },
+      jsc: {
+        parser: {
+          syntax: 'typescript',
+          decorators: true,
+        },
+        target: 'esnext',
+        transform: {
+          legacyDecorator: true,
+          decoratorMetadata: true,
+        },
+      },
+    },
+  });
 
-  // const tsCompiler =
-
-  // const tsCompiler = swc(config.swcOpts || {
-  //   swc: {
-  //     cwd: projectDir,
-  //     module: {
-  //       type: 'nodenext',
-  //     },
-  //     jsc: {
-  //       parser: {
-  //         syntax: 'typescript',
-  //         decorators: true,
-  //       },
-  //       target: 'esnext',
-  //       transform: {
-  //         legacyDecorator: true,
-  //         decoratorMetadata: true,
-  //       },
-  //     },
-  //   },
-  // });
-
-  // const transformTs = (code: string, id: string, options?: { ssr?: boolean; }) =>
-  //   (tsCompiler.transform as Function)(code, id, options);
+  const transformTs = (code: string, id: string, options?: { ssr?: boolean; }) =>
+    (tsCompiler.transform as Function)(code, id, options);
 
   return [
     {
@@ -107,12 +103,13 @@ export const bootstrapFiorite = (projectDir: string, config: {
           noExternal: env.command === 'build' ? true : undefined,
         },
         build: {
-          ssr: false,
+          ssr: true,
           outDir,
           rollupOptions: {
             input: absoluteMainTs,
             external: config.rollupExternal || nodeJsExternal,
           },
+          assetsDir: '.',
           emptyOutDir: true,
           // sourcemap: true,
         },
@@ -162,18 +159,16 @@ export const bootstrapFiorite = (projectDir: string, config: {
           });
         });
       },
-      transform: (code, id) => {
+      transform: (code, id, options) => {
         if (id.endsWith('.ts')) {
           if (autoImportEnabled && id === absoluteMainTs) {
-            return makeAutoImportCode() + code;
+            code = makeAutoImportCode() + code;
           }
-          // return transformTs(code, id, options);
+          return transformTs(code, id, options);
         }
-        return;
-        // return code;
+        return code;
       },
     } as PluginOption,
-    typescript({ cwd: projectDir }),
     includeDotNode(),
     replaceDirname(),
   ];

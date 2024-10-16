@@ -1,38 +1,42 @@
+export type {
+  BehaveLikeDecorator,
+} from './decorators';
 export {
   BehaveLike,
   Singleton,
   Inherited,
   Scoped,
   Prototype,
-  BehaveLikeDecorator,
 } from './decorators';
 export { ServiceBehavior } from './service-behavior';
-export { ServiceConfigureFunction } from './service-configure';
+export type { ServiceConfigureFunction } from './service-configure';
 export { ServiceDescriptor } from './service-descriptor';
 export { ServiceSet } from './service-set';
-export {
-  Provide,
-  ProvideDecorator
-} from './provide';
-export {
+export type { ProvideDecorator } from './provide';
+export { Provide } from './provide';
+export type {
   ServiceFactoryCallback,
+  ServiceFactoryFunction,
+} from './service-factory';
+export {
   ServiceFactory,
   ServiceFactoryWithReturn,
-  ServiceFactoryFunction,
   ValueFactory,
   TypeFactory,
   TargetParametersFactory,
   ObjectMethodFactory,
 } from './service-factory';
-export {
-  ServiceProvider,
-  ServiceNotFoundError,
+export type {
   ServiceProvideCallback,
   ServiceProvideFunction,
   OnScopeDestroy,
   ServiceProvideAsyncFunction,
 } from './service-provider';
-export { ServiceType } from './service-type';
+export {
+  ServiceProvider,
+  ServiceNotFoundError,
+} from './service-provider';
+export type { ServiceType } from './service-type';
 export { serviceRef, ServiceReference } from './service-ref';
 export { ServiceScope } from './service-scope';
 

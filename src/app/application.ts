@@ -1,5 +1,4 @@
 import {
-  BehaveLike,
   runProviderContext,
   ServiceConfigureFunction,
   ServiceProvideAsyncFunction,
@@ -7,6 +6,8 @@ import {
   ServiceProvider,
   ServiceType
 } from '../di';
+// noinspection ES6PreferShortImport
+import { BehaveLike } from  '../di/decorators';
 import { addCors, addHttpServer, addJsonParser, HttpServer, httpServerPort } from '../http';
 import { addRouting, Route, RouteMatcher } from '../routing';
 import { addConsoleLogger, Logger, LogLevel } from '../logging';

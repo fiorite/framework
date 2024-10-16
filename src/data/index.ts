@@ -1,8 +1,10 @@
 export type { ModelFieldTypeToJs } from './field';
 export { ModelFieldType, ModelField } from './field';
-export { Model, ModelFields } from './model';
+export type { ModelFields } from './model';
+export { Model } from './model';
 export { TransferNormalizer, NormalizeFunctionError } from './normalizer';
-export { TypeTransformer, TransformCallback, makeTransformer } from './transformer';
+export type { TransformCallback } from './transformer';
+export { TypeTransformer, makeTransformer } from './transformer';
 export type { ValidateFunction } from './validation';
 export {
   ValidatorBuilder,

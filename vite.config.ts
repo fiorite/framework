@@ -1,31 +1,30 @@
 import { defineConfig } from 'vite';
-import typescript from '@rollup/plugin-typescript';
 import { nodeJsExternal } from './src/vite';
+import typescript from '@rollup/plugin-typescript';
 
 export default defineConfig({
   ssr: {
     noExternal: true,
   },
-  // esbuild: false,
+  esbuild: {
+    platform: 'neutral',
+  },
   build: {
     outDir: __dirname + '/dist',
     ssr: true,
     lib: {
-      formats: ['cjs'],
+      formats: ['es'],
       entry: {
         'index': __dirname + '/src/index.ts',
         'nodejs': __dirname + '/src/nodejs/index.ts',
         'sqlite3': __dirname + '/src/sqlite3/index.ts',
-        'vite': __dirname + '/src/vite/index.ts',
         'firestore': __dirname + '/src/firestore/index.ts',
       },
     },
-    sourcemap: true,
-    minify: true,
-    assetsDir: 'common',
+    sourcemap: 'hidden',
     emptyOutDir: true,
     rollupOptions: {
-      external: [...nodeJsExternal, 'sqlite3', 'firebase-admin/firestore', 'vite', '@rollup/plugin-swc', '@swc/types'],
+      external: [...nodeJsExternal, 'sqlite3', 'firebase-admin/firestore', '@rollup/plugin-typescript', 'reflect-metadata', '@swc/core', '@rollup/plugin-swc'],
     }
   },
   plugins: [typescript()],

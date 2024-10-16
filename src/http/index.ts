@@ -1,8 +1,8 @@
-export { HttpCallback } from './callback';
+export type { HttpCallback } from './callback';
 export { HttpContext, HttpContextHost } from './context';
 export { CorsMiddleware, addCors } from './cors';
 export { FromRequest, FromQuery, FromHeader, FromBody } from './decorator';
-export { HttpHeaders } from './headers';
+export type { HttpHeaders } from './headers';
 export { JsonParserMiddleware, addJsonParser } from './json-parser';
 export { HttpMessageHeader, HttpMessage } from './message';
 export { HttpMethod } from './method';
@@ -11,5 +11,6 @@ export { HttpPipeline } from './pipeline';
 export { HttpRequestHeader, HttpRequest, HttpQuery } from './request';
 export { HttpResponseHeader, HttpResponse } from './response';
 export { HttpBodyResult } from './result';
-export { HttpServer, HttpServerRunner, addHttpServer, httpServerPort } from './server';
+export { HttpServer, addHttpServer, httpServerPort } from './server';
+export type { HttpServerRunner } from './server';
 export { HttpStatusCode } from './status-code';
