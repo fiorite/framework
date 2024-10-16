@@ -9,10 +9,6 @@
     "sourceMap": true,
     "outDir": "dist",
     "allowSyntheticDefaultImports": true,
-    "sourceRoot": "src",
     "rootDir": "src"
-  },
-  "include": [
-    "src"
-  ]
+  }
 }

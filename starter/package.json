@@ -3,7 +3,9 @@
     "start": "vite -c vite.config.ts",
     "build": "vite -c vite.config.ts build"
   },
+  "type": "module",
   "dependencies": {
-    "fiorite": "^0.0.6"
+    "fiorite": "^0.0.7",
+    "reflect-metadata": "^0.2.2"
   }
 }

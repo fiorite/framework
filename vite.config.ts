@@ -19,6 +19,7 @@ export default defineConfig({
         'nodejs': __dirname + '/src/nodejs/index.ts',
         'sqlite3': __dirname + '/src/sqlite3/index.ts',
         'firestore': __dirname + '/src/firestore/index.ts',
+        'vite': __dirname + '/src/vite/index.ts',
       },
     },
     sourcemap: 'hidden',
