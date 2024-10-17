@@ -8,7 +8,7 @@ import {
   ServiceType
 } from '../di';
 // noinspection ES6PreferShortImport
-import { BehaveLike } from  '../di/decorators';
+import { BehaveLike } from '../di/decorators';
 import { addCors, addHttpServer, addJsonParser, HttpServer, httpServerPort } from '../http';
 import { addRouting, Route, RouteMatcher } from '../routing';
 import { addConsoleLogger, Logger, LogLevel } from '../logging';
@@ -23,10 +23,30 @@ import {
 import { addDbManager } from '../db';
 import { addEvents } from '../events';
 
+enum Environment {
+  Production = 'production',
+  Development = 'development',
+}
+
+const environmentKey = 'environment';
+
 // todo: make reactive application which extends as it goes.
 export class Application {
   private readonly _provider: ServiceProvider;
   private readonly _queue: CallbackQueue;
+  private readonly _environment: Environment | string;
+
+  get environment(): Environment | string {
+    return this._environment;
+  }
+
+  get production(): boolean {
+    return Environment.Production === this.environment;
+  }
+
+  get development(): boolean {
+    return Environment.Development === this.environment;
+  }
 
   get provider(): ServiceProvider {
     return this._provider;
@@ -63,6 +83,7 @@ export class Application {
   constructor(provider: ServiceProvider, queue: CallbackQueue) {
     this._provider = provider;
     this._queue = queue;
+    this._environment = provider.get(environmentKey);
   }
 
   within(callback: (complete: VoidCallback) => void): void {
@@ -91,10 +112,9 @@ export class Application {
 
 export function makeApplication(...features: ServiceConfigureFunction[]): Application {
   const provider = new ServiceProvider();
-  // @ts-ignore
-  const development = !(import.meta as any).env?.PROD && process.env['NODE_ENV'] === 'development';
-  provider.addValue(Symbol.for('development'), development);
-  addConsoleLogger(provider, development ? LogLevel.Debug : undefined); // todo: make configurable
+  const environment = process.env['NODE_ENV'] as Environment | string;
+  provider.addValue('environment', environment);
+  addConsoleLogger(provider, Environment.Production !== environment ? LogLevel.Debug : undefined); // todo: make configurable
   addDbManager(provider);
   addEvents(provider);
 

@@ -1,15 +1,13 @@
-import { Alias, AliasOptions, PluginOption } from 'vite';
+import { Alias, PluginOption } from 'vite';
 import path from 'path';
 import fs from 'node:fs';
 import { nodeJsExternal } from './node-js-external';
 import type { Application } from '../app';
-import type { HttpServer } from '../http';
 import { includeDotNode, replaceDirname } from './plugins';
 import type { NodeJsHttpServer } from '../nodejs';
 import swc from '@rollup/plugin-swc';
 import type { Options as SwcOptions } from '@swc/core';
 import typescript, { RollupTypescriptOptions, RollupTypescriptPluginOptions } from '@rollup/plugin-typescript';
-import { InternalModuleFormat } from 'rollup';
 
 /**
  * Directory where vite config exists, or project root.
@@ -18,7 +16,7 @@ import { InternalModuleFormat } from 'rollup';
 export const bootstrapFiorite = (projectDir: string, options: {
   readonly src?: string;
   readonly dist?: string;
-  readonly main?: string;
+  readonly main?: string | false;
   readonly external?: string[];
   readonly appVar?: string; // 'app' is default
   readonly autoImport?: boolean | string | string[];
@@ -57,7 +55,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
   let generatedMain: string | undefined;
   const exportVar = options.appVar || 'app';
 
-  if (!fs.existsSync(mainPath)) {
+  if (false === options.main || !fs.existsSync(mainPath)) {
     mainName = mainName + `-${new Date().valueOf()}-generated.ts`;
     mainPath = path.resolve(srcDir, mainName);
 
@@ -69,12 +67,12 @@ export const bootstrapFiorite = (projectDir: string, options: {
       `import { log, makeApplication } from 'fiorite';`,
       `export const ${exportVar} = makeApplication();`,
       `// @ts-ignore`,
-      `if (!import.meta.env.PROD) {`,
+      `if (${exportVar}.production) {`,
       `  ${exportVar}.start(() => log.info(\`[server] server is running...\`));`,
       `}`,
-    ].join('\n')
+    ].join('\n');
 
-    console.warn(`${mainName} will be generated automatically.`);
+    console.warn(`${mainName} is generated automatically.`);
   }
 
   const outDir = options.dist || projectDir + '/dist';
@@ -180,6 +178,9 @@ export const bootstrapFiorite = (projectDir: string, options: {
     return generatedCode + '\n\n';
   };
 
+  let previousApp: Application;
+  let previousRoutes: string[] = [];
+
   // endregion
 
   return [
@@ -188,7 +189,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
       config: (_, env) => {
         if (env.command === 'build') {
           if (generateMain && !fs.existsSync(mainPath)) {
-            fs.mkdirSync(path.dirname(mainPath), {recursive: true});
+            fs.mkdirSync(path.dirname(mainPath), { recursive: true });
             fs.writeFileSync(mainPath, generatedMain!);
           }
         }
@@ -229,8 +230,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
         }
       },
       configureServer: (server) => {
-        let app: Application;
-        let appServer: HttpServer;
+        let currentApp: Application;
         let timer: NodeJS.Timeout;
 
         const fsEvents = ['add', 'change', 'unlink'];
@@ -254,16 +254,35 @@ export const bootstrapFiorite = (projectDir: string, options: {
         server.httpServer!.once('listening', async () => {
           try {
             const mod = await server.ssrLoadModule(mainPath);
-            app = mod[exportVar]; // todo: add check if file exists and error
-            appServer = app.httpServer;
+            currentApp = mod[exportVar]; // todo: add check if var exists and throw error otherwise
+
+            // TODO: add difference methods to services and routes
+            currentApp.routing.routeSet.forEach(route => {
+              const routeString = route.toString();
+              if (!previousRoutes.includes(routeString)) {
+                previousRoutes.push(routeString);
+                currentApp.logger.info('route-added: ' + routeString);
+              }
+            });
+
+            // if (!previousApp) {
+            //   // console.debug('vite: initial start');
+            // } else {
+            //   // console.debug('vite: restart');
+            // }
+
+            previousApp = currentApp;
           } catch (err) {
             console.error(err);
           }
         });
 
         server.middlewares.use((req, res) => {
-          app.within(complete => {
-            appServer.platformRunner.then(runner => (runner as NodeJsHttpServer)(req, res));
+          currentApp.within(complete => {
+            currentApp.httpServer
+              .platformRunner
+              .then(runner => (runner as NodeJsHttpServer)(req, res));
+
             res.on('close', complete); // todo: extend lifecycle and perhaps connect to scope lifetime.
           });
         });

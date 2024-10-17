@@ -20,3 +20,4 @@ const [, , command, ...args] = process.argv;
     });
   }
 })();
+

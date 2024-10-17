@@ -1,6 +1,6 @@
 import { HttpMethod } from '../http';
 import { RoutePath } from './route-path';
-import { RouteActionFunction } from './route-action';
+import { ReflectedAction, RouteActionFunction } from './route-action';
 
 export class RouteDescriptor {
   private readonly _path: RoutePath;
@@ -28,6 +28,13 @@ export class RouteDescriptor {
   }
 
   toString(): string {
-    return [this.httpMethod || '*', this.path.value].join(' ');
+    let actionString: string;
+    if (this.action instanceof ReflectedAction) {
+      actionString = this.action.type.name + '#' + this.action.propertyKey.toString();
+    } else {
+      actionString = '(anonymous function)';
+    }
+
+    return [this.httpMethod || '*', this.path.value, ' => '+actionString].join(' ');
   }
 }
