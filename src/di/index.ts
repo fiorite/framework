@@ -9,6 +9,7 @@ export {
   Prototype,
 } from './decorators';
 export { ServiceBehavior } from './service-behavior';
+export { configureProvider, globalConfiguration } from './service-configure';
 export type { ServiceConfigureFunction } from './service-configure';
 export { ServiceDescriptor } from './service-descriptor';
 export { ServiceSet } from './service-set';

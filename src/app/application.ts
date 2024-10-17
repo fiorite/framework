@@ -1,4 +1,5 @@
 import {
+  globalConfiguration,
   runProviderContext,
   ServiceConfigureFunction,
   ServiceProvideAsyncFunction,
@@ -109,6 +110,8 @@ export function makeApplication(...features: ServiceConfigureFunction[]): Applic
   addRouting(provider);
   addCors(provider);
   addJsonParser(provider);
+
+  features.unshift(...globalConfiguration); // add global services
 
   runProviderContext(provider, closeGlobalContext => {
     features.forEach(featureFn => queue.add(done => MaybePromiseLike.then(() => featureFn(provider), done)));

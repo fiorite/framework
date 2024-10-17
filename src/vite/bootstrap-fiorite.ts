@@ -4,38 +4,112 @@ import fs from 'node:fs';
 import { nodeJsExternal } from './node-js-external';
 import type { Application } from '../app';
 import type { HttpServer } from '../http';
-import { includeDotNode } from './include-dot-node';
-import { replaceDirname } from './replace-dirname';
+import { includeDotNode, replaceDirname } from './plugins';
 import type { NodeJsHttpServer } from '../nodejs';
 import swc from '@rollup/plugin-swc';
+import type { Options as SwcOptions } from '@swc/core';
+import typescript, { RollupTypescriptOptions, RollupTypescriptPluginOptions } from '@rollup/plugin-typescript';
 
 /**
  * Directory where vite config exists, or project root.
  * In mono repo, use subproject path.
  */
-export const bootstrapFiorite = (projectDir: string, config: {
-  readonly srcDir?: string;
-  readonly outDir?: string;
-  readonly mainTs?: string;
-  readonly rollupExternal?: string[];
+export const bootstrapFiorite = (projectDir: string, options: {
+  readonly src?: string;
+  readonly dist?: string;
+  readonly main?: string;
+  readonly external?: string[];
   readonly appVar?: string; // 'app' is default
-  readonly importAll?: boolean | string | string[];
+  readonly autoImport?: boolean | string | string[];
+  readonly compiler?: 'swc' | 'typescript'; // implement choice
+  readonly swc?: SwcOptions;
+  readonly typescript?: RollupTypescriptPluginOptions;
 } = {}): PluginOption[] => {
-  const srcDir = config.srcDir || path.resolve(projectDir + '/src');
-  const absoluteMainTs = path.resolve(srcDir, config.mainTs || 'main.ts');
-  const outDir = config.outDir || projectDir + '/dist';
+  const resolvePath = (subpath: string): string => {
+    return path.isAbsolute(subpath) ? subpath : path.resolve(projectDir, subpath);
+  }
+
+  const srcDir = options.src || path.resolve(projectDir + '/src');
+
+  const mainName = options.main || 'main.ts';
+  const mainPath = path.resolve(srcDir, mainName);
+  let generateMain = false;
+
+  if (!fs.existsSync(mainPath)) {
+    // main.ts is aut generated
+    generateMain = true;
+    console.warn(`${mainName} will be generated automatically.`);
+  }
+
+  const outDir = options.dist || projectDir + '/dist';
+  const exportVar = options.appVar || 'app';
+
+  let transform: (code: string, id: string, options?: { ssr?: boolean; }) => unknown = (code) => code;
+  const plugins: PluginOption[] = [];
+  let compiler: PluginOption; // plugin
+
+  if (options.compiler === 'typescript') {
+    // asser !options.swc
+
+    const typescriptOptions: RollupTypescriptOptions = {};
+
+    if (options.typescript) {
+      Object.assign(typescriptOptions, options.typescript);
+    } else {
+      const tsconfigPath = projectDir + '/tsconfig.json';
+
+      if (fs.existsSync(tsconfigPath)) {
+        typescriptOptions.tsconfig = tsconfigPath;
+      }
+    }
+
+    compiler = typescript(typescriptOptions);
+    plugins.push(compiler);
+  } else {
+    let swcOptions: SwcOptions = {
+      cwd: projectDir,
+      module: {
+        type: 'nodenext',
+      },
+      jsc: {
+        parser: {
+          syntax: 'typescript',
+          decorators: true,
+        },
+        target: 'esnext',
+        transform: {
+          legacyDecorator: true,
+          decoratorMetadata: true,
+        },
+      },
+    };
+
+    const swcrcPath = projectDir + '/.swcrc';
+
+    if (fs.existsSync(swcrcPath)) {
+      Object.assign(swcOptions, JSON.parse(fs.readFileSync(swcrcPath).toString())); // todo: add error: invalid json
+    }
+
+    if (options.swc) {
+      Object.assign(swcOptions, options.swc);
+    }
+
+    compiler = swc({ swc: swcOptions });
+    transform = compiler.transform as any;
+  }
 
   // region automatic import
 
-  const { importAll } = config;
+  const { autoImport } = options;
   let autoImportEnabled = true;
   let autoImportPaths = [];
-  if (typeof importAll === 'string') { // handle path
-    autoImportPaths.push(importAll);
-  } else if (Array.isArray(importAll)) { // handle path
-    autoImportPaths.push(...importAll);
-  } else if (true === importAll) { // set root as importAll
-    autoImportPaths.push(path.dirname(absoluteMainTs));
+
+  if (typeof autoImport === 'string') { // handle path
+    autoImportPaths.push(resolvePath(autoImport));
+  } else if (Array.isArray(autoImport)) { // handle path
+    autoImportPaths.push(...autoImport.map(resolvePath));
+  } else if (true === autoImport) { // set root as importAll
+    autoImportPaths.push(projectDir);
   } else {
     autoImportEnabled = false;
   }
@@ -53,7 +127,7 @@ export const bootstrapFiorite = (projectDir: string, config: {
         const path = queue.shift()!;
         if (fs.statSync(path).isDirectory() && !exclude.includes(path)) {
           queue.push(...fs.readdirSync(path).map(file => `${path}/${file}`));
-        } else if (path.endsWith('.ts') && path !== absoluteMainTs) {
+        } else if (path.endsWith('.ts') && path !== mainPath) {
           files.push(path);
         }
       }
@@ -61,7 +135,7 @@ export const bootstrapFiorite = (projectDir: string, config: {
       return files;
     };
 
-    const mainDirname = path.dirname(absoluteMainTs); // todo: create a separate file holder called auto-import.ts
+    const mainDirname = path.dirname(mainPath); // todo: create a separate file holder called auto-import.ts
     const generatedCode = autoImportPaths.flatMap(importDir => scanAll(importDir))
       .map(path => '.' + path.substring(mainDirname.length, path.length - 3))
       .map(path => `import '${path}';`).join('\n');
@@ -70,29 +144,6 @@ export const bootstrapFiorite = (projectDir: string, config: {
   };
 
   // endregion
-
-  const tsCompiler = swc({
-    swc: {
-      cwd: projectDir,
-      module: {
-        type: 'nodenext',
-      },
-      jsc: {
-        parser: {
-          syntax: 'typescript',
-          decorators: true,
-        },
-        target: 'esnext',
-        transform: {
-          legacyDecorator: true,
-          decoratorMetadata: true,
-        },
-      },
-    },
-  });
-
-  const transformTs = (code: string, id: string, options?: { ssr?: boolean; }) =>
-    (tsCompiler.transform as Function)(code, id, options);
 
   return [
     {
@@ -106,18 +157,33 @@ export const bootstrapFiorite = (projectDir: string, config: {
           ssr: true,
           outDir,
           rollupOptions: {
-            input: absoluteMainTs,
-            external: config.rollupExternal || nodeJsExternal,
+            input: mainPath,
+            external: [...nodeJsExternal, ...(options.external ? options.external : [])],
           },
           assetsDir: '.',
           emptyOutDir: true,
-          // sourcemap: true,
+          sourcemap: 'hidden',
         },
         esbuild: false,
         server: {
           hmr: false,
         },
       }),
+      load: id => {
+        if (generateMain && id === mainPath) {
+          return {
+            code: [
+              `/** system: generate main turned on: ${mainName} */`,
+              `import { log, makeApplication } from 'fiorite';`,
+              `export const ${exportVar} = makeApplication();`,
+              `// @ts-ignore`,
+              `if (import.meta.env.PROD) {`,
+              `  ${exportVar}.start(() => log.info(\`[server] server is running...\`));`,
+              `}`,
+            ].join('\n'),
+          };
+        }
+      },
       configureServer: (server) => {
         let app: Application;
         let appServer: HttpServer;
@@ -143,12 +209,11 @@ export const bootstrapFiorite = (projectDir: string, config: {
 
         server.httpServer!.once('listening', async () => {
           try {
-            const mod = await server.ssrLoadModule(absoluteMainTs);
-            app = mod[config.appVar || 'app']; // todo: add check if file exists and error
+            const mod = await server.ssrLoadModule(mainPath);
+            app = mod[exportVar]; // todo: add check if file exists and error
             appServer = app.httpServer;
           } catch (err) {
             console.error(err);
-            throw err;
           }
         });
 
@@ -161,14 +226,15 @@ export const bootstrapFiorite = (projectDir: string, config: {
       },
       transform: (code, id, options) => {
         if (id.endsWith('.ts')) {
-          if (autoImportEnabled && id === absoluteMainTs) {
+          if (autoImportEnabled && id === mainPath) {
             code = makeAutoImportCode() + code;
           }
-          return transformTs(code, id, options);
+          return transform(code, id, options);
         }
-        return code;
+        return;
       },
     } as PluginOption,
+    ...plugins,
     includeDotNode(),
     replaceDirname(),
   ];
