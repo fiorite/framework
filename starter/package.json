@@ -1,11 +1,11 @@
 {
   "scripts": {
-    "start": "vite -c vite.config.ts",
-    "build": "vite -c vite.config.ts build"
+    "start": "fiorite",
+    "build": "fiorite build"
   },
   "type": "module",
   "dependencies": {
-    "fiorite": "^0.0.7",
+    "fiorite": "^0.0.9",
     "reflect-metadata": "^0.2.2"
   }
 }
