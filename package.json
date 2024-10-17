@@ -2,7 +2,7 @@
   "name": "fiorite",
   "author": "Yevhen Melnychenko",
   "description": "Fiorite - concept of a framework powered by modern approaches",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "license": "MIT",
   "type": "module",
   "repository": {
