@@ -50,8 +50,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
     }
   }
 
-  const srcDir = options.src || path.resolve(projectDir + '/src');
-
+  const srcDir = resolvePath(options.src || 'src');
   let mainName = options.main || 'main.ts';
   let mainPath = path.resolve(srcDir, mainName);
   let generateMain = false;
@@ -160,11 +159,13 @@ export const bootstrapFiorite = (projectDir: string, options: {
       const files = [];
 
       while (queue.length) {
-        const path = queue.shift()!;
-        if (fs.statSync(path).isDirectory() && !exclude.includes(path)) {
-          queue.push(...fs.readdirSync(path).map(file => `${path}/${file}`));
-        } else if (path.endsWith('.ts') && path !== mainPath) {
-          files.push(path);
+        const path2 = queue.shift()!;
+        const basename = path.basename(path2);
+
+        if (fs.statSync(path2).isDirectory() && !exclude.includes(basename)) {
+          queue.push(...fs.readdirSync(path2).map(file => `${path}/${file}`));
+        } else if (path2.endsWith('.ts') && path2 !== mainPath) {
+          files.push(path2);
         }
       }
 
