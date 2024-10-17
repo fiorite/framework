@@ -29,7 +29,7 @@ npm install fiorite --save
 ```json
 {
   "port": 3000,
-  "autoImport": "src"
+  "autoImport": true
 }
 ```
 
