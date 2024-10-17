@@ -20,12 +20,13 @@ export default defineConfig({
         'sqlite3': __dirname + '/src/sqlite3/index.ts',
         'firestore': __dirname + '/src/firestore/index.ts',
         'vite': __dirname + '/src/vite/index.ts',
+        'cli': __dirname + '/src/cli.ts',
       },
     },
     sourcemap: 'hidden',
     emptyOutDir: true,
     rollupOptions: {
-      external: [...nodeJsExternal, 'sqlite3', 'firebase-admin/firestore', '@rollup/plugin-typescript', 'reflect-metadata', '@swc/core', '@rollup/plugin-swc'],
+      external: [...nodeJsExternal, 'sqlite3', 'firebase-admin/firestore', '@rollup/plugin-typescript', 'reflect-metadata', '@swc/core', '@rollup/plugin-swc', 'fsevents', 'vite'],
     }
   },
   plugins: [typescript()],

@@ -1,4 +1,4 @@
-import { PluginOption } from 'vite';
+import { Alias, AliasOptions, PluginOption } from 'vite';
 import path from 'path';
 import fs from 'node:fs';
 import { nodeJsExternal } from './node-js-external';
@@ -9,6 +9,7 @@ import type { NodeJsHttpServer } from '../nodejs';
 import swc from '@rollup/plugin-swc';
 import type { Options as SwcOptions } from '@swc/core';
 import typescript, { RollupTypescriptOptions, RollupTypescriptPluginOptions } from '@rollup/plugin-typescript';
+import { InternalModuleFormat } from 'rollup';
 
 /**
  * Directory where vite config exists, or project root.
@@ -27,22 +28,57 @@ export const bootstrapFiorite = (projectDir: string, options: {
 } = {}): PluginOption[] => {
   const resolvePath = (subpath: string): string => {
     return path.isAbsolute(subpath) ? subpath : path.resolve(projectDir, subpath);
+  };
+
+  const fioritePath = projectDir + '/fiorite.json';
+  const resolveAliases: Alias[] = [];
+  let serverPort: number | undefined;
+  if (fs.existsSync(fioritePath)) {
+    const fioriteOptions = JSON.parse(fs.readFileSync(fioritePath).toString());
+    Object.assign(options, fioriteOptions);
+
+    if (fioriteOptions.paths) {
+      resolveAliases.push(
+        ...Object.keys(fioriteOptions.paths).map(key => {
+          return { find: key, replacement: resolvePath(fioriteOptions.paths[key]), };
+        })
+      );
+    }
+
+    if (fioriteOptions.port) {
+      serverPort = fioriteOptions.port;
+    }
   }
 
   const srcDir = options.src || path.resolve(projectDir + '/src');
 
-  const mainName = options.main || 'main.ts';
-  const mainPath = path.resolve(srcDir, mainName);
+  let mainName = options.main || 'main.ts';
+  let mainPath = path.resolve(srcDir, mainName);
   let generateMain = false;
+  let generatedMain: string | undefined;
+  const exportVar = options.appVar || 'app';
 
   if (!fs.existsSync(mainPath)) {
+    mainName = mainName + `-${new Date().valueOf()}-generated.ts`;
+    mainPath = path.resolve(srcDir, mainName);
+
     // main.ts is aut generated
     generateMain = true;
+
+    generatedMain = [
+      `/** system: generate main turned on: ${mainName} */`,
+      `import { log, makeApplication } from 'fiorite';`,
+      `export const ${exportVar} = makeApplication();`,
+      `// @ts-ignore`,
+      `if (import.meta.env.PROD) {`,
+      `  ${exportVar}.start(() => log.info(\`[server] server is running...\`));`,
+      `}`,
+    ].join('\n')
+
     console.warn(`${mainName} will be generated automatically.`);
   }
 
   const outDir = options.dist || projectDir + '/dist';
-  const exportVar = options.appVar || 'app';
 
   let transform: (code: string, id: string, options?: { ssr?: boolean; }) => unknown = (code) => code;
   const plugins: PluginOption[] = [];
@@ -148,39 +184,46 @@ export const bootstrapFiorite = (projectDir: string, options: {
   return [
     {
       name: 'fiorite-bootstrap',
-      config: (_, env) => ({
-        root: projectDir,
-        ssr: {
-          noExternal: env.command === 'build' ? true : undefined,
-        },
-        build: {
-          ssr: true,
-          outDir,
-          rollupOptions: {
-            input: mainPath,
-            external: [...nodeJsExternal, ...(options.external ? options.external : [])],
+      config: (_, env) => {
+        if (env.command === 'build') {
+          if (generateMain && !fs.existsSync(mainPath)) {
+            fs.mkdirSync(path.dirname(mainPath), {recursive: true});
+            fs.writeFileSync(mainPath, generatedMain!);
+          }
+        }
+
+        return {
+          root: projectDir,
+          ssr: {
+            noExternal: env.command === 'build' ? true : undefined,
           },
-          assetsDir: '.',
-          emptyOutDir: true,
-          sourcemap: 'hidden',
-        },
-        esbuild: false,
-        server: {
-          hmr: false,
-        },
-      }),
+          build: {
+            ssr: true,
+            outDir,
+            rollupOptions: {
+              input: {
+                main: mainPath,
+              },
+              external: [...nodeJsExternal, ...(options.external ? options.external : [])],
+            },
+            assetsDir: '.',
+            emptyOutDir: true,
+            sourcemap: false,
+          },
+          esbuild: false,
+          server: {
+            port: serverPort,
+            hmr: false,
+          },
+          resolve: {
+            alias: resolveAliases,
+          },
+        };
+      },
       load: id => {
         if (generateMain && id === mainPath) {
           return {
-            code: [
-              `/** system: generate main turned on: ${mainName} */`,
-              `import { log, makeApplication } from 'fiorite';`,
-              `export const ${exportVar} = makeApplication();`,
-              `// @ts-ignore`,
-              `if (import.meta.env.PROD) {`,
-              `  ${exportVar}.start(() => log.info(\`[server] server is running...\`));`,
-              `}`,
-            ].join('\n'),
+            code: generatedMain,
           };
         }
       },
@@ -233,6 +276,11 @@ export const bootstrapFiorite = (projectDir: string, options: {
         }
         return;
       },
+      closeBundle: () => {
+        if (generateMain && fs.existsSync(mainPath)) {
+          fs.unlinkSync(mainPath);
+        }
+      }
     } as PluginOption,
     ...plugins,
     includeDotNode(),
