@@ -69,7 +69,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
       `import { log, makeApplication } from 'fiorite';`,
       `export const ${exportVar} = makeApplication();`,
       `// @ts-ignore`,
-      `if (import.meta.env.PROD) {`,
+      `if (!import.meta.env.PROD) {`,
       `  ${exportVar}.start(() => log.info(\`[server] server is running...\`));`,
       `}`,
     ].join('\n')
