@@ -1,5 +1,7 @@
 # Fiorite Concept
 
+**All the stuff below is not structured nor formatted yet.**
+
 Fiorite is build with `@rollup/plugin-typescript` however, app is using `@rollup/plugin-swc` since `esbuild` has an issue with `emitDecoratorMetadata`.
 
 Entries:
@@ -11,6 +13,40 @@ Entries:
 - fiorite/idb - if done for browser
 - fiorite/firestore - firebase
 ```
+
+---
+
+## Installation
+
+1. Add package
+
+```
+npm install fiorite --save
+```
+
+2. Add `fiorite.json`. `autoImport` is feature which scans your directory and build `import './[file].ts'` into entry file.
+
+```json
+{
+  "port": 3000,
+  "autoImport": "src"
+}
+```
+
+3. Add `src/hello.ts` (or any business file).
+
+```typescript
+
+import { HttGet } from 'fiorite';
+
+export class HelloController {
+  @HttpGet() message() {
+    return 'Hello!';
+  }
+}
+```
+
+4. Run `fiorite` command, hit `http://localhost:3000` and see `Hello!`.
 
 ---
 
