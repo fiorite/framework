@@ -62,9 +62,8 @@ export class NotSynchronousServiceError {
   readonly name = 'AsynchronousServiceError';
   readonly message: string;
 
-  constructor(type: MaybeOptional<ServiceType>) {
-    const [type2] = MaybeOptional.spread(type);
-    this.message = `Service(${ServiceType.toString(type2)}) is not synchronous. Add callback() to provide(..., callback) instead.`;
+  constructor(type: ServiceType) {
+    this.message = `Service(${ServiceType.toString(type)}) is not synchronous. Add callback() to provide(..., callback) instead.`;
   }
 }
 
@@ -267,7 +266,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       return forceCallbackValue(complete => this._provide(type, complete));
     } catch (error) {
       if (error instanceof CallbackForceValueError) {
-        throw new NotSynchronousServiceError(type);
+        const [type2] = MaybeOptional.spread(type);
+        throw new NotSynchronousServiceError(type2);
       }
       throw error;
     }
