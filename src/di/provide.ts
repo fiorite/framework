@@ -153,7 +153,7 @@ export namespace Provide {
     private readonly _dependencies: readonly MaybeOptional<ServiceType>[];
 
     /**
-     * Compatible dependencies list for {@link ServiceDesciptor2}.
+     * Compatible dependencies list for {@link ServiceDesciptor}.
      */
     get dependencies(): readonly MaybeOptional<ServiceType>[] {
       return this._dependencies;

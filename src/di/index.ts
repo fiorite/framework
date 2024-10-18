@@ -30,6 +30,5 @@ export {
 } from './provider';
 export type { ServiceType } from './type';
 export { serviceRef, ServiceReference } from './service-ref';
-export { ServiceScope } from './service-scope';
 
 export { runProviderContext, provide } from './global'; // todo: will be moved away

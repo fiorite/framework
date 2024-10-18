@@ -1,7 +1,6 @@
 import {
   AbstractType,
   CallbackForceValueError,
-  CallbackShare,
   DecoratorOuterFunction,
   DecoratorRecorder,
   emptyCallback,
@@ -19,12 +18,12 @@ import {
 } from '../core';
 import { ServiceType } from './type';
 import { ServiceBehavior } from './behavior';
-import { ServiceScope } from './service-scope';
 import { ServiceFactoryCallback, ServiceFactoryFunction } from './factory';
 import { iterableForEach } from '../iterable';
 import { BehaveLike } from './decorators';
 import { Provide } from './provide';
 import { ServiceDescriptor } from './descriptor';
+import { ServiceContainer } from './container';
 
 /**
  * Dependency injection is built with the help of callbacks.
@@ -125,30 +124,15 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       };
     },
     [ServiceBehavior.Singleton]: (descriptor): ServiceFactoryFunctionWithProvider => {
-      return (provider, callback) => {
-        if (provider._singletons.has(descriptor.type)) {
-          return callback(provider._singletons.get(descriptor.type));
-        }
-
-        return provider._callbackShare(ServiceType.toString(descriptor.type), fulfill => {
-          descriptor.prototype(provider._provide.bind(provider), fulfill);
-        }, value => {
-          provider._singletons.set(descriptor.type, value);
-          callback(value);
-        });
-      };
+      return (provider, callback) => provider._singletonContainer.request(descriptor, callback);
     },
     [ServiceBehavior.Scoped]: (descriptor): ServiceFactoryFunctionWithProvider => {
       return (provider, callback) => {
-        if (!provider.scope) {
+        if (!provider.scopeContainer) {
           throw new Error('Scope is not defined. Use #createScope()');
         }
 
-        return provider.scope.through(
-          descriptor.type,
-          resolve => descriptor.prototype(provider._provide.bind(provider), resolve),
-          callback
-        );
+        return provider.scopeContainer.request(descriptor, callback);
       };
     },
     [ServiceBehavior.Prototype]: (descriptor): ServiceFactoryFunctionWithProvider => {
@@ -157,22 +141,22 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   };
 
   static createWithScope(from: ServiceProvider): ServiceProvider {
-    if (from._scope) {
+    if (from._scopeContainer) {
       throw new Error('ServiceProvider has Scope already.');
     }
 
     const scoped = new ServiceProvider(from);
-    scoped._scope = new ServiceScope();
+    scoped._scopeContainer = new ServiceContainer(scoped._provide.bind(scoped));
     return scoped;
   }
 
   static destroyScope(of: ServiceProvider): void {
-    if (!of._scope) {
+    if (!of._scopeContainer) {
       throw new Error('ServiceProvider has no Scope.');
     }
 
-    const scope = of._scope;
-    delete of._scope;
+    const scope = of._scopeContainer;
+    delete of._scopeContainer;
 
     iterableForEach<[ServiceType, unknown]>(entry => {
       if (isObjectMethod(entry[1], 'onScopeDestroy')) {
@@ -183,14 +167,12 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   private readonly _serviceMap = new Map<ServiceType, ServiceDescriptor>();
 
-  private readonly _singletons: Map<ServiceType, unknown>;
+  private readonly _singletonContainer: ServiceContainer;
 
-  private readonly _callbackShare: CallbackShare;
+  private _scopeContainer?: ServiceContainer;
 
-  private _scope?: ServiceScope;
-
-  get scope(): ServiceScope | undefined {
-    return this._scope;
+  get scopeContainer(): ServiceContainer | undefined {
+    return this._scopeContainer;
   }
 
   private _runtimeMap = new Map<ServiceType, ServiceFactoryFunctionWithProvider>;
@@ -235,13 +217,11 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       this._serviceMap.forEach((descriptor: ServiceDescriptor) => {
         this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior](descriptor));
       });
-      this._singletons = new Map();
-      this._callbackShare = new CallbackShare();
+      this._singletonContainer = new ServiceContainer(this._provide.bind(this));
     } else {
       this._serviceMap = descriptors._serviceMap;
       this._runtimeMap = descriptors._runtimeMap;
-      this._singletons = descriptors._singletons;
-      this._callbackShare = descriptors._callbackShare;
+      this._singletonContainer = descriptors._singletonContainer;
     }
 
     this._runtimeMap.set(ServiceProvider, (_, callback) => callback(this));
@@ -456,7 +436,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     const descriptors: ServiceDescriptor[] = [];
     this._serviceMap.forEach(descriptor => {
-      if (descriptor.singletonBehavior && !this._singletons.has(descriptor.type)) {
+      if (descriptor.singletonBehavior && !this._singletonContainer.has(descriptor.type)) {
         descriptors.push(descriptor);
       }
     });
