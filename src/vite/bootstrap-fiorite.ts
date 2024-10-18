@@ -100,7 +100,6 @@ export const bootstrapFiorite = (projectDir: string, options: {
     plugins.push(compiler);
   } else {
     let swcOptions: SwcOptions = {
-      cwd: projectDir,
       module: {
         type: 'nodenext',
       },
@@ -160,7 +159,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
         const path2 = queue.shift()!;
         const basename = path.basename(path2);
 
-        if (fs.statSync(path2).isDirectory() && !exclude.includes(basename)) {
+        if (fs.existsSync(path2) && fs.statSync(path2).isDirectory() && !exclude.includes(basename)) {
           queue.push(...fs.readdirSync(path2).map(file => `${path}/${file}`));
         } else if (path2.endsWith('.ts') && path2 !== mainPath) {
           files.push(path2);
