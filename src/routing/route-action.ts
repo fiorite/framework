@@ -46,12 +46,13 @@ export class ReflectedAction extends FunctionClass<RouteActionCallback> {
 
   constructor(type: Type, propertyKey: string | symbol) {
     const target = Provide.targetAssemble(type, propertyKey);
-
     super((context, next) => {
       const serviceProvider = context.provide!;
       serviceProvider.prototypeWhenMissing(type, (object: object) => {
         serviceProvider.getAll(target.dependencies, args => {
-          MaybePromiseLike.then(() => (object as any)[propertyKey](...args), next);
+          target(args, args2 => {
+            MaybePromiseLike.then(() => (object as any)[propertyKey](...args2), next);
+          });
         });
       });
     });

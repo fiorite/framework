@@ -55,9 +55,9 @@ export function Provide(): ProvideDecorator;
 export function Provide(optional: OptionalModifier): ProvideDecorator;
 export function Provide<T>(type: MaybeOptional<ServiceType<T>>): ProvideDecorator<T>;
 export function Provide<T>(optional: OptionalModifier, type: ServiceType<T>): ProvideDecorator<T>;
+export function Provide<T, R>(type: OptionalMarker<ServiceType<T>>, transform: (value?: T) => MaybePromiseLike<R>): ProvideDecorator<T, R>;
 export function Provide<T, R>(type: ServiceType<T>, transform: MapCallback<T, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
-export function Provide<T, R>(type: OptionalMarker<ServiceType<T>>, transform: MapCallback<T | undefined, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
-export function Provide<T, R>(optional: OptionalModifier, type: ServiceType<T>, transform: MapCallback<T | undefined, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
+export function Provide<T, R>(optional: OptionalModifier, type: ServiceType<T>, transform: (value?: T) => MaybePromiseLike<R>): ProvideDecorator<T, R>;
 export function Provide(...args: unknown[]): unknown {
   let type: MaybeOptional<ServiceType> | undefined, transform: MapCallback<unknown> | undefined,
     optional: boolean | undefined;
@@ -77,6 +77,7 @@ export function Provide(...args: unknown[]): unknown {
       transform = args[1] as MapCallback<unknown>;
     }
   } else if (3 === args.length) { // optional: OptionalModifier, type: ServiceType<T>, transform: MapCallback<T, MaybePromiseLike<R>>
+    optional = true;
     type = args[1] as ServiceType;
     transform = args[2] as MapCallback<unknown>;
   }
@@ -188,20 +189,16 @@ export namespace Provide {
   export function targetAssemble(target: Type, skipCount?: number): TargetDescriptor;
   export function targetAssemble(target: Type, propertyKey: string | symbol, skipCount?: number): TargetDescriptor;
   export function targetAssemble(...args: unknown[]) {
-    let type: Type, propertyKey: string | symbol | undefined, skipCount: number | undefined;
+    const type = args[0] as Type;
+    let propertyKey: string | symbol | undefined, skipCount: number | undefined;
 
-    if (1 === args.length) { // target: Type
-      type = args[0] as Type;
-    } else if (2 === args.length) {
+    if (2 === args.length) {
       if (typeof args[1] === 'number') { // target: Type, skipCount: number
-        type = args[0] as Type;
         skipCount = args[1];
       } else { // target: Type, propertyKey: string | symbol
-        type = args[0] as Type;
         propertyKey = args[1] as string | symbol;
       }
-    } else { // target: Type, propertyKey: string | symbol, skipCount: number
-      type = args[0] as Type;
+    } else if (3 === args.length) { // target: Type, propertyKey: string | symbol, skipCount: number
       propertyKey = args[1] as string | symbol;
       skipCount = args[2] as number;
     }
@@ -213,27 +210,27 @@ export namespace Provide {
 
     if (reflectMetadata) {
       const recordedDecoration = DecoratorRecorder.parameterSearch(Provide, type, propertyKey);
-      parameters = reflectMetadata.map<[index: number, Type]>((type, index) => [index, type])
+      parameters = reflectMetadata.map<[index: number, Type]>((type2, index) => [index, type2])
         .slice(skipCount || 0)
-        .map<ParameterDescriptor>(([index, type]) => {
+        .map<ParameterDescriptor>(([index, type2]) => {
           const filtered = recordedDecoration.filter(record => record.path[2] === index);
-          let type2: MaybeOptional<ServiceType>, transform: MapCallback<unknown> | undefined,
+          let type3: MaybeOptional<ServiceType>, transform: MapCallback<unknown> | undefined,
             optional: boolean | undefined;
 
           if (filtered.length) {
             const payload = filtered[0].payload;
-            type2 = payload.type || type;
+            type3 = payload.type || type2;
             transform = payload.transform || (x => x);
             optional = payload.optional;
             if (optional) {
-              type2 = new OptionalMarker(type2) as OptionalMarker<ServiceType>;
+              type3 = new OptionalMarker(type3) as OptionalMarker<ServiceType>;
             }
           } else {
-            type2 = type;
+            type3 = type2;
             transform = x => x; // todo: use known function proxyValue(val) => val;
           }
 
-          return new ParameterDescriptor(type2, transform, index, optional);
+          return new ParameterDescriptor(type3, transform, index, optional);
         });
     }
 

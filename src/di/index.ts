@@ -10,7 +10,7 @@ export {
 } from './decorators';
 export { ServiceDescriptor } from './descriptor';
 export { ServiceBehavior } from './behavior';
-export { configureProvider, globalConfiguration } from './configure';
+export { configure, globalConfiguration } from './configure';
 export type { ServiceConfigureFunction } from './configure';
 export type { ProvideDecorator } from './provide';
 export { Provide } from './provide';

@@ -182,10 +182,7 @@ export class CallbackQueue {
   }
 
   on(_event: 'empty', listener: VoidCallback) {
-
-    console.log(this._data);
     this._data.length ? this.add(done => {
-      console.log('empty');
       listener();
       done();
     }) : listener();

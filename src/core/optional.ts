@@ -23,6 +23,10 @@ export namespace MaybeOptional {
   }
 }
 
+export interface OptionalModifier {
+  <T>(value: T): OptionalMarker<T>;
+}
+
 /**
  * Use `optional` variable from `fiorite` which is the only instance of {@link OptionalModifier}.
  */
