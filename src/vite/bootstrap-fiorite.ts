@@ -160,7 +160,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
         const basename = path.basename(path2);
 
         if (fs.existsSync(path2) && fs.statSync(path2).isDirectory() && !exclude.includes(basename)) {
-          queue.push(...fs.readdirSync(path2).map(file => `${path}/${file}`));
+          queue.push(...fs.readdirSync(path2).map(file => `${path2}/${file}`));
         } else if (path2.endsWith('.ts') && path2 !== mainPath) {
           files.push(path2);
         }
