@@ -67,6 +67,9 @@ export function Provide(...args: unknown[]): unknown {
       optional = true;
     } else { // type: ServiceType<T>
       type = args[0] as MaybeOptional<ServiceType>;
+      if (args[0] instanceof OptionalMarker) {
+        optional = true;
+      }
     }
   } else if (2 === args.length) {
     if (OptionalModifier.instance === args[0]) { // optional: OptionalModifier, type: ServiceType<T>
@@ -75,6 +78,9 @@ export function Provide(...args: unknown[]): unknown {
     } else { // type: ServiceType<T>, transform: MapCallback<T, MaybePromiseLike<R>>
       type = args[0] as MaybeOptional<ServiceType>;
       transform = args[1] as MapCallback<unknown>;
+      if (args[0] instanceof OptionalMarker) {
+        optional = true;
+      }
     }
   } else if (3 === args.length) { // optional: OptionalModifier, type: ServiceType<T>, transform: MapCallback<T, MaybePromiseLike<R>>
     optional = true;
