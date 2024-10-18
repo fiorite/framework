@@ -4,7 +4,6 @@ Variety of `optional` uses:
 
 ```typescript
 import { Provide, optional } from 'fiorite';
-import { provide } from './global';
 
 class A {
   constructor(readonly b: string) {

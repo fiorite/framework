@@ -11,7 +11,7 @@ import {
   isType,
   MapCallback,
   MaybeOptional,
-  MaybePromiseLike,
+  MaybePromiseLike, OptionalMarker,
   Type,
   ValueCallback,
   VoidCallback
@@ -44,7 +44,16 @@ import { ServiceDescriptor2 } from './descriptor2';
  * ```
  * Core function which accepts service {@link type} and resolves it with {@link callback}.
  */
-export type ServiceProvideCallback = <T>(type: MaybeOptional<ServiceType<T>>, then: ValueCallback<T>) => void;
+export interface ServiceProvideCallback {
+  /**
+   * @throws ServiceNotFoundError if unable to find a service.
+   */
+  <T>(type: ServiceType<T>, then: ValueCallback<T>): void;
+
+  <T>(type: OptionalMarker<ServiceType<T>>, then: ValueCallback<T | undefined>): void;
+
+  <T>(type: MaybeOptional<ServiceType<T>>, then: ValueCallback<typeof type extends OptionalMarker<unknown> ? T | undefined : T>): void;
+}
 
 /**
  * Provide with return is an attempt to catch a synchronous value out of provide callback.
@@ -53,10 +62,20 @@ export type ServiceProvideCallback = <T>(type: MaybeOptional<ServiceType<T>>, th
  * @throws Error when unable to catch a value, thus service considered to be asynchronous, unless one uses callback overload.
  */
 export interface ServiceProvideFunction extends ServiceProvideCallback {
-  <T>(type: MaybeOptional<ServiceType<T>>): T;
+  <T>(type: ServiceType<T>): T;
+
+  <T>(type: OptionalMarker<ServiceType<T>>): T | undefined;
+
+  <T>(type: MaybeOptional<ServiceType<T>>): typeof type extends OptionalMarker<unknown> ? T | undefined : T;
 }
 
-export type ServiceProvideAsyncFunction = <T>(type: ServiceType<T>) => PromiseLike<T>;
+export interface ServiceProvideAsyncFunction {
+  <T>(type: ServiceType<T>): PromiseLike<T>;
+
+  <T>(type: OptionalMarker<ServiceType<T>>): PromiseLike<T | undefined>;
+
+  <T>(type: MaybeOptional<ServiceType<T>>): PromiseLike<typeof type extends OptionalMarker<unknown> ? T | undefined : T>;
+}
 
 export class NotSynchronousServiceError {
   readonly name = 'AsynchronousServiceError';
