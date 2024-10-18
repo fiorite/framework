@@ -8,5 +8,6 @@ chmod +x dist/cli.js
 
 dts-bundle-generator --no-check -o dist/index.d.ts src/index.ts
 dts-bundle-generator --no-check -o dist/nodejs.d.ts src/nodejs/index.ts
+dts-bundle-generator --no-check -o dist/sqlite3.d.ts src/sqlite3/index.ts
 dts-bundle-generator --no-check -o dist/firestore.d.ts src/firestore/index.ts
 #dts-bundle-generator --no-check --external-imports=vite  -o dist/vite.d.ts src/vite/index.ts
