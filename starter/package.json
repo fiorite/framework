@@ -5,7 +5,6 @@
   },
   "type": "module",
   "dependencies": {
-    "fiorite": "^0.0.13",
-    "reflect-metadata": "^0.2.2"
+    "fiorite": "^0.0.15"
   }
 }

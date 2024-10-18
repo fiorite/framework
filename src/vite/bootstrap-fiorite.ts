@@ -257,7 +257,7 @@ export const bootstrapFiorite = (projectDir: string, options: {
 
             // TODO: add difference methods to services and routes
             currentApp.routing.routeSet.forEach(route => {
-              const routeString = route.toString();
+              const routeString = route.toString(true);
               if (!previousRoutes.includes(routeString)) {
                 previousRoutes.push(routeString);
                 currentApp.logger.info('route-added: ' + routeString);
@@ -277,13 +277,21 @@ export const bootstrapFiorite = (projectDir: string, options: {
         });
 
         server.middlewares.use((req, res) => {
-          currentApp.within(complete => {
-            currentApp.httpServer
-              .platformRunner
-              .then(runner => (runner as NodeJsHttpServer)(req, res));
+          if (currentApp) {
+            currentApp.within(complete => {
+              res.on('close', complete); // todo: extend lifecycle and perhaps connect to scope lifetime.
 
-            res.on('close', complete); // todo: extend lifecycle and perhaps connect to scope lifetime.
-          });
+              try {
+                currentApp.httpServer
+                  .platformRunner
+                  .then(runner => (runner as NodeJsHttpServer)(req, res));
+              } catch (err) {
+                console.error(err);
+              }
+            });
+          } else {
+            console.warn('app is not ready yet');
+          }
         });
       },
       transform: (code, id, options) => {

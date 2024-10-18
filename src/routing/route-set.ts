@@ -17,6 +17,17 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
     }
   }
 
+  replace(value: RouteDescriptor): this {
+    if (this.has(value)) {
+      this._innerMap.set(value.toString(), value);
+    } else {
+      super.add(value);
+    }
+
+    this._changeEmitter.emit('change', void 0);
+    return this;
+  }
+
   override add(path: string, action: RouteActionFunction): this;
   override add(httpMethod: HttpMethod | string, path: string, action: RouteActionFunction): this;
   override add(value: RouteDescriptor): this;
@@ -85,7 +96,7 @@ export class RouteSet extends SetWithInnerKey<RouteDescriptor, string> {
       }, [] as Function[]);
     for (const type of types) {
       for (const route of ReflectedAction.forType(type as Type)) {
-        this.add(route);
+        this.replace(route);
       }
     }
     return this;

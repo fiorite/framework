@@ -27,7 +27,7 @@ export class RouteDescriptor {
     this._httpMethod = httpMethod;
   }
 
-  toString(): string {
+  toString(extended = false): string {
     let actionString: string;
     if (this.action instanceof ReflectedAction) {
       actionString = this.action.type.name + '#' + this.action.propertyKey.toString();
@@ -35,6 +35,8 @@ export class RouteDescriptor {
       actionString = '(anonymous function)';
     }
 
-    return [this.httpMethod || '*', this.path.value, ' => '+actionString].join(' ');
+    return !extended ?
+      [this.httpMethod || '*', this.path.value/*, ' => '+actionString*/].join(' ') :
+      [this.httpMethod || '*', this.path.value, ' => '+actionString].join(' ');
   }
 }
