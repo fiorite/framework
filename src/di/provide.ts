@@ -55,8 +55,9 @@ export function Provide(): ProvideDecorator;
 export function Provide(optional: OptionalModifier): ProvideDecorator;
 export function Provide<T>(type: MaybeOptional<ServiceType<T>>): ProvideDecorator<T>;
 export function Provide<T>(optional: OptionalModifier, type: ServiceType<T>): ProvideDecorator<T>;
-export function Provide<T, R>(type: MaybeOptional<ServiceType<T>>, transform: MapCallback<T, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
-export function Provide<T, R>(optional: OptionalModifier, type: ServiceType<T>, transform: MapCallback<T, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
+export function Provide<T, R>(type: ServiceType<T>, transform: MapCallback<T, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
+export function Provide<T, R>(type: OptionalMarker<ServiceType<T>>, transform: MapCallback<T | undefined, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
+export function Provide<T, R>(optional: OptionalModifier, type: ServiceType<T>, transform: MapCallback<T | undefined, MaybePromiseLike<R>>): ProvideDecorator<T, R>;
 export function Provide(...args: unknown[]): unknown {
   let type: MaybeOptional<ServiceType> | undefined, transform: MapCallback<unknown> | undefined,
     optional: boolean | undefined;
