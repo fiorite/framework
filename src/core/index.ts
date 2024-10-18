@@ -26,6 +26,7 @@ export * from './error';
 export { FunctionClass } from './function-class';
 export { JsPlatform, currentJsPlatform } from './js-platform';
 export { isObject, isObjectMethod } from './object-utils';
+export { optional, OptionalModifier, OptionalMarker, MaybeOptional } from './optional';
 export {
   MaybePromiseLike,
   isPromiseLike,

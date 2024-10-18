@@ -10,18 +10,21 @@ import {
   isObjectMethod,
   isType,
   MapCallback,
+  MaybeOptional,
+  MaybePromiseLike,
   Type,
   ValueCallback,
   VoidCallback
 } from '../core';
 import { ServiceType } from './service-type';
-import { ServiceDescriptor } from './service-descriptor';
 import { ServiceBehavior } from './service-behavior';
 import { ServiceScope } from './service-scope';
-import { ServiceFactoryCallback, ServiceFactoryFunction, TypeFactory } from './service-factory';
+import { ServiceFactoryCallback, ServiceFactoryFunction } from './service-factory';
 import { iterableForEach } from '../iterable';
 import { ServiceSet } from './service-set';
 import { BehaveLike } from './decorators';
+import { Provide } from './provide';
+import { ServiceDescriptor2 } from './descriptor2';
 
 /**
  * Dependency injection is built with the help of callbacks.
@@ -41,7 +44,7 @@ import { BehaveLike } from './decorators';
  * ```
  * Core function which accepts service {@link type} and resolves it with {@link callback}.
  */
-export type ServiceProvideCallback = <T>(type: ServiceType<T>, then: ValueCallback<T>) => void;
+export type ServiceProvideCallback = <T>(type: MaybeOptional<ServiceType<T>>, then: ValueCallback<T>) => void;
 
 /**
  * Provide with return is an attempt to catch a synchronous value out of provide callback.
@@ -50,7 +53,7 @@ export type ServiceProvideCallback = <T>(type: ServiceType<T>, then: ValueCallba
  * @throws Error when unable to catch a value, thus service considered to be asynchronous, unless one uses callback overload.
  */
 export interface ServiceProvideFunction extends ServiceProvideCallback {
-  <T>(type: ServiceType<T>): T;
+  <T>(type: MaybeOptional<ServiceType<T>>): T;
 }
 
 export type ServiceProvideAsyncFunction = <T>(type: ServiceType<T>) => PromiseLike<T>;
@@ -59,8 +62,9 @@ export class NotSynchronousServiceError {
   readonly name = 'AsynchronousServiceError';
   readonly message: string;
 
-  constructor(type: ServiceType) {
-    this.message = `Service(${ServiceType.toString(type)}) is not synchronous. Add callback() to provide(..., callback) instead.`;
+  constructor(type: MaybeOptional<ServiceType>) {
+    const [type2] = MaybeOptional.spread(type);
+    this.message = `Service(${ServiceType.toString(type2)}) is not synchronous. Add callback() to provide(..., callback) instead.`;
   }
 }
 
@@ -85,8 +89,8 @@ export interface OnScopeDestroy {
   onScopeDestroy(): void;
 }
 
-export class ServiceProvider extends FunctionClass<ServiceProvideFunction> implements Iterable<ServiceDescriptor> {
-  private static _behaviorFactories: Record<ServiceBehavior, MapCallback<ServiceDescriptor, ServiceFactoryFunctionWithProvider>> = {
+export class ServiceProvider extends FunctionClass<ServiceProvideFunction> implements Iterable<ServiceDescriptor2> {
+  private static _behaviorFactories: Record<ServiceBehavior, MapCallback<ServiceDescriptor2, ServiceFactoryFunctionWithProvider>> = {
     [ServiceBehavior.Inherited]: (descriptor) => {
       return (provider, callback): void => {
         provider._makeBehaviorInheritance(descriptor).forEach(resolvedDescriptor => {
@@ -110,7 +114,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
         }
 
         return provider._callbackShare(ServiceType.toString(descriptor.type), fulfill => {
-          descriptor.factory(provider._provide.bind(provider), fulfill);
+          descriptor.prototype(provider._provide.bind(provider), fulfill);
         }, value => {
           provider._singletons.set(descriptor.type, value);
           callback(value);
@@ -125,13 +129,13 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
         return provider.scope.through(
           descriptor.type,
-          resolve => descriptor.factory(provider._provide.bind(provider), resolve),
+          resolve => descriptor.prototype(provider._provide.bind(provider), resolve),
           callback
         );
       };
     },
     [ServiceBehavior.Prototype]: (descriptor): ServiceFactoryFunctionWithProvider => {
-      return (provider, callback) => descriptor.factory(provider._provide.bind(provider), callback);
+      return (provider, callback) => descriptor.prototype(provider._provide.bind(provider), callback);
     },
   };
 
@@ -184,7 +188,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     DecoratorRecorder.classSearch(BehaveLike).map(d => [d.path[0] as Type, d.payload])
   );
 
-  constructor(descriptors: Iterable<ServiceDescriptor> = []) {
+  constructor(descriptors: Iterable<ServiceDescriptor2> = []) {
     super((...args: unknown[]) => (this.get as Function)(...args));
 
     if (!(descriptors instanceof ServiceProvider)) { // todo: maybe refactor
@@ -212,7 +216,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       });
 
       this._makeBehaviorInheritance().forEach(newDescriptor => this._serviceSet.replaceInherited(newDescriptor));
-      this._serviceSet.forEach((descriptor: ServiceDescriptor) => {
+      this._serviceSet.forEach((descriptor: ServiceDescriptor2) => {
         this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior](descriptor));
       });
       this._singletons = new Map();
@@ -238,19 +242,23 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   /**
    * Raw {@link ServiceProvideCallback}, used internally.
    */
-  private _provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void {
-    const behaviorFactory = this._runtimeMap.get(type) as ServiceFactoryFunctionWithProvider<T> | undefined;
+  private _provide<T>(type: MaybeOptional<ServiceType<T>>, callback: ValueCallback<T>): void {
+    const [type2, optional] = MaybeOptional.spread(type);
+    const behaviorFactory = this._runtimeMap.get(type2) as ServiceFactoryFunctionWithProvider<T> | undefined;
 
     if (undefined === behaviorFactory) {
-      throw new ServiceNotFoundError(type);
+      if (optional) {
+        return callback(undefined as T);
+      }
+      throw new ServiceNotFoundError(type2);
     }
 
     return behaviorFactory(this, callback);
   }
 
-  get<T>(type: ServiceType<T>): T;
-  get<T>(type: ServiceType<T>, then: ValueCallback<T>): void;
-  get(type: ServiceType, callback?: ValueCallback<unknown>): unknown {
+  get<T>(type: MaybeOptional<ServiceType<T>>): T;
+  get<T>(type: MaybeOptional<ServiceType<T>>, then: ValueCallback<T>): void;
+  get(type: MaybeOptional<ServiceType>, callback?: ValueCallback<unknown>): unknown {
     if (callback) {
       return this._provide(type, callback);
     }
@@ -265,11 +273,11 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     }
   }
 
-  getAll(array: ServiceType[], callback: ValueCallback<unknown[]>): void {
+  getAll(array: readonly MaybeOptional<ServiceType>[], callback: ValueCallback<unknown[]>): void {
     return ServiceFactoryCallback.all(array)(this._provide.bind(this), callback);
   }
 
-  async<T>(type: ServiceType<T>): PromiseLike<T> {
+  async<T>(type: MaybeOptional<ServiceType<T>>): PromiseLike<T> {
     return new Promise((resolve, reject) => {
       try {
         this._provide(type, resolve);
@@ -279,7 +287,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     });
   }
 
-  asyncAll(array: ServiceType[]): PromiseLike<unknown[]> {
+  asyncAll(array: MaybeOptional<ServiceType>[]): PromiseLike<unknown[]> {
     return Promise.all(
       array.map(type => this.async(type))
     );
@@ -294,19 +302,25 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   // region procedures
 
-  private _dependenciesToDescriptors(descriptor: ServiceDescriptor): ServiceDescriptor[] {
-    return descriptor.dependencies.filter(x => x !== ServiceProvider).map(type => {
+  private _dependenciesToDescriptors(descriptor: ServiceDescriptor2): ServiceDescriptor2[] {
+    return descriptor.dependencies.filter(x => x !== ServiceProvider).reduce((result, dependency) => {
+      const [type, optional] = MaybeOptional.spread(dependency);
       const x = this._serviceSet.get(type);
       if (!x) {
-        throw new Error('Missing dependency: ' + ServiceType.toString(type));
+        if (!optional) {
+          throw new Error('Missing dependency: ' + ServiceType.toString(type));
+        }
+      } else {
+        result.push(x);
       }
-      return x;
-    });
+
+      return result;
+    }, [] as ServiceDescriptor2[]);
   }
 
-  private _makeBehaviorInheritance(...descriptors: ServiceDescriptor[]): ServiceDescriptor[] {
-    const result: ServiceDescriptor[] = [];
-    const queue: ServiceDescriptor[] = [];
+  private _makeBehaviorInheritance(...descriptors: ServiceDescriptor2[]): ServiceDescriptor2[] {
+    const result: ServiceDescriptor2[] = [];
+    const queue: ServiceDescriptor2[] = [];
 
     if (descriptors.length) {
       if (descriptors.some(x => !x.inheritedBehavior)) {
@@ -323,17 +337,23 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     while (queue.length) {
       const descriptor1 = queue.shift()!;
-      const dependencies = descriptor1.dependencies.map(type => {
+      const dependencies = descriptor1.dependencies.reduce((descriptors, dependency) => {
+        const [type, optional] = MaybeOptional.spread(dependency);
         const index = result.findIndex(x => x.type === type);
         if (index > -1) {
-          return result[index];
+          descriptors.push(result[index]);
+        } else {
+          const x = this._serviceSet.get(type);
+          if (!x) {
+            if (!optional) {
+              throw new Error('Missing dependency: ' + ServiceType.toString(type));
+            }
+          } else {
+            descriptors.push(x);
+          }
         }
-        const x = this._serviceSet.get(type);
-        if (!x) {
-          throw new Error('Missing dependency: ' + ServiceType.toString(type));
-        }
-        return x;
-      });
+        return descriptors;
+      }, [] as ServiceDescriptor2[]);
 
       const inheritedDeps = dependencies.filter(x => x.inheritedBehavior);
       if (inheritedDeps.length) {
@@ -347,14 +367,14 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       } else {
         const behaviorToInherit = dependencies.some(dependency => dependency.scopedBehavior) ?
           ServiceBehavior.Scoped : ServiceBehavior.Singleton;
-        result.push(descriptor1.inherit(behaviorToInherit));
+        result.push(descriptor1.withBehavior(behaviorToInherit));
       }
     }
 
     return result;
   }
 
-  private _checkCircularDependencies(...descriptors: ServiceDescriptor[]): void {
+  private _checkCircularDependencies(...descriptors: ServiceDescriptor2[]): void {
     const queue1 = descriptors.length ? descriptors : Array.from(this);
 
     while (queue1.length) {
@@ -371,7 +391,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     }
   }
 
-  private _checkBehaviourDependencies(...descriptors: ServiceDescriptor[]): void {
+  private _checkBehaviourDependencies(...descriptors: ServiceDescriptor2[]): void {
     const queue1 = descriptors.length ? descriptors : Array.from(this);
 
     while (queue1.length) {
@@ -403,7 +423,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   //   });
   // }
 
-  private _mentionedInDependencies(dependency: ServiceDescriptor): boolean {
+  private _mentionedInDependencies(dependency: ServiceDescriptor2): boolean {
     for (const descriptor of this._serviceSet) {
       if (descriptor.dependencies.includes(dependency.type)) {
         return true;
@@ -417,7 +437,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   preCacheSingletons(callback: VoidCallback): void {
     this._preCacheSingletons = true;
 
-    const descriptors: ServiceDescriptor[] = [];
+    const descriptors: ServiceDescriptor2[] = [];
     this._serviceSet.forEach(descriptor => {
       if (descriptor.singletonBehavior && !this._singletons.has(descriptor.type)) {
         descriptors.push(descriptor);
@@ -444,12 +464,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       return this.addValue(args[0] as object);
     }
 
-    if (args.length > 1 && isType(args[1])) {
+    if (args.length > 1 && (isType(args[1]) || Array.isArray(args[1]))) {
       return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as ServiceBehavior);
-    }
-
-    if (args.length > 1 && Array.isArray(args[1])) {
-      return this.addFactory(args[0] as ServiceType, (...args: unknown[]) => new (args[0] as Type)(...args), args[1] as ServiceType[], args[2] as ServiceBehavior);
     }
 
     return this.addValue(args[0] as Type, args[1] as object);
@@ -467,7 +483,10 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     while (queue.length) {
       const descriptor = queue.shift()!;
       descriptor.dependencies
-        .filter(dependency => !this._serviceSet.has(dependency) && dependency !== ServiceProvider)
+        .filter(dependency => {
+          const [dependencyType, optional] = MaybeOptional.spread(dependency);
+          return !this._serviceSet.has(dependencyType) && !optional && dependency !== ServiceProvider; // ignore optional type
+        })
         .filter(isType)
         .map(type => this._addType(type))
         .forEach(descriptor2 => queue.push(descriptor2));
@@ -475,6 +494,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     return this;
   }
 
+  // todo: copy all overloads from ServiceDescriptor
   addType(type: Type): this;
   addType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
   addType(...args: unknown[]): this {
@@ -486,23 +506,20 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     return this;
   }
 
-  private _addType<T>(implementation: Type<T>, type: ServiceType<T> = implementation, behavior?: ServiceBehavior): ServiceDescriptor {
+  private _addType<T>(implementation: Type<T>, type: ServiceType<T> = implementation, behavior?: ServiceBehavior): ServiceDescriptor2 {
     if (!behavior) {
       behavior = this._behavioralMap.get(implementation) || ServiceBehavior.Inherited;
     }
 
-    const descriptor = ServiceDescriptor.fromType(type, implementation, behavior);
+    const descriptor = ServiceDescriptor2.fromType(type, implementation, behavior);
     this._serviceSet.add(descriptor);
     return descriptor;
   }
 
-  addFactory<T>(
-    type: ServiceType<T>,
-    factory: ServiceFactoryFunction<T>,
-    dependencies: ServiceType[] = [],
-    behavior?: ServiceBehavior,
-  ): this {
-    const descriptor = ServiceDescriptor.fromFactory(type, factory, dependencies, behavior);
+  addFactory<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
+  addFactory<T>(type: ServiceType<T>, dependencies: MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
+  addFactory(...args: unknown[]): this {
+    const descriptor = (ServiceDescriptor2.fromFactory as Function)(...args);
     this._serviceSet.add(descriptor);
     return this;
   }
@@ -511,8 +528,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   addValue<T>(serviceType: ServiceType<T>, object: T): this;
   addValue(...args: unknown[]): this {
     this._serviceSet.add(
-      args.length === 1 ? ServiceDescriptor.fromValue(args[0] as object) :
-        ServiceDescriptor.fromValue(args[0] as ServiceType<object>, args[1] as object)
+      args.length === 1 ? ServiceDescriptor2.fromValue(args[0] as object) :
+        ServiceDescriptor2.fromValue(args[0] as ServiceType<object>, args[1] as object)
     );
     return this;
   }
@@ -532,8 +549,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
+      args[1] as ServiceFactoryFunction<unknown>,
       ServiceBehavior.Inherited
     );
   }
@@ -558,8 +575,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
+      args[1] as ServiceFactoryFunction<unknown>,
       ServiceBehavior.Singleton
     );
   }
@@ -579,8 +596,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
+      args[1] as ServiceFactoryFunction<unknown>,
       ServiceBehavior.Scoped
     );
   }
@@ -600,21 +617,22 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
     return this.addFactory(
       args[0] as AbstractType,
-      args[1] as ServiceFactoryFunction<unknown>,
       Array.isArray(args[2]) ? args[2] : [],
+      args[1] as ServiceFactoryFunction<unknown>,
       ServiceBehavior.Prototype
     );
   }
 
-  prototypeWhenMissing<T>(type: Type<T>, result: ValueCallback<T>): void {
+  prototypeWhenMissing<T>(type: Type<T>, done: ValueCallback<T>): void {
     if (this.has(type)) {
-      return this.get(type, result);
+      return this.get(type, done);
     }
 
-    new TypeFactory(type)(this._provide.bind(this), result);
+    const target = Provide.targetAssemble(type);
+    this.getAll(target.dependencies, args => done(new type(...args)));
   }
 
-  [Symbol.iterator](): Iterator<ServiceDescriptor> {
+  [Symbol.iterator](): Iterator<ServiceDescriptor2> {
     return this._serviceSet[Symbol.iterator]();
   }
 }

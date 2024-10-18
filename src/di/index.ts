@@ -8,24 +8,16 @@ export {
   Scoped,
   Prototype,
 } from './decorators';
+export { ServiceDescriptor2 } from './descriptor2';
 export { ServiceBehavior } from './service-behavior';
 export { configureProvider, globalConfiguration } from './service-configure';
 export type { ServiceConfigureFunction } from './service-configure';
-export { ServiceDescriptor } from './service-descriptor';
 export { ServiceSet } from './service-set';
 export type { ProvideDecorator } from './provide';
 export { Provide } from './provide';
 export type {
   ServiceFactoryCallback,
   ServiceFactoryFunction,
-} from './service-factory';
-export {
-  ServiceFactory,
-  ServiceFactoryWithReturn,
-  ValueFactory,
-  TypeFactory,
-  TargetParametersFactory,
-  ObjectMethodFactory,
 } from './service-factory';
 export type {
   ServiceProvideCallback,

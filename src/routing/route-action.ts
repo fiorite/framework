@@ -1,7 +1,7 @@
 import { HttpContext } from '../http';
 import { DecoratorRecorder, FunctionClass, MaybePromiseLike, Type, ValueCallback } from '../core';
 import { RouteResult } from './route-result';
-import { ObjectMethodFactory, ServiceType } from '../di';
+import { Provide } from '../di';
 import { RouteDescriptor } from './route-descriptor';
 import { Route, RoutePrefix } from './decorators';
 
@@ -31,6 +31,7 @@ export class ReflectedAction extends FunctionClass<RouteActionCallback> {
   get propertyKey(): string | symbol {
     return this._propertyKey;
   }
+
   // private readonly _objectMethodFactory: ObjectMethodFactory<unknown>;
 
   static forType(value: Type): RouteDescriptor[] {
@@ -44,17 +45,14 @@ export class ReflectedAction extends FunctionClass<RouteActionCallback> {
   }
 
   constructor(type: Type, propertyKey: string | symbol) {
-    const methodFactory = new ObjectMethodFactory(type, propertyKey);
+    const target = Provide.targetAssemble(type, propertyKey);
+
     super((context, next) => {
       const serviceProvider = context.provide!;
       serviceProvider.prototypeWhenMissing(type, (object: object) => {
-        methodFactory(<R>(type2: ServiceType<R>, callback2: ValueCallback<R>) => {
-          if (type2 === type) {
-            return callback2(object as unknown as R);
-          }
-
-          return context.provide!(type2, callback2);
-        }, next);
+        serviceProvider.getAll(target.dependencies, args => {
+          MaybePromiseLike.then(() => (object as any)[propertyKey](...args), next);
+        });
       });
     });
 

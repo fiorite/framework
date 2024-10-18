@@ -1,5 +1,33 @@
 # Dependency Injection
 
+```
+[ ] Optional inject as global strategy or Provide({ optional }) 
+```
+
+## Provide()
+
+```typescript
+import { Provide, optional } from 'fiorite';
+
+class A {
+  constructor(readonly b: string) { }
+}
+
+class Example {
+  constructor(
+    @Provide() arg1: A,
+    @Provide(optional) arg2: A | undefined,
+    @Provide(A) arg3: unknown,
+    @Provide(optional, A) arg4: unknown | undefined,
+    @Provide(optional(A)) arg5: unknown | undefined,
+    @Provide(A, a => a.b) arg6: string,
+    @Provide(optional, A, a => a ? a.b : '-') arg7: string,
+    @Provide(optional(A), a => a ? a.b : '-') arg8: string,
+  ) { }
+}
+```
+
+
 **What are services?** - reusable parts which follow behavior patterns and can be projected by consumer code.
 
 `emitDecoratorMetadata: true` in `tsconfig.json` is required.
