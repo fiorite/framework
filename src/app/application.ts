@@ -123,6 +123,7 @@ export function makeApplication(...features: ServiceConfigureFunction[]): Applic
   const queue = new CallbackQueue();
 
   const runnerLoader = ComputedCallback.preCache<void>(done => {
+    // @ts-ignore
     const port = Number(currentJsPlatform === 'nodejs' ? (() => process.env['PORT'])() : 3000 || 3000);
     addHttpServer(provider, port, done);
   });

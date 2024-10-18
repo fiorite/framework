@@ -1,6 +1,6 @@
 # Fiorite Concept
 
-**All the stuff below is not structured nor formatted yet.**
+**⚠️ All the stuff below is not structured nor formatted yet (just notes). It won't be fixed until v1 is done.**
 
 Fiorite is build with `@rollup/plugin-typescript` however, app is using `@rollup/plugin-swc` since `esbuild` has an issue with `emitDecoratorMetadata`.
 

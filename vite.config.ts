@@ -29,6 +29,6 @@ export default defineConfig({
       external: [...nodeJsExternal, 'sqlite3', 'firebase-admin/firestore', '@rollup/plugin-typescript', 'reflect-metadata', '@swc/core', '@rollup/plugin-swc', 'fsevents', 'vite'],
     }
   },
-  plugins: [typescript()],
+  plugins: [typescript({ declaration: false })],
 });
 

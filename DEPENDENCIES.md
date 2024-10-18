@@ -1,0 +1,2 @@
+- `fiorite/sqlite3` done with `sqlite3@^5.1.7`
+- `fiorite/firestore` done with `firebase-admin@^12.5.0`
