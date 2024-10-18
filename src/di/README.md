@@ -1,16 +1,14 @@
 # Dependency Injection
 
-```
-[ ] Optional inject as global strategy or Provide({ optional }) 
-```
-
-## Provide()
+Variety of `optional` uses:
 
 ```typescript
 import { Provide, optional } from 'fiorite';
+import { provide } from './global';
 
 class A {
-  constructor(readonly b: string) { }
+  constructor(readonly b: string) {
+  }
 }
 
 class Example {
@@ -23,10 +21,19 @@ class Example {
     @Provide(A, a => a.b) arg6: string,
     @Provide(optional, A, a => a ? a.b : '-') arg7: string,
     @Provide(optional(A), a => a ? a.b : '-') arg8: string,
-  ) { }
+  ) {
+  }
 }
 ```
 
+```typescript
+class B {
+  constructor(a?: A) { }
+}
+
+provider.addType(B, [optional(A)]);
+provider.addFactory(B, [optional(A)], (a?: A) => new B(a));
+```
 
 **What are services?** - reusable parts which follow behavior patterns and can be projected by consumer code.
 
