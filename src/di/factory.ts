@@ -1,6 +1,6 @@
 import { MaybeOptional, MaybePromiseLike, ValueCallback } from '../core';
-import { ServiceType } from './service-type';
-import type { ServiceProvideCallback } from './service-provider';
+import { ServiceType } from './type';
+import type { ServiceProvideCallback } from './provider';
 
 export type ServiceFactoryCallback<T = unknown> = (provide: ServiceProvideCallback, callback: ValueCallback<T>) => void;
 

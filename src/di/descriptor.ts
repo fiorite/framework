@@ -1,13 +1,13 @@
 import { FunctionClass, MaybeOptional, MaybePromiseLike, Type, ValueCallback } from '../core';
-import { ServiceType } from './service-type';
-import { ServiceProvideCallback } from './service-provider';
-import { ServiceFactoryCallback } from './service-factory';
-import { ServiceBehavior } from './service-behavior';
+import { ServiceType } from './type';
+import { ServiceProvideCallback } from './provider';
+import { ServiceFactoryCallback } from './factory';
+import { ServiceBehavior } from './behavior';
 import { Provide } from './provide';
 
 type PrototypeFactoryFunction<T = unknown> = (args: any[], done: ValueCallback<T>) => void;
 
-export class ServiceDescriptor2<T = unknown> {
+export class ServiceDescriptor<T = unknown> {
   private readonly _type: ServiceType<T>;
 
   get type(): ServiceType<T> {
@@ -44,9 +44,9 @@ export class ServiceDescriptor2<T = unknown> {
     return ServiceBehavior.Prototype === this.behavior;
   }
 
-  static fromValue<T extends object | FunctionClass>(value: T): ServiceDescriptor2<T>;
-  static fromValue<T>(type: ServiceType<T>, value: T): ServiceDescriptor2<T>;
-  static fromValue(...args: unknown[]): ServiceDescriptor2 {
+  static fromValue<T extends object | FunctionClass>(value: T): ServiceDescriptor<T>;
+  static fromValue<T>(type: ServiceType<T>, value: T): ServiceDescriptor<T>;
+  static fromValue(...args: unknown[]): ServiceDescriptor {
     let type: ServiceType, value: object;
 
     if (1 === args.length) {
@@ -59,14 +59,14 @@ export class ServiceDescriptor2<T = unknown> {
       value = args[1] as object;
     }
 
-    return new ServiceDescriptor2(type!, (_, done) => done(value), [], ServiceBehavior.Singleton);
+    return new ServiceDescriptor(type!, (_, done) => done(value), [], ServiceBehavior.Singleton);
   }
 
-  static fromType<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor2<T>;
-  static fromType<T>(type: Type<T>, dependencies: MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor2<T>;
-  static fromType<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor2<T>;
-  static fromType<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor2<T>;
-  static fromType(...args: unknown[]): ServiceDescriptor2 {
+  static fromType<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType<T>(type: Type<T>, dependencies: MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType(...args: unknown[]): ServiceDescriptor {
     let type: ServiceType, prototypeFactory: PrototypeFactoryFunction,
       dependencies: readonly MaybeOptional<ServiceType>[],
       behavior: ServiceBehavior | undefined;
@@ -111,11 +111,11 @@ export class ServiceDescriptor2<T = unknown> {
       behavior = args[3] as ServiceBehavior;
     }
 
-    return new ServiceDescriptor2(type, prototypeFactory, dependencies, behavior);
+    return new ServiceDescriptor(type, prototypeFactory, dependencies, behavior);
   }
 
-  static fromFactory<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): ServiceDescriptor2<T>;
-  static fromFactory<T>(type: ServiceType<T>, dependencies: MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): ServiceDescriptor2<T>;
+  static fromFactory<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromFactory<T>(type: ServiceType<T>, dependencies: MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
   static fromFactory<T>(...args: unknown[]) {
     const type = args[0] as ServiceType;
     let prototypeFactory: PrototypeFactoryFunction, dependencies: readonly MaybeOptional<ServiceType>[],
@@ -135,7 +135,7 @@ export class ServiceDescriptor2<T = unknown> {
     //       throw new Error('Factory dependencies missing. Deps [' + dependencies.map(ServiceType.toString).join(', ') + ']. Function: ' + factory.toString());
     //     }
 
-    return new ServiceDescriptor2(type, prototypeFactory, dependencies, behavior);
+    return new ServiceDescriptor(type, prototypeFactory, dependencies, behavior);
   }
 
   private constructor(
@@ -150,8 +150,8 @@ export class ServiceDescriptor2<T = unknown> {
     this._behavior = undefined === behavior ? ServiceBehavior.Inherited : behavior;
   }
 
-  withBehavior(other: ServiceBehavior): ServiceDescriptor2<T> {
-    return new ServiceDescriptor2(this.type, this._prototypeFactory, this.dependencies, other);
+  withBehavior(other: ServiceBehavior): ServiceDescriptor<T> {
+    return new ServiceDescriptor(this.type, this._prototypeFactory, this.dependencies, other);
   }
 
   prototype(provide: ServiceProvideCallback, done: ValueCallback<T>) {

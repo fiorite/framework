@@ -1,4 +1,4 @@
-import { ServiceBehavior } from './service-behavior';
+import { ServiceBehavior } from './behavior';
 import { ClassDecoratorWithPayload, makeClassDecorator } from '../core';
 
 export function BehaveLike(behavior: ServiceBehavior): ClassDecoratorWithPayload<ServiceBehavior, unknown> {

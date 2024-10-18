@@ -1,6 +1,5 @@
-import { ServiceProvider } from './service-provider';
+import { ServiceProvider } from './provider';
 import { MaybePromiseLike } from '../core';
-import { privateDecrypt } from 'node:crypto';
 
 export type ServiceConfigureFunction = (provider: ServiceProvider) => MaybePromiseLike<unknown>;
 

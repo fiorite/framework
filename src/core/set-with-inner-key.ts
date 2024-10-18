@@ -52,7 +52,7 @@ export class SetWithInnerKey<T, K = T> implements Set<T> {
 
   entries(): IterableIterator<[T, T]> {
     const iterator = this._innerMap.values()[Symbol.iterator]();
-    const result: IterableIterator<[T, T]> = {
+    const result: IterableIterator<[T, T]> = { // iternal iterator. todo: remove this interface and implement map to consumers
       next(): IteratorResult<[T, T]> {
         const result = iterator.next();
         return result.done ? { done: true, value: undefined } : {
@@ -73,6 +73,6 @@ export class SetWithInnerKey<T, K = T> implements Set<T> {
   }
 
   [Symbol.iterator](): IterableIterator<T> {
-    return this._innerMap.values();
+    return this._innerMap.values()[Symbol.iterator]();
   }
 }

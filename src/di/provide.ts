@@ -12,7 +12,7 @@ import {
   Type,
   ValueCallback
 } from '../core';
-import { ServiceType } from './service-type';
+import { ServiceType } from './type';
 
 export class ProvideDecoratorPayload<T = unknown, R = T> {
   private readonly _type?: MaybeOptional<ServiceType<T>>;

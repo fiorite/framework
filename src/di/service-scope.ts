@@ -1,4 +1,4 @@
-import { ServiceType } from './service-type';
+import { ServiceType } from './type';
 import { CallbackShare, ValueCallback } from '../core';
 
 export class ServiceScope implements Iterable<[ServiceType, unknown]> {

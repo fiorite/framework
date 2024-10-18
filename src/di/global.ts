@@ -12,7 +12,7 @@
  * - Test cases will become more complex, use on your consideration.
  * There a chance, in the future, to get a better understanding on improvements.
  */
-import type { ServiceProvideFunction, ServiceProvider } from './service-provider';
+import type { ServiceProvideFunction, ServiceProvider } from './provider';
 
 const defaultImplementation: ServiceProvideFunction = () => {
   throw new Error('provide() implementation not defined in this context.');

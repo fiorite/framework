@@ -1,5 +1,5 @@
-import { ServiceType } from './service-type';
-import { ServiceProvideFunction } from './service-provider';
+import { ServiceType } from './type';
+import { ServiceProvideFunction } from './provider';
 import { MapCallback } from '../core';
 
 export class ServiceReference<R, T = any> {
