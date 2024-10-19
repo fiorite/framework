@@ -194,6 +194,7 @@ export function Provide(...args: unknown[]): unknown {
       type = args[0] as MaybeOptional<ServiceType>;
       transform = args[1] as MapCallback<unknown>;
       if (args[0] instanceof OptionalMarker) {
+        type = args[0].value;
         optional = true;
       }
     }

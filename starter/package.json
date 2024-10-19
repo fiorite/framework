@@ -5,6 +5,6 @@
   },
   "type": "module",
   "dependencies": {
-    "fiorite": "^0.0.19"
+    "fiorite": "^0.0.20"
   }
 }
