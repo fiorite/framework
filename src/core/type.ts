@@ -26,6 +26,7 @@ export function isInstance<T>(object: unknown): object is T {
   return null !== object && undefined !== object && Function !== object.constructor;
 }
 
+/** @deprecated experimental */
 export class TypeTold<T, TValue> {
   private readonly _type: T;
 
@@ -45,13 +46,17 @@ export class TypeTold<T, TValue> {
   }
 }
 
+/** @deprecated experimental */
 export function tellType<T, TValue>(type: T, value: TValue): TypeTold<T, TValue> {
   return new TypeTold<T, TValue>(type, value);
 }
 
+/** @deprecated experimental */
 export type MaybeTypeTold<T, TValue> = TValue | TypeTold<T, TValue>;
 
+/** @deprecated experimental */
 export namespace MaybeTypeTold {
+  /** @deprecated experimental */
   export function spread<T, TValue>(object: MaybeTypeTold<T, TValue>): [value: TValue, type: T | undefined] {
     return object instanceof TypeTold ? [object.value, object.type] : [object, undefined];
   }

@@ -456,15 +456,23 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   // region add a new service
 
-  //  todo: fix
+  /** {@link addValue} */
   add(object: object | FunctionClass): this;
-  add(value: [type: ServiceType, object: object | FunctionClass]): this;
+  /** {@link addValue} */
+  add<T>(value: [type: ServiceType<T>, object: T]): this;
+  /** {@link addType} */
   add(type: Type, behavior?: ServiceBehavior): this;
+  /** {@link addType} */
   add(type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
+  /** @deprecated experimental, {@link addValue} */
   add<T>(object: MaybeTypeTold<ServiceType<T>, T>): this;
+  /** {@link addType} */
   add<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): this;
+  /** {@link addType} */
   add<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
+  /** {@link addFactory} */
   add<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
+  /** {@link addFactory} */
   add<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
   add(...args: unknown[]): this {
     if (1 === args.length) {
@@ -548,7 +556,6 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     return this;
   }
 
-  // todo: copy all overloads from ServiceDescriptor
   addType(type: Type, behavior?: ServiceBehavior): this;
   addType(type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
   addType<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): this;
