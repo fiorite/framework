@@ -454,6 +454,15 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     this.all(descriptors.map(x => x.type), () => callback());
   }
 
+  prototypeObject<T>(type: Type<T>, done: ValueCallback<T>): void {
+    if (this.has(type)) {
+      return this.get(type, done);
+    }
+
+    const target = Provide.targetAssemble(type);
+    this.all(target.dependencies, args => done(new type(...args)));
+  }
+
   // region add a new service
 
   /** {@link addValue} */
@@ -714,15 +723,6 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     }
 
     throw new RangeError('wrong number of parameters');
-  }
-
-  prototypeWhenMissing<T>(type: Type<T>, done: ValueCallback<T>): void {
-    if (this.has(type)) {
-      return this.get(type, done);
-    }
-
-    const target = Provide.targetAssemble(type);
-    this.all(target.dependencies, args => done(new type(...args)));
   }
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {

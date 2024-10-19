@@ -12,7 +12,7 @@ export function addEvents(provider: ServiceProvider): void {
     const target = Provide.targetAssemble(record.path[0], record.path[1], 1);
 
     emitter.on(record.payload as string | symbol | number, event => { // todo: add analyzer component and point out that events cannot be handled in Scoped behavior.
-      provider.prototypeWhenMissing(record.path[0], instance => {
+      provider.prototypeObject(record.path[0], instance => {
         provider.all(target.dependencies, args => {
           target(args, args2 => instance[record.path[1]](event, ...args2));
         });
