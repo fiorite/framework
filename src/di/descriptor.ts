@@ -44,7 +44,7 @@ export class ServiceDescriptor<T = unknown> {
     return ServiceBehavior.Prototype === this.behavior;
   }
 
-  static fromValue<T extends object | FunctionClass>(value: T): ServiceDescriptor<T>;
+  static fromValue<T extends object | FunctionClass>(object: T): ServiceDescriptor<T>;
   static fromValue<T>(type: ServiceType<T>, value: T): ServiceDescriptor<T>;
   static fromValue(...args: unknown[]): ServiceDescriptor {
     let type: ServiceType, value: object;
@@ -116,7 +116,7 @@ export class ServiceDescriptor<T = unknown> {
 
   static fromFactory<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
   static fromFactory<T>(type: ServiceType<T>, dependencies: MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
-  static fromFactory<T>(...args: unknown[]) {
+  static fromFactory(...args: unknown[]) {
     const type = args[0] as ServiceType;
     let prototypeFactory: PrototypeFactoryFunction, dependencies: readonly MaybeOptional<ServiceType>[],
       behavior: ServiceBehavior | undefined;

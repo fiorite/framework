@@ -1,5 +1,16 @@
 # Dependency Injection
 
+```typescript
+
+import { tellType } from 'fiorite';
+
+const num = 24;
+
+provider.add(tellType('number-24', num));
+```
+
+---
+
 Variety of `optional` uses:
 
 ```typescript

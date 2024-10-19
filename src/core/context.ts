@@ -6,11 +6,11 @@ import { MaybeOptional, OptionalMarker } from './optional';
  */
 export type ContextThing<T = unknown> = string | symbol | Type<T> | AbstractType<T>;
 
-export class ThingNotFoundError implements Error {
-  constructor(thing: ContextThing) {
-
-  }
-}
+// export class ThingNotFoundError implements Error {
+//   constructor(thing: ContextThing) {
+//
+//   }
+// }
 
 /**
  * Centralized instance for any specific context which is the storage for features at the same time.

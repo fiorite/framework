@@ -1,5 +1,4 @@
 import {
-  AbstractType,
   CallbackForceValueError,
   DecoratorOuterFunction,
   DecoratorRecorder,
@@ -12,14 +11,16 @@ import {
   MaybeOptional,
   MaybeOptionalValue,
   MaybePromiseLike,
+  MaybeTypeTold,
   OptionalMarker,
   Type,
+  TypeTold,
   ValueCallback,
   VoidCallback
 } from '../core';
 import { ServiceType } from './type';
 import { ServiceBehavior } from './behavior';
-import { ServiceFactoryCallback, ServiceFactoryFunction } from './factory';
+import { ServiceFactoryCallback } from './factory';
 import { iterableForEach } from '../iterable';
 import { BehaveLike } from './decorators';
 import { Provide } from './provide';
@@ -105,8 +106,8 @@ export interface OnScopeDestroy {
 }
 
 export class ServiceProvider extends FunctionClass<ServiceProvideFunction> implements Iterable<ServiceDescriptor> {
-  private static _behaviorFactories: Record<ServiceBehavior, MapCallback<ServiceDescriptor, ServiceFactoryFunctionWithProvider>> = {
-    [ServiceBehavior.Inherited]: (descriptor) => {
+  private static _behaviorFactories: Map<ServiceBehavior, MapCallback<ServiceDescriptor, ServiceFactoryFunctionWithProvider>> = new Map([
+    [ServiceBehavior.Inherited, (descriptor) => {
       return (provider, callback): void => {
         provider._makeBehaviorInheritance(descriptor).forEach(resolvedDescriptor => {
           if (resolvedDescriptor.type === descriptor.type) { //
@@ -116,15 +117,15 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
         });
 
         descriptor = provider._serviceMap.get(descriptor.type)!;
-        const factoryToSet = ServiceProvider._behaviorFactories[descriptor.behavior](descriptor);
+        const factoryToSet = ServiceProvider._behaviorFactories.get(descriptor.behavior)!(descriptor);
         provider._runtimeMap.set(descriptor.type, factoryToSet);
         return factoryToSet(provider, callback);
       };
-    },
-    [ServiceBehavior.Singleton]: (descriptor): ServiceFactoryFunctionWithProvider => {
+    }],
+    [ServiceBehavior.Singleton, (descriptor): ServiceFactoryFunctionWithProvider => {
       return (provider, callback) => provider._singletonContainer.request(descriptor, callback);
-    },
-    [ServiceBehavior.Scoped]: (descriptor): ServiceFactoryFunctionWithProvider => {
+    }],
+    [ServiceBehavior.Scoped, (descriptor): ServiceFactoryFunctionWithProvider => {
       return (provider, callback) => {
         if (!provider.scopeContainer) {
           throw new Error('Scope is not defined. Use #createScope()');
@@ -132,11 +133,11 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
         return provider.scopeContainer.request(descriptor, callback);
       };
-    },
-    [ServiceBehavior.Prototype]: (descriptor): ServiceFactoryFunctionWithProvider => {
+    }],
+    [ServiceBehavior.Prototype, (descriptor): ServiceFactoryFunctionWithProvider => {
       return (provider, callback) => descriptor.prototype(provider._provide.bind(provider), callback);
-    },
-  };
+    }],
+  ]);
 
   static createWithScope(from: ServiceProvider): ServiceProvider {
     if (from._scopeContainer) {
@@ -213,7 +214,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
       this._makeBehaviorInheritance().forEach(newDescriptor => this._serviceMap.set(newDescriptor.type, newDescriptor));
       this._serviceMap.forEach((descriptor: ServiceDescriptor) => {
-        this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories[descriptor.behavior](descriptor));
+        this._runtimeMap.set(descriptor.type, ServiceProvider._behaviorFactories.get(descriptor.behavior)!(descriptor));
       });
       this._singletonContainer = new ServiceContainer(this._provide.bind(this));
     } else {
@@ -456,25 +457,63 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   // region add a new service
 
   //  todo: fix
-  add(object: object): this;
-  add<T>(serviceType: ServiceType<T>, object: T): this;
-  add(type: Type): this;
-  add<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
-  add<T>(type: Type<T>, dependencies: ServiceType[], behavior?: ServiceBehavior): this;
+  add(object: object | FunctionClass): this;
+  add(value: [type: ServiceType, object: object | FunctionClass]): this;
+  add(type: Type, behavior?: ServiceBehavior): this;
+  add(type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
+  add<T>(object: MaybeTypeTold<ServiceType<T>, T>): this;
+  add<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): this;
+  add<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
+  add<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
+  add<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
   add(...args: unknown[]): this {
-    if (args.length === 1) {
-      if (isType(args[0])) {
+    if (1 === args.length) {
+      if (Array.isArray(args[0])) { // @2 = [type: ServiceType<T>, object: T]
+        return this.addValue(args[0][0], args[0][1]);
+      } else if (args[0] instanceof TypeTold) { // @2 = [type: ServiceType<T>, object: T]
+        if (isType(args[0].value)) {
+          return this.addType(args[0].type, args[0].value);
+        } else {
+          return this.addValue(args[0].type, args[0].value);
+        }
+      } else if (isType(args[0])) { // @3 = type: Type
         return this.addType(args[0] as Type);
+      } else { // @1 = object: object | FunctionClass
+        return this.addValue(args[0] as object | FunctionClass);
       }
-
-      return this.addValue(args[0] as object);
+    } else if (2 === args.length) {
+      if (isType(args[1])) { // @5 = type: ServiceType<T>, implementation: Type<T>
+        return this.addType(args[0] as ServiceType, args[1]);
+      } else if (Array.isArray(args[1])) { // @4 = type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as Type, args[1]);
+      } else if (args[1] instanceof ServiceBehavior) { // @3 = type: Type, behavior?: ServiceBehavior
+        return this.addType(args[0] as Type, args[1] as ServiceBehavior);
+      } else { // @7 = type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
+        return this.addFactory(args[0] as ServiceType, args[1] as () => unknown);
+      }
+    } else if (3 === args.length) {
+      if (Array.isArray(args[1])) {
+        if (args[2] instanceof ServiceBehavior) { // @4 = type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior
+          return this.addType(args[0] as Type, args[1], args[2]);
+        } else { // @8 = type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
+          return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown);
+        }
+      } else if (Array.isArray(args[2])) { // @6 = type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as ServiceType, args[1] as Type, args[2]);
+      } else if (isType(args[1])) { // @5 = type: ServiceType<T>, implementation: Type<T>, behavior: ServiceBehavior
+        return this.addType(args[0] as ServiceType, args[1], args[2] as ServiceBehavior);
+      } else { // @7 = type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior: ServiceBehavior
+        return this.addFactory(args[0] as ServiceType, args[1] as (...args: any[]) => unknown, args[2] as ServiceBehavior);
+      }
+    } else if (4 === args.length) {
+      if (Array.isArray(args[1])) { // @8 = type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior: ServiceBehavior
+        return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, args[2] as ServiceBehavior);
+      } else { // @6 = type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior
+        return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], args[3] as ServiceBehavior);
+      }
     }
 
-    if (args.length > 1 && (isType(args[1]) || Array.isArray(args[1]))) {
-      return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as ServiceBehavior);
-    }
-
-    return this.addValue(args[0] as Type, args[1] as object);
+    throw new RangeError('wrong number of parameters');
   }
 
   addDecoratedBy(...decorators: DecoratorOuterFunction<ClassDecorator>[]): this {
@@ -502,7 +541,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   private _add(service: ServiceDescriptor): this {
     this._serviceMap.set(service.type, service);
-    this._runtimeMap.set(service.type, ServiceProvider._behaviorFactories[service.behavior](service));
+    this._runtimeMap.set(service.type, ServiceProvider._behaviorFactories.get(service.behavior)!(service));
     if (this._preCacheSingletons && service.singletonBehavior) {
       this._provide(service.type, emptyCallback);
     }
@@ -510,8 +549,10 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   }
 
   // todo: copy all overloads from ServiceDescriptor
-  addType(type: Type): this;
-  addType<T>(type: ServiceType<T>, actual: Type<T>, behavior?: ServiceBehavior): this;
+  addType(type: Type, behavior?: ServiceBehavior): this;
+  addType(type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
+  addType<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): this;
+  addType<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
   addType(...args: unknown[]): this {
     if (args.length === 1) {
       this._addType(args[0] as Type);
@@ -521,6 +562,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     return this;
   }
 
+  // todo: fix
   private _addType<T>(implementation: Type<T>, type: ServiceType<T> = implementation, behavior?: ServiceBehavior): ServiceDescriptor {
     if (!behavior) {
       behavior = this._behavioralMap.get(implementation) || ServiceBehavior.Inherited;
@@ -532,14 +574,14 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   }
 
   addFactory<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
-  addFactory<T>(type: ServiceType<T>, dependencies: MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
+  addFactory<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
   addFactory(...args: unknown[]): this {
     const descriptor = (ServiceDescriptor.fromFactory as Function)(...args);
     return this._add(descriptor);
   }
 
-  addValue(object: object): this;
-  addValue<T>(serviceType: ServiceType<T>, object: T): this;
+  addValue(object: object | FunctionClass): this;
+  addValue<T>(type: ServiceType<T>, object: T): this;
   addValue(...args: unknown[]): this {
     return this._add(
       args.length === 1 ? ServiceDescriptor.fromValue(args[0] as object) :
@@ -548,92 +590,123 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   }
 
   addInherited(type: Type): this;
-  addInherited<T>(type: AbstractType<T>, implementation: Type<T>): this;
-  addInherited<T>(type: AbstractType<T>, factory: ServiceFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addInherited(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addInherited<T>(type: ServiceType<T>, implementation: Type<T>): this;
+  addInherited<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addInherited<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
+  addInherited<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addInherited(...args: unknown[]): this {
-    if (args.length === 1) {
+    if (1 === args.length) {
       const type = args[0] as Type;
       return this.addType(type, type, ServiceBehavior.Inherited);
+    } else if (2 === args.length) {
+      if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Inherited);
+      }
+      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Inherited);
+      } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
+        return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Inherited);
+      }
+    } else if (3 === args.length) {
+      if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
+        return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Inherited);
+      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Inherited);
+      }
     }
 
-    if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Inherited);
-    }
-
-    return this.addFactory(
-      args[0] as AbstractType,
-      Array.isArray(args[2]) ? args[2] : [],
-      args[1] as ServiceFactoryFunction<unknown>,
-      ServiceBehavior.Inherited
-    );
+    throw new RangeError('wrong number of parameters');
   }
 
   addSingleton(type: Type): this;
-  addSingleton<T>(type: ServiceType<T>, value: T): this;
+  addSingleton(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
   addSingleton<T>(type: ServiceType<T>, implementation: Type<T>): this;
-  addSingleton<T>(type: ServiceType<T>, callback: ServiceFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addSingleton<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addSingleton<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
+  addSingleton<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addSingleton(...args: unknown[]): this {
-    if (args.length === 1) {
+    if (1 === args.length) {
       const type = args[0] as Type;
       return this.addType(type, type, ServiceBehavior.Singleton);
-    }
-
-    if (args.length === 2) {
-      if (isType(args[1])) {
-        return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Singleton);
+    } else if (2 === args.length) {
+      if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Singleton);
       }
-
-      return this.addValue(args[0] as Type, args[1] as object);
+      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Singleton);
+      } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
+        return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Singleton);
+      }
+    } else if (3 === args.length) {
+      if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
+        return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Singleton);
+      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Singleton);
+      }
     }
 
-    return this.addFactory(
-      args[0] as AbstractType,
-      Array.isArray(args[2]) ? args[2] : [],
-      args[1] as ServiceFactoryFunction<unknown>,
-      ServiceBehavior.Singleton
-    );
+    throw new RangeError('wrong number of parameters');
   }
 
   addScoped(type: Type): this;
+  addScoped(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
   addScoped<T>(type: ServiceType<T>, implementation: Type<T>): this;
-  addScoped<T>(type: ServiceType<T>, callback: ServiceFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addScoped<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addScoped<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
+  addScoped<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addScoped(...args: unknown[]): this {
-    if (args.length === 1) {
+    if (1 === args.length) {
       const type = args[0] as Type;
       return this.addType(type, type, ServiceBehavior.Scoped);
+    } else if (2 === args.length) {
+      if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Scoped);
+      }
+      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Scoped);
+      } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
+        return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Scoped);
+      }
+    } else if (3 === args.length) {
+      if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
+        return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Scoped);
+      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Scoped);
+      }
     }
 
-    if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Scoped);
-    }
-
-    return this.addFactory(
-      args[0] as AbstractType,
-      Array.isArray(args[2]) ? args[2] : [],
-      args[1] as ServiceFactoryFunction<unknown>,
-      ServiceBehavior.Scoped
-    );
+    throw new RangeError('wrong number of parameters');
   }
 
   addPrototype(type: Type): this;
+  addPrototype(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
   addPrototype<T>(type: ServiceType<T>, implementation: Type<T>): this;
-  addPrototype<T>(type: ServiceType<T>, callback: ServiceFactoryFunction<T>, dependencies?: ServiceType[]): this;
+  addPrototype<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addPrototype<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
+  addPrototype<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addPrototype(...args: unknown[]): this {
-    if (args.length === 1) {
+    if (1 === args.length) {
       const type = args[0] as Type;
       return this.addType(type, type, ServiceBehavior.Prototype);
+    } else if (2 === args.length) {
+      if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Prototype);
+      }
+      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+        return this.addType(args[0] as Type, args[1], ServiceBehavior.Prototype);
+      } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
+        return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Prototype);
+      }
+    } else if (3 === args.length) {
+      if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
+        return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Prototype);
+      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+        return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Prototype);
+      }
     }
 
-    if (isType(args[1])) {
-      return this.addType(args[0] as AbstractType, args[1], ServiceBehavior.Prototype);
-    }
-
-    return this.addFactory(
-      args[0] as AbstractType,
-      Array.isArray(args[2]) ? args[2] : [],
-      args[1] as ServiceFactoryFunction<unknown>,
-      ServiceBehavior.Prototype
-    );
+    throw new RangeError('wrong number of parameters');
   }
 
   prototypeWhenMissing<T>(type: Type<T>, done: ValueCallback<T>): void {

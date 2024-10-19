@@ -63,7 +63,7 @@ export function addHttpServer(provider: ServiceProvider, serverPort: number, run
   const pipeline = new HttpPipeline();
   provider.addValue(httpServerPort, serverPort)
     .addValue(HttpPipeline, pipeline)
-    .addSingleton(HttpServer, (provider: ServiceProvider) => {
+    .addSingleton(HttpServer, [ServiceProvider], (provider: ServiceProvider) => {
       return new HttpServer((context, next) => {
         const scopedProvider = ServiceProvider.createWithScope(provider);
         const requestContext = new HttpContext(context.request, context.response, scopedProvider);
@@ -71,23 +71,23 @@ export function addHttpServer(provider: ServiceProvider, serverPort: number, run
         pipeline(requestContext, next);
         context.response.on('close', () => ServiceProvider.destroyScope(scopedProvider));
       });
-    }, [ServiceProvider])
+    })
     .addScoped(HttpContextHost)
-    .addPrototype(HttpContext, (host: HttpContextHost) => {
+    .addPrototype(HttpContext, [HttpContextHost], (host: HttpContextHost) => {
       if (!host.context) {
         throw new Error('HttpContext is missing');
       }
       return host.context;
-    }, [HttpContextHost])
-    .addPrototype(HttpRequest, (context: HttpContext) => context.request, [HttpContext])
-    .addPrototype(HttpQuery, (request: HttpRequest) => request.query, [HttpRequest])
-    .addPrototype(HttpResponse, (context: HttpContext) => context.response, [HttpContext])
+    })
+    .addPrototype(HttpRequest, [HttpContext], (context: HttpContext) => context.request)
+    .addPrototype(HttpQuery, [HttpRequest], (request: HttpRequest) => request.query)
+    .addPrototype(HttpResponse, [HttpContext], (context: HttpContext) => context.response)
   ;
 
   if (currentJsPlatform === JsPlatform.NodeJs) {
     import('http').then(m => { // todo: refactor perhaps with runner check
-      provider.addPrototype(m.IncomingMessage, request => (request as NodeJsServerRequest).original, [HttpRequest])
-        .addPrototype(m.ServerResponse, response => (response as NodeJsServerResponse).original, [HttpResponse]);
+      provider.addPrototype(m.IncomingMessage, [HttpRequest], request => (request as NodeJsServerRequest).original)
+        .addPrototype(m.ServerResponse, [HttpResponse], response => (response as NodeJsServerResponse).original);
       runnerLoaded();
     });
   } else {

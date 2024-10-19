@@ -37,5 +37,5 @@ export type { RadixWalkResult } from './radix-map';
 export { RadixMap } from './radix-map';
 export { SetWithInnerKey } from './set-with-inner-key';
 export type { AbstractType, Type } from './type';
-export { isType, isInstance } from './type';
+export { isType, isInstance, tellType, TypeTold, MaybeTypeTold } from './type';
 export { Utf16Sequence, utf16 } from './utf16';
