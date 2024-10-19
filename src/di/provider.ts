@@ -11,7 +11,6 @@ import {
   MaybeOptional,
   MaybeOptionalValue,
   MaybePromiseLike,
-  MaybeTypeTold,
   OptionalMarker,
   Type,
   TypeTold,
@@ -474,11 +473,11 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   /** {@link addType} */
   add(type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
   /** @deprecated experimental, {@link addValue} */
-  add<T>(object: MaybeTypeTold<ServiceType<T>, T>): this;
+  add<T>(value: TypeTold<ServiceType<T>, T>): this;
   /** {@link addType} */
-  add<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): this;
+  add<T>(type: ServiceType<T>, implementationType: Type<T>, behavior?: ServiceBehavior): this;
   /** {@link addType} */
-  add<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
+  add<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
   /** {@link addFactory} */
   add<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior): this;
   /** {@link addFactory} */
@@ -515,9 +514,9 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
         } else { // @8 = type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
           return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown);
         }
-      } else if (Array.isArray(args[2])) { // @6 = type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+      } else if (Array.isArray(args[2])) { // @6 = type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as ServiceType, args[1] as Type, args[2]);
-      } else if (isType(args[1])) { // @5 = type: ServiceType<T>, implementation: Type<T>, behavior: ServiceBehavior
+      } else if (isType(args[1])) { // @5 = type: ServiceType<T>, implementationType: Type<T>, behavior: ServiceBehavior
         return this.addType(args[0] as ServiceType, args[1], args[2] as ServiceBehavior);
       } else { // @7 = type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior: ServiceBehavior
         return this.addFactory(args[0] as ServiceType, args[1] as (...args: any[]) => unknown, args[2] as ServiceBehavior);
@@ -525,7 +524,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     } else if (4 === args.length) {
       if (Array.isArray(args[1])) { // @8 = type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>, behavior: ServiceBehavior
         return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, args[2] as ServiceBehavior);
-      } else { // @6 = type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior
+      } else { // @6 = type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior
         return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], args[3] as ServiceBehavior);
       }
     }
@@ -567,24 +566,27 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   addType(type: Type, behavior?: ServiceBehavior): this;
   addType(type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
-  addType<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): this;
-  addType<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
+  addType<T>(type: ServiceType<T>, implementationType: Type<T>, behavior?: ServiceBehavior): this;
+  addType<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): this;
   addType(...args: unknown[]): this {
-    if (args.length === 1) {
-      this._addType(args[0] as Type);
-    } else {
-      this._addType(args[1] as Type, args[0] as ServiceType, args[2] as ServiceBehavior);
-    }
+    (this._addType as Function)(...args);
     return this;
   }
 
-  // todo: fix
-  private _addType<T>(implementation: Type<T>, type: ServiceType<T> = implementation, behavior?: ServiceBehavior): ServiceDescriptor {
-    if (!behavior) {
-      behavior = this._behavioralMap.get(implementation) || ServiceBehavior.Inherited;
+  private _addType(type: Type, behavior?: ServiceBehavior): ServiceDescriptor;
+  private _addType(type: Type, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor;
+  private _addType<T>(type: ServiceType<T>, implementationType: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor;
+  private _addType<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor;
+  private _addType<T>(...args: unknown[]): ServiceDescriptor {
+    if (1 === args.length) {
+      args.push(this._behavioralMap.get(args[0] as Type) || ServiceBehavior.Inherited);
+    } else if (2 === args.length && !(args[1] instanceof ServiceBehavior)) {
+      args.push(this._behavioralMap.get(Array.isArray(args[1]) ? args[0] as Type : args[1] as Type) || ServiceBehavior.Inherited);
+    } else if (3 === args.length && !(args[2] instanceof ServiceBehavior)) {
+      args.push(this._behavioralMap.get(args[1] as Type) || ServiceBehavior.Inherited);
     }
 
-    const descriptor = ServiceDescriptor.fromType(type, implementation, behavior);
+    const descriptor = (ServiceDescriptor.fromType as Function)(...args);
     this._add(descriptor);
     return descriptor;
   }
@@ -607,8 +609,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   addInherited(type: Type): this;
   addInherited(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
-  addInherited<T>(type: ServiceType<T>, implementation: Type<T>): this;
-  addInherited<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addInherited<T>(type: ServiceType<T>, implementationType: Type<T>): this;
+  addInherited<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
   addInherited<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
   addInherited<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addInherited(...args: unknown[]): this {
@@ -619,7 +621,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Inherited);
       }
-      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+      if (isType(args[1])) { // type: ServiceType<T>, implementationType: Type<T>
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Inherited);
       } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
         return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Inherited);
@@ -627,7 +629,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     } else if (3 === args.length) {
       if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
         return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Inherited);
-      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+      } else { // type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Inherited);
       }
     }
@@ -637,8 +639,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   addSingleton(type: Type): this;
   addSingleton(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
-  addSingleton<T>(type: ServiceType<T>, implementation: Type<T>): this;
-  addSingleton<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addSingleton<T>(type: ServiceType<T>, implementationType: Type<T>): this;
+  addSingleton<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
   addSingleton<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
   addSingleton<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addSingleton(...args: unknown[]): this {
@@ -649,7 +651,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Singleton);
       }
-      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+      if (isType(args[1])) { // type: ServiceType<T>, implementationType: Type<T>
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Singleton);
       } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
         return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Singleton);
@@ -657,7 +659,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     } else if (3 === args.length) {
       if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
         return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Singleton);
-      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+      } else { // type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Singleton);
       }
     }
@@ -667,8 +669,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   addScoped(type: Type): this;
   addScoped(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
-  addScoped<T>(type: ServiceType<T>, implementation: Type<T>): this;
-  addScoped<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addScoped<T>(type: ServiceType<T>, implementationType: Type<T>): this;
+  addScoped<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
   addScoped<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
   addScoped<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addScoped(...args: unknown[]): this {
@@ -679,7 +681,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Scoped);
       }
-      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+      if (isType(args[1])) { // type: ServiceType<T>, implementationType: Type<T>
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Scoped);
       } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
         return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Scoped);
@@ -687,7 +689,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     } else if (3 === args.length) {
       if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
         return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Scoped);
-      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+      } else { // type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Scoped);
       }
     }
@@ -697,8 +699,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   addPrototype(type: Type): this;
   addPrototype(type: Type, dependencies: readonly MaybeOptional<ServiceType>[]): this;
-  addPrototype<T>(type: ServiceType<T>, implementation: Type<T>): this;
-  addPrototype<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
+  addPrototype<T>(type: ServiceType<T>, implementationType: Type<T>): this;
+  addPrototype<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]): this;
   addPrototype<T>(type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>): this;
   addPrototype<T>(type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>): this;
   addPrototype(...args: unknown[]): this {
@@ -709,7 +711,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       if (Array.isArray(args[1])) { // type: Type, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Prototype);
       }
-      if (isType(args[1])) { // type: ServiceType<T>, implementation: Type<T>
+      if (isType(args[1])) { // type: ServiceType<T>, implementationType: Type<T>
         return this.addType(args[0] as Type, args[1], ServiceBehavior.Prototype);
       } else { // type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>
         return this.addFactory(args[0] as Type, args[1] as () => unknown, ServiceBehavior.Prototype);
@@ -717,7 +719,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     } else if (3 === args.length) {
       if (Array.isArray(args[1])) { // type: ServiceType<T>, dependencies: readonly MaybeOptional<ServiceType>[], prototypeFunction: (...args: any[]) => MaybePromiseLike<T>
         return this.addFactory(args[0] as ServiceType, args[1], args[2] as (...args: any[]) => unknown, ServiceBehavior.Prototype);
-      } else { // type: ServiceType<T>, implementation: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
+      } else { // type: ServiceType<T>, implementationType: Type<T>, dependencies: readonly MaybeOptional<ServiceType>[]
         return this.addType(args[0] as ServiceType, args[1] as Type, args[2] as readonly MaybeOptional<ServiceType>[], ServiceBehavior.Prototype);
       }
     }
