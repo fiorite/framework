@@ -18,7 +18,6 @@ export function iterableToArray<T>(callback: ValueCallback<T[]>): IterableOperat
           }
         });
       };
-
       next();
     }
   };

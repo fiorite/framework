@@ -1,3 +1,7 @@
+# Fiorite - WIP
+
+Concept of a framework w/ tasty features to **keep it clean**.
+
 # Fiorite Concept
 
 **⚠️ All the stuff below is not structured nor formatted yet (just notes). It won't be fixed until v1 is done.**

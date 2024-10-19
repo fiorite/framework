@@ -6,6 +6,7 @@ export type {
   MapCallback,
   CallbackShareFunction,
 } from './callbacks';
+export { Context, ContextThing } from './context';
 export {
   emptyCallback,
   CallbackShare,
@@ -26,7 +27,7 @@ export * from './error';
 export { FunctionClass } from './function-class';
 export { JsPlatform, currentJsPlatform } from './js-platform';
 export { isObject, isObjectMethod } from './object-utils';
-export { optional, OptionalModifier, OptionalMarker, MaybeOptional } from './optional';
+export { optional, OptionalModifier, OptionalMarker, MaybeOptional, MaybeOptionalValue } from './optional';
 export {
   MaybePromiseLike,
   isPromiseLike,

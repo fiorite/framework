@@ -16,5 +16,6 @@ export function iterableForEach<T, TReturn = unknown>(
           result2.then(() => next()) : next();
       }
     });
+    next();
   };
 }

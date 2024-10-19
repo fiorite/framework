@@ -13,7 +13,7 @@ export { ServiceBehavior } from './behavior';
 export { configure, globalConfiguration } from './configure';
 export type { ServiceConfigureFunction } from './configure';
 export type { ProvideDecorator } from './provide';
-export { Provide } from './provide';
+export { Provide, occupyProvide, provide, provideAsync, ProvideDecoratorPayload } from './provide';
 export type {
   ServiceFactoryCallback,
   ServiceFactoryFunction,
@@ -31,4 +31,3 @@ export {
 export type { ServiceType } from './type';
 export { serviceRef, ServiceReference } from './service-ref';
 
-export { runProviderContext, provide } from './global'; // todo: will be moved away

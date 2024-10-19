@@ -19,7 +19,7 @@ export class RoutingMiddleware extends FunctionClass<HttpCallback> {
           }
 
           // setup params
-          const params = context.provide!(RouteParams);
+          const params = context.provider.get(RouteParams);
           params.clear();
           Object.entries(result.params).forEach((x) => params.set(x[0], x[1] as any));
 

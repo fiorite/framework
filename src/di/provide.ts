@@ -1,18 +1,133 @@
 import {
+  Context,
   DecoratorRecorder,
   FunctionClass,
   makeParameterDecorator,
   MapCallback,
   MaybeOptional,
+  MaybeOptionalValue,
   MaybePromiseLike,
   OptionalMarker,
   OptionalModifier,
   ParameterDecoratorWithPayload,
   reflectTargetTypes,
   Type,
-  ValueCallback
+  ValueCallback,
+  VoidCallback
 } from '../core';
 import { ServiceType } from './type';
+import { ServiceProvider } from './provider';
+
+// const defaultImplementation: ServiceProvideCallback = () => {
+//   throw new Error('provide() is not implemented yet.');
+// };
+
+/**
+ * New Angular gave an idea to put this thing here.
+ * However, there no chance to bind `provide()` to request context.
+ * Thus, this feature is only limited for unscoped providers and, perhaps, two and more apps
+ * using it will get an error upon concurrent call.
+ * Also, promise-based services require callback to be added.
+ * Error can appear in runtime, moving async -> sync can cause an error.
+ * Use it if you have test coverage and are able to track an issue.
+ * Tips:
+ * - Use for class constructor and methods (HTTP route handlers)
+ * - Use for a single application and global services (non-scoped).
+ * - Test cases will become more complex, use on your consideration.
+ * There a chance, in the future, to get a better understanding on improvements.
+ */
+
+let providerImplementation: ServiceProvider | undefined;
+
+export function provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+export function provide<T>(type: OptionalMarker<ServiceType<T>>, callback: ValueCallback<T | undefined>): void;
+export function provide<T>(type: MaybeOptional<ServiceType<T>>, callback: ValueCallback<MaybeOptionalValue<typeof type, T>>): void;
+export function provide<T>(type: ServiceType<T>): T;
+export function provide<T>(type: OptionalMarker<ServiceType<T>>): T | undefined;
+export function provide<T>(type: MaybeOptional<ServiceType<T>>): MaybeOptionalValue<typeof type, T>;
+export function provide<T>(context: Context, type: ServiceType<T>, callback: ValueCallback<T>): void;
+export function provide<T>(context: Context, type: OptionalMarker<ServiceType<T>>, callback: ValueCallback<T | undefined>): void;
+export function provide<T>(context: Context, type: MaybeOptional<ServiceType<T>>, callback: ValueCallback<MaybeOptionalValue<typeof type, T>>): void;
+export function provide<T>(context: Context, type: ServiceType<T>): T;
+export function provide<T>(context: Context, type: OptionalMarker<ServiceType<T>>): T | undefined;
+export function provide<T>(context: Context, type: MaybeOptional<ServiceType<T>>): MaybeOptionalValue<typeof type, T>;
+export function provide(...args: unknown[]) {
+  if (args.length > 1 && args[0] instanceof Context) {
+    return args.length > 2 ?
+      (args[0] as Context).get(ServiceProvider).get(args[1] as MaybeOptional<ServiceType>, args[2] as ValueCallback<unknown>) :
+      (args[0] as Context).get(ServiceProvider).get(args[1] as MaybeOptional<ServiceType>);
+  }
+
+  if (!providerImplementation) {
+    throw new Error('provide() unable to locate ServiceProvider (not being set yet).');
+  }
+
+  return args.length > 1 ?
+    providerImplementation.get(args[0] as MaybeOptional<ServiceType>, args[1] as ValueCallback<unknown>) :
+    providerImplementation.get(args[0] as MaybeOptional<ServiceType>);
+}
+
+export function provideAsync<T>(type: ServiceType<T>): PromiseLike<T>;
+export function provideAsync<T>(type: OptionalMarker<ServiceType<T>>): PromiseLike<T | undefined>;
+export function provideAsync<T>(type: MaybeOptional<ServiceType<T>>): PromiseLike<MaybeOptionalValue<typeof type, T>>;
+export function provideAsync<T>(context: Context, type: ServiceType<T>): PromiseLike<T>;
+export function provideAsync<T>(context: Context, type: OptionalMarker<ServiceType<T>>): PromiseLike<T | undefined>;
+export function provideAsync<T>(context: Context, type: MaybeOptional<ServiceType<T>>): PromiseLike<MaybeOptionalValue<typeof type, T>>;
+export function provideAsync(...args: unknown[]) {
+  if (args.length === 2) {
+    return (args[0] as Context).get(ServiceProvider).getAsync(args[1] as MaybeOptional<ServiceType>);
+  }
+
+  if (!providerImplementation) {
+    throw new Error('provide() unable to locate ServiceProvider (not being set yet).');
+  }
+
+  return providerImplementation.getAsync(args[0] as ServiceType);
+}
+
+let occupyCallers = 0;
+
+export function occupyProvide(provider: ServiceProvider, callback: (done: VoidCallback) => void): void {
+  let done = false;
+  const complete = () => {
+    if (!done) {
+      occupyCallers--;
+      if (occupyCallers <= 0) {
+        providerImplementation = undefined;
+      }
+      done = true;
+    }
+  };
+
+  const implementation = provider;
+
+  if (providerImplementation === implementation) {
+    occupyCallers++;
+    try {
+      callback(complete);
+    } catch (err) {
+      complete();
+      throw err;
+    }
+  } else {
+    if (occupyCallers > 0) {
+      throw new Error(`Implementation has been busy (clients: ${occupyCallers}). Consider using this feature in single app.`);
+    }
+
+    if (provider.scopeContainer) {
+      throw new Error('Unable to use Scoped provider implementation. To avoid sharing context of particular client.');
+    }
+
+    providerImplementation = implementation;
+    occupyCallers++;
+    try {
+      callback(complete);
+    } catch (err) {
+      complete();
+      throw err;
+    }
+  }
+}
 
 export class ProvideDecoratorPayload<T = unknown, R = T> {
   private readonly _type?: MaybeOptional<ServiceType<T>>;

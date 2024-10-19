@@ -10,6 +10,7 @@ import {
   isType,
   MapCallback,
   MaybeOptional,
+  MaybeOptionalValue,
   MaybePromiseLike,
   OptionalMarker,
   Type,
@@ -44,19 +45,16 @@ import { ServiceContainer } from './container';
  * Core function which accepts service {@link type} and resolves it with {@link callback}.
  */
 export interface ServiceProvideCallback {
-  /**
-   * @throws ServiceNotFoundError if unable to find a service.
-   */
-  <T>(type: ServiceType<T>, then: ValueCallback<T>): void;
+  <T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
 
-  <T>(type: OptionalMarker<ServiceType<T>>, then: ValueCallback<T | undefined>): void;
+  <T>(type: OptionalMarker<ServiceType<T>>, callback: ValueCallback<T | undefined>): void;
 
-  <T>(type: MaybeOptional<ServiceType<T>>, then: ValueCallback<typeof type extends OptionalMarker<unknown> ? T | undefined : T>): void;
+  <T>(type: MaybeOptional<ServiceType<T>>, callback: ValueCallback<MaybeOptionalValue<typeof type, T>>): void;
 }
 
 /**
  * Provide with return is an attempt to catch a synchronous value out of provide callback.
- * Side effect is {@link NotSynchronousServiceError} throw when service is asynchronous.
+ * Side effect is {@link ServiceNotSynchronousError} throw when service is asynchronous.
  *
  * @throws Error when unable to catch a value, thus service considered to be asynchronous, unless one uses callback overload.
  */
@@ -65,7 +63,7 @@ export interface ServiceProvideFunction extends ServiceProvideCallback {
 
   <T>(type: OptionalMarker<ServiceType<T>>): T | undefined;
 
-  <T>(type: MaybeOptional<ServiceType<T>>): typeof type extends OptionalMarker<unknown> ? T | undefined : T;
+  <T>(type: MaybeOptional<ServiceType<T>>): MaybeOptionalValue<typeof type, T>;
 }
 
 export interface ServiceProvideAsyncFunction {
@@ -73,10 +71,10 @@ export interface ServiceProvideAsyncFunction {
 
   <T>(type: OptionalMarker<ServiceType<T>>): PromiseLike<T | undefined>;
 
-  <T>(type: MaybeOptional<ServiceType<T>>): PromiseLike<typeof type extends OptionalMarker<unknown> ? T | undefined : T>;
+  <T>(type: MaybeOptional<ServiceType<T>>): PromiseLike<MaybeOptionalValue<typeof type, T>>;
 }
 
-export class NotSynchronousServiceError {
+export class ServiceNotSynchronousError {
   readonly name = 'AsynchronousServiceError';
   readonly message: string;
 
@@ -236,8 +234,14 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
   }
 
   /**
-   * Raw {@link ServiceProvideCallback}, used internally.
+   * @throws ServiceNotFoundError
    */
+  private _provide<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+  private _provide<T>(type: OptionalMarker<ServiceType<T>>, callback: ValueCallback<T | undefined>): void;
+  /**
+   * @throws ServiceNotFoundError
+   */
+  private _provide<T>(type: MaybeOptional<ServiceType<T>>, callback: ValueCallback<MaybeOptionalValue<typeof type, T>>): void;
   private _provide<T>(type: MaybeOptional<ServiceType<T>>, callback: ValueCallback<T>): void {
     const [type2, optional] = MaybeOptional.spread(type);
     const behaviorFactory = this._runtimeMap.get(type2) as ServiceFactoryFunctionWithProvider<T> | undefined;
@@ -252,8 +256,12 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     return behaviorFactory(this, callback);
   }
 
-  get<T>(type: MaybeOptional<ServiceType<T>>): T;
-  get<T>(type: MaybeOptional<ServiceType<T>>, then: ValueCallback<T>): void;
+  get<T>(type: ServiceType<T>): T;
+  get<T>(type: OptionalMarker<ServiceType<T>>): T | undefined;
+  get<T>(type: MaybeOptional<ServiceType<T>>): MaybeOptionalValue<typeof type, T>;
+  get<T>(type: ServiceType<T>, callback: ValueCallback<T>): void;
+  get<T>(type: OptionalMarker<ServiceType<T>>, callback: ValueCallback<T | undefined>): void;
+  get<T>(type: MaybeOptional<ServiceType<T>>, callback: ValueCallback<MaybeOptionalValue<typeof type, T>>): void;
   get(type: MaybeOptional<ServiceType>, callback?: ValueCallback<unknown>): unknown {
     if (callback) {
       return this._provide(type, callback);
@@ -264,17 +272,20 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     } catch (error) {
       if (error instanceof CallbackForceValueError) {
         const [type2] = MaybeOptional.spread(type);
-        throw new NotSynchronousServiceError(type2);
+        throw new ServiceNotSynchronousError(type2);
       }
       throw error;
     }
   }
 
-  getAll(array: readonly MaybeOptional<ServiceType>[], callback: ValueCallback<unknown[]>): void {
+  all(array: readonly MaybeOptional<ServiceType>[], callback: ValueCallback<unknown[]>): void {
     return ServiceFactoryCallback.all(array)(this._provide.bind(this), callback);
   }
 
-  async<T>(type: MaybeOptional<ServiceType<T>>): PromiseLike<T> {
+  getAsync<T>(type: ServiceType<T>): PromiseLike<T>;
+  getAsync<T>(type: OptionalMarker<ServiceType<T>>): PromiseLike<T | undefined>;
+  getAsync<T>(type: MaybeOptional<ServiceType<T>>): PromiseLike<MaybeOptionalValue<typeof type, T>>;
+  getAsync(type: MaybeOptional<ServiceType>): PromiseLike<unknown> {
     return new Promise((resolve, reject) => {
       try {
         this._provide(type, resolve);
@@ -284,10 +295,8 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     });
   }
 
-  asyncAll(array: MaybeOptional<ServiceType>[]): PromiseLike<unknown[]> {
-    return Promise.all(
-      array.map(type => this.async(type))
-    );
+  allAsync(array: MaybeOptional<ServiceType>[]): PromiseLike<unknown[]> {
+    return Promise.all(array.map(type => this.getAsync(type)));
   }
 
   // todo: add set which will forcefully set the service unless there no dependency done on it.
@@ -441,7 +450,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       }
     });
 
-    this.getAll(descriptors.map(x => x.type), () => callback());
+    this.all(descriptors.map(x => x.type), () => callback());
   }
 
   // region add a new service
@@ -633,7 +642,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
     }
 
     const target = Provide.targetAssemble(type);
-    this.getAll(target.dependencies, args => done(new type(...args)));
+    this.all(target.dependencies, args => done(new type(...args)));
   }
 
   [Symbol.iterator](): Iterator<ServiceDescriptor> {

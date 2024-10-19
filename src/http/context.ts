@@ -1,9 +1,10 @@
 import { ServiceProvider } from '../di';
 import { HttpRequest } from './request';
 import { HttpResponse } from './response';
-import { ValueCallback, VoidCallback } from '../core';
+import { Context, ValueCallback, VoidCallback } from '../core';
 
-export class HttpContext {
+
+export class HttpContext extends Context {
   private readonly _request: HttpRequest;
 
   get request(): HttpRequest {
@@ -16,16 +17,23 @@ export class HttpContext {
     return this._response;
   }
 
-  private readonly _provide?: ServiceProvider;
+  private readonly _provider?: ServiceProvider;
 
-  get provide(): ServiceProvider | undefined {
-    return this._provide;
+  get provider(): ServiceProvider {
+    if (this._provider) {
+
+    }
+    return this.get(ServiceProvider);
   }
 
-  constructor(request: HttpRequest, response: HttpResponse, provide?: ServiceProvider) {
+  constructor(request: HttpRequest, response: HttpResponse, provider?: ServiceProvider | undefined) {
+    super([[HttpRequest, request], [HttpResponse, response]]);
     this._request = request;
     this._response = response;
-    this._provide = provide;
+    if (provider) {
+      this._provider = provider;
+      this.set(ServiceProvider, provider);
+    }
   }
 
   // direction => request <- response

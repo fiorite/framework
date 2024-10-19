@@ -3,7 +3,7 @@ import { FunctionClass } from './function-class';
 /**
  * Instance used to mark something as an optional type and value. e.g. ServiceType.
  */
-export class OptionalMarker<T> {
+export class OptionalMarker<T = unknown> {
   private readonly _value: T;
 
   get value(): T {
@@ -16,6 +16,7 @@ export class OptionalMarker<T> {
 }
 
 export type MaybeOptional<T> = T | OptionalMarker<T>;
+export type MaybeOptionalValue<TCheck, TValue> = TCheck extends OptionalMarker ? TValue | undefined : TValue;
 
 export namespace MaybeOptional {
   export function spread<T>(object: MaybeOptional<T>): [T, optional: boolean] {

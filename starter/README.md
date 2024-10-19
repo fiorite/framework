@@ -12,7 +12,7 @@ Start development instance:
 npm start
 ```
 
-Build production instalce:
+Build production instance:
 
 ```
 npm run build

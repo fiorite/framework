@@ -1,11 +1,11 @@
 import {
   globalConfiguration,
-  runProviderContext,
   ServiceConfigureFunction,
   ServiceProvideAsyncFunction,
   ServiceProvideFunction,
   ServiceProvider,
-  ServiceType
+  ServiceType,
+  occupyProvide
 } from '../di';
 // noinspection ES6PreferShortImport
 import { BehaveLike } from '../di/decorators';
@@ -61,7 +61,7 @@ export class Application {
   }
 
   get async(): ServiceProvideAsyncFunction {
-    return this._provider.async.bind(this._provider);
+    return this._provider.getAsync.bind(this._provider);
   }
 
   get has(): (type: ServiceType) => boolean {
@@ -87,7 +87,7 @@ export class Application {
   }
 
   within(callback: (complete: VoidCallback) => void): void {
-    runProviderContext(this._provider, callback);
+    occupyProvide(this._provider, callback);
   }
 
   ready(callback: VoidCallback): void {
@@ -99,7 +99,7 @@ export class Application {
   start(callback?: VoidCallback): unknown {
     return promiseWhenNoCallback<void>(callback => {
       this._queue.on('empty', () => {
-        runProviderContext(this._provider, complete => {
+        occupyProvide(this._provider, complete => {
           this._provider(HttpServer).listen(
             this._provider(httpServerPort),
             () => MaybePromiseLike.then(() => callback(), complete),
@@ -134,7 +134,7 @@ export function makeApplication(...features: ServiceConfigureFunction[]): Applic
 
   features.unshift(...globalConfiguration); // add global services
 
-  runProviderContext(provider, closeGlobalContext => {
+  occupyProvide(provider, closeGlobalContext => {
     features.forEach(featureFn => queue.add(done => MaybePromiseLike.then(() => featureFn(provider), done)));
 
     queue.add(finishTask => {
