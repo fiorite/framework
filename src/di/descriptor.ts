@@ -64,8 +64,8 @@ export class ServiceDescriptor<T = unknown> {
 
   static fromType<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
   static fromType<T>(type: Type<T>, dependencies: MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor<T>;
-  static fromType<T>(type: ServiceType<T>, implementation: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
-  static fromType<T>(type: ServiceType<T>, implementation: Type<T>, dependencies: MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType<T>(type: ServiceType<T>, implementationType: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
+  static fromType<T>(type: ServiceType<T>, implementationType: Type<T>, dependencies: MaybeOptional<ServiceType>[], behavior?: ServiceBehavior): ServiceDescriptor<T>;
   static fromType(...args: unknown[]): ServiceDescriptor {
     let type: ServiceType, prototypeFactory: PrototypeFactoryFunction,
       dependencies: readonly MaybeOptional<ServiceType>[],
@@ -81,7 +81,13 @@ export class ServiceDescriptor<T = unknown> {
         type = args[0] as Type;
         prototypeFactory = (args1, done) => done(new (type as Type)(...args1));
         dependencies = args[1];
-      } else { // @3 = type: ServiceType<T>, implementation: Type<T>
+      } else if (args[1] instanceof ServiceBehavior) { // type: Type<T>, behavior: ServiceBehavior
+        type = args[0] as Type;
+        const target = Provide.targetAssemble(type as Type);
+        prototypeFactory = (args1, done) => target(args1, args2 => done(new (type as Type)(...args2)));
+        dependencies = target.dependencies;
+        behavior = args[1];
+      } else { // @3 = type: ServiceType<T>, implementationType: Type<T>
         type = args[0] as Type;
         const target = Provide.targetAssemble(type as Type);
         prototypeFactory = (args1, done) => target(args1, args2 => done(new (args[1] as Type)(...args2)));
@@ -93,20 +99,20 @@ export class ServiceDescriptor<T = unknown> {
         prototypeFactory = (args1, done) => done(new (type as Type)(...args1));
         dependencies = args[1];
         behavior = args[2] as ServiceBehavior;
-      } else if (Array.isArray(args[2])) { // @4 = type: ServiceType<T>, implementation: Type<T>, dependencies: ServiceType[]
+      } else if (Array.isArray(args[2])) { // @4 = type: ServiceType<T>, implementationType: Type<T>, dependencies: ServiceType[]
         type = args[0] as ServiceType;
         prototypeFactory = (args1, done) => done(new (args[1] as Type)(...args1));
         dependencies = args[2];
-      } else { // type: @3 = ServiceType<T>, implementation: Type<T>, behavior: ServiceBehavior
+      } else { // type: @3 = ServiceType<T>, implementationType: Type<T>, behavior: ServiceBehavior
         type = args[0] as ServiceType;
         behavior = args[2] as ServiceBehavior;
         const target = Provide.targetAssemble(type as Type);
         prototypeFactory = (args1, done) => target(args1, args2 => done(new (args[1] as Type)(...args2)));
         dependencies = target.dependencies;
       }
-    } else { // @4 = type: ServiceType<T>, implementation: Type<T>, dependencies: ServiceType[], behavior: ServiceBehavior
+    } else { // @4 = type: ServiceType<T>, implementationType: Type<T>, dependencies: ServiceType[], behavior: ServiceBehavior
       type = args[0] as ServiceType;
-      prototypeFactory = (args1, done) => done(new (args[1] as Type as Type)(...args1));
+      prototypeFactory = (args1, done) => done(new (args[1] as Type)(...args1));
       dependencies = args[2] as ServiceType[];
       behavior = args[3] as ServiceBehavior;
     }

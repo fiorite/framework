@@ -32,13 +32,17 @@ export class RoutingMiddleware extends FunctionClass<HttpCallback> {
 
             normalizer.normalize(result, normalized => { // write JSON
               const jsonString = JSON.stringify(normalized);
-              response.headers.set(HttpResponseHeader.ContentType, 'application/json; charset=utf-8');
-              response.headers.set(HttpResponseHeader.ContentLength, Number(jsonString.length));
+              if (undefined !== jsonString) {
+                response.headers.set(HttpResponseHeader.ContentType, 'application/json; charset=utf-8');
+                response.headers.set(HttpResponseHeader.ContentLength, Number(jsonString.length));
 
-              response.write(jsonString, () => {
-                response.close();
+                response.write(jsonString, () => {
+                  response.close();
+                  next();
+                });
+              } else {
                 next();
-              });
+              }
             });
           };
 
