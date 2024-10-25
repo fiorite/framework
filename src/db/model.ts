@@ -3,7 +3,6 @@ import { DbValue } from './object';
 import { MapCallback } from '../core';
 import { DbFieldType, dbPreDefinition } from './field-type';
 import { DbStoringModel, DbStoringType } from './storing';
-import { b } from 'vite/dist/node/types.d-aGj9QkWt';
 
 export class DbModel<T = unknown> {
   private _fieldMap: Map<string | symbol, DbField>;
@@ -84,7 +83,7 @@ export class DbModel<T = unknown> {
     });
 
     return [
-      (addExport ? 'export ' : '')+`interface ${capitalizeFirstLetter(this.name)} {`,
+      (addExport ? 'export ' : '') + `interface ${capitalizeFirstLetter(this.name)} {`,
       ...fieldStrings.map(propertyString => '  ' + (addReadonly ? 'readonly ' : '') + propertyString),
       '}'
     ].join('\n');
