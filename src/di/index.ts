@@ -13,7 +13,7 @@ export { ServiceBehavior } from './behavior';
 export { configureProvider, globalConfiguration } from './configure';
 export type { ServiceConfigureFunction } from './configure';
 export type { ProvideDecorator } from './provide';
-export { Provide, occupyProvide, provide, provideAsync, ProvideDecoratorPayload } from './provide';
+export { Provide, occupyProvide, provide, provideAsync, ProvidePayload, ProvideTarget, ProvideTargetParameter } from './provide';
 export type {
   ServiceFactoryCallback,
   ServiceFactoryFunction,

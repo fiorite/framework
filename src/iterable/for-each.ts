@@ -2,8 +2,8 @@ import { emptyCallback, isPromiseLike, ValueCallback } from '../core';
 import { IterableOperatorFunction } from './operator';
 import { getIterator } from './iterator';
 
-export function iterableForEach<T, TReturn = unknown>(
-  callback: ValueCallback<T>, done: ValueCallback<TReturn> = emptyCallback
+export function iterableForEach<T>(
+  callback: ValueCallback<T>, done: ValueCallback<unknown> = emptyCallback
 ): IterableOperatorFunction<T, void> {
   return iterable => {
     const iterator = getIterator(iterable);

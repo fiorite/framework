@@ -27,7 +27,7 @@ export class ServiceReference<R, T = any> {
 
 /** @todo refactor! generics hell */
 export function serviceRef<T>(type: ServiceType<T>): ServiceReference<T, T>;
-export function serviceRef<T, R>(type: ServiceType<T>, project: MapCallback<T, R>): ServiceReference<R, T>;
+export function serviceRef<T, R>(type: ServiceType<T>, project: MapCallback<T, R>): ServiceReference<R>;
 export function serviceRef(type: ServiceType, project?: MapCallback<unknown>): ServiceReference<unknown, unknown> {
   return new ServiceReference(type, project);
 }

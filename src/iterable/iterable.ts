@@ -10,8 +10,8 @@ export interface AsyncLikeIterable<T> {
   [Symbol.asyncIterator](): AsyncLikeIterator<T>;
 }
 
-export interface AsyncLikeIterableIterator<T, TReturn = unknown> extends AsyncLikeIterator<T, TReturn> {
-  [Symbol.asyncIterator](): AsyncLikeIterableIterator<T, TReturn>;
+export interface AsyncLikeIterableIterator<T> extends AsyncLikeIterator<T> {
+  [Symbol.asyncIterator](): AsyncLikeIterableIterator<T>;
 }
 
 export type MaybeAsyncLikeIterable<T> = Iterable<T> | AsyncLikeIterableIterator<T>;

@@ -3,9 +3,11 @@ import { ServiceType } from './type';
 import { ServiceProvideCallback } from './provider';
 import { ServiceFactoryCallback } from './factory';
 import { ServiceBehavior } from './behavior';
-import { Provide } from './provide';
+import { Provide, ProvideTarget } from './provide';
 
 type PrototypeFactoryFunction<T = unknown> = (args: any[], done: ValueCallback<T>) => void;
+
+const valueSymbol = Symbol('ServiceDescriptor.value');
 
 export class ServiceDescriptor<T = unknown> {
   private readonly _type: ServiceType<T>;
@@ -44,6 +46,9 @@ export class ServiceDescriptor<T = unknown> {
     return ServiceBehavior.Prototype === this.behavior;
   }
 
+  /** @deprecated used for debug purpose */
+  private [valueSymbol]?: T;
+
   static fromValue<T extends object | FunctionClass>(object: T): ServiceDescriptor<T>;
   static fromValue<T>(type: ServiceType<T>, value: T): ServiceDescriptor<T>;
   static fromValue(...args: unknown[]): ServiceDescriptor {
@@ -59,7 +64,9 @@ export class ServiceDescriptor<T = unknown> {
       value = args[1] as object;
     }
 
-    return new ServiceDescriptor(type!, (_, done) => done(value), [], ServiceBehavior.Singleton);
+    const descriptor = new ServiceDescriptor(type!, (_, done) => done(value), [], ServiceBehavior.Singleton);
+    descriptor[valueSymbol] = value!;
+    return descriptor;
   }
 
   static fromType<T>(type: Type<T>, behavior?: ServiceBehavior): ServiceDescriptor<T>;
@@ -73,7 +80,7 @@ export class ServiceDescriptor<T = unknown> {
 
     if (args.length === 1) { // @1 = type: Type<T>
       type = args[0] as Type;
-      const target = Provide.targetAssemble(type as Type);
+      const target = new ProvideTarget(type as Type);
       prototypeFactory = (args1, done) => target(args1, args2 => done(new (args[0] as Type)(...args2)));
       dependencies = target.dependencies;
     } else if (args.length === 2) {
@@ -83,13 +90,13 @@ export class ServiceDescriptor<T = unknown> {
         dependencies = args[1];
       } else if (args[1] instanceof ServiceBehavior) { // type: Type<T>, behavior: ServiceBehavior
         type = args[0] as Type;
-        const target = Provide.targetAssemble(type as Type);
+        const target = new ProvideTarget(type as Type);
         prototypeFactory = (args1, done) => target(args1, args2 => done(new (type as Type)(...args2)));
         dependencies = target.dependencies;
         behavior = args[1];
       } else { // @3 = type: ServiceType<T>, implementationType: Type<T>
         type = args[0] as Type;
-        const target = Provide.targetAssemble(type as Type);
+        const target = new ProvideTarget(type as Type);
         prototypeFactory = (args1, done) => target(args1, args2 => done(new (args[1] as Type)(...args2)));
         dependencies = target.dependencies;
       }
@@ -106,7 +113,7 @@ export class ServiceDescriptor<T = unknown> {
       } else { // type: @3 = ServiceType<T>, implementationType: Type<T>, behavior: ServiceBehavior
         type = args[0] as ServiceType;
         behavior = args[2] as ServiceBehavior;
-        const target = Provide.targetAssemble(type as Type);
+        const target = new ProvideTarget(type as Type);
         prototypeFactory = (args1, done) => target(args1, args2 => done(new (args[1] as Type)(...args2)));
         dependencies = target.dependencies;
       }
@@ -127,7 +134,7 @@ export class ServiceDescriptor<T = unknown> {
     let prototypeFactory: PrototypeFactoryFunction, dependencies: readonly MaybeOptional<ServiceType>[],
       behavior: ServiceBehavior | undefined;
 
-    if (2 === args.length || typeof args[2] === 'number') { // @1 = type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior
+    if (2 === args.length || args[2] instanceof ServiceBehavior) { // @1 = type: ServiceType<T>, prototypeFunction: () => MaybePromiseLike<T>, behavior?: ServiceBehavior
       dependencies = [];
       prototypeFactory = (_, done) => MaybePromiseLike.then(() => (args[1] as Function)(), done);
       behavior = args[2] as ServiceBehavior | undefined;

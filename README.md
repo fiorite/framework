@@ -36,7 +36,7 @@ npm install fiorite --save
   "autoImport": true
 }
 ```
-
+2
 3. Add `src/hello.ts` (or any business file).
 
 ```typescript

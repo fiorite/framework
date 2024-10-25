@@ -22,7 +22,7 @@ import { ServiceBehavior } from './behavior';
 import { ServiceFactoryCallback } from './factory';
 import { iterableForEach } from '../iterable';
 import { BehaveLike } from './decorators';
-import { Provide } from './provide';
+import { Provide, ProvideTarget } from './provide';
 import { ServiceDescriptor } from './descriptor';
 import { ServiceContainer } from './container';
 
@@ -458,7 +458,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
       return this.get(type, done);
     }
 
-    const target = Provide.targetAssemble(type);
+    const target = new ProvideTarget(type);
     this.all(target.dependencies, args => done(new type(...args)));
   }
 

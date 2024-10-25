@@ -1,35 +1,27 @@
-import { Statement } from 'sqlite3';
-import { AsyncLikeIterableIterator } from '../iterable';
-import { promiseLikeCallback, MaybePromiseLike, PromiseLikeCallback } from '../core';
-import { DbModelField, DbObject } from '../db';
-import { ModelFieldType } from '../data';
+import sqlite3 from 'sqlite3';
+import { AsyncLikeIterator } from '../iterable';
+import { MaybePromiseLike, promiseLikeCallback, PromiseLikeCallback } from '../core';
+import { DbStoringObject } from '../db';
 
-export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
-  private readonly _fields: readonly DbModelField[];
-  private readonly _statement: Statement;
+export class Sqlite3DbIterator implements AsyncLikeIterator<DbStoringObject> {
+  private readonly _statement: sqlite3.Statement;
 
-  constructor(fields: readonly DbModelField[], statement: Statement) {
-    this._fields = fields;
+  constructor(statement: sqlite3.Statement) {
     this._statement = statement;
   }
 
-  private _transform(object: DbObject): DbObject { // todo: move to data manipulator instance.
-    return this._fields.reduce((result, field) => { // add name <=> key transformation
-      const value = object[field.name as any];
-      if (null === value) {
-        result[field.name as any] = undefined;
-      } else if (ModelFieldType.Boolean === field.type) {
-        result[field.name as any] = 1 === value || '1' === value; // convert numeric|text to boolean
-      } else {
-        result[field.name as any] = value;
+  private _transform(object: DbStoringObject): DbStoringObject { // todo: perhaps move to higher db layer
+    Object.keys(object).forEach(key => {
+      if (null === object[key]) {
+        object[key] = undefined;
       }
-      return object;
-    }, {} as DbObject);
+    });
+    return object;
   }
 
-  next(): PromiseLikeCallback<IteratorResult<DbObject>> {
+  next(): PromiseLikeCallback<IteratorResult<DbStoringObject>> {
     return promiseLikeCallback(complete => {
-      this._statement.get((error: Error | null, row: DbObject) => {
+      this._statement.get((error: Error | null, row: DbStoringObject) => {
         if (null !== error) {
           throw error;
         }
@@ -43,7 +35,7 @@ export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
     });
   }
 
-  return(value?: MaybePromiseLike<unknown>): PromiseLikeCallback<IteratorResult<DbObject>> {
+  return(value?: MaybePromiseLike<unknown>): PromiseLikeCallback<IteratorResult<DbStoringObject>> {
     return promiseLikeCallback(complete => {
       this._statement.finalize((error?: Error) => {
         if (error) {
@@ -56,6 +48,4 @@ export class Sqlite3DbIterator implements AsyncLikeIterableIterator<DbObject> {
       });
     });
   }
-
-  [Symbol.asyncIterator] = () => this;
 }

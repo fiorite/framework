@@ -129,7 +129,7 @@ export function occupyProvide(provider: ServiceProvider, callback: (done: VoidCa
   }
 }
 
-export class ProvideDecoratorPayload<T = unknown, R = T> {
+export class ProvidePayload<T = unknown, R = T> {
   private readonly _type?: MaybeOptional<ServiceType<T>>;
 
   /**
@@ -164,7 +164,7 @@ export class ProvideDecoratorPayload<T = unknown, R = T> {
   }
 }
 
-export type ProvideDecorator<T = unknown, R = unknown> = ParameterDecoratorWithPayload<ProvideDecoratorPayload<T, R>>;
+export type ProvideDecorator<T = unknown, R = unknown> = ParameterDecoratorWithPayload<ProvidePayload<T, R>>;
 
 export function Provide(): ProvideDecorator;
 export function Provide(optional: OptionalModifier): ProvideDecorator;
@@ -204,113 +204,86 @@ export function Provide(...args: unknown[]): unknown {
     transform = args[2] as MapCallback<unknown>;
   }
 
-  const payload = new ProvideDecoratorPayload(type, transform, optional);
+  const payload = new ProvidePayload(type, transform, optional);
   return makeParameterDecorator(Provide, payload);
 }
 
-export namespace Provide {
-  export class ParameterDescriptor extends ProvideDecoratorPayload {
-    override get type(): MaybeOptional<ServiceType> {
-      return super.type!;
-    }
-
-    override get transform(): MapCallback<unknown, unknown> {
-      return super.transform!;
-    }
-
-    private readonly _index: number;
-
-    /**
-     * Position of parameter in a particular constructor or method.
-     */
-    get index(): number {
-      return this._index;
-    }
-
-    constructor(type: MaybeOptional<ServiceType>, transform: MapCallback<unknown, unknown>, index: number, optional?: boolean) {
-      super(type, transform, optional);
-      this._index = index;
-    }
+export class ProvideTargetParameter extends ProvidePayload {
+  override get type(): MaybeOptional<ServiceType> {
+    return super.type!;
   }
 
-  export class TargetDescriptor extends FunctionClass<(args: unknown[], done: ValueCallback<unknown[]>) => void> {
-    private readonly _type: Type;
-
-    get type(): Type {
-      return this._type;
-    }
-
-    private readonly _propertyKey?: string | symbol;
-
-    /**
-     * Whether this is `undefined`, target is a class constructor.
-     */
-    get propertyKey(): string | symbol | undefined {
-      return this._propertyKey;
-    }
-
-    private readonly _skipCount?: number;
-
-    /**
-     * Whether object method or class constructor has reserved arguments.
-     */
-    get skipCount(): number | undefined {
-      return this._skipCount;
-    }
-
-    private readonly _reflectMetadata: readonly Type[] | undefined;
-
-    /**
-     * Result of `Reflect.getMetadata('design:paramtypes', ...);`
-     */
-    get reflectMetadata(): readonly Type[] | undefined {
-      return this._reflectMetadata;
-    }
-
-    private readonly _parameters: readonly ParameterDescriptor[];
-
-    get parameters(): readonly ParameterDescriptor[] {
-      return this._parameters;
-    }
-
-    private readonly _dependencies: readonly MaybeOptional<ServiceType>[];
-
-    /**
-     * Compatible dependencies list for {@link ServiceDesciptor}.
-     */
-    get dependencies(): readonly MaybeOptional<ServiceType>[] {
-      return this._dependencies;
-    }
-
-    constructor(
-      type: Type,
-      propertyKey?: string | symbol | undefined,
-      skipCount?: number | undefined,
-      reflectMetadata?: readonly Type[],
-      parameters: readonly ParameterDescriptor[] = [],
-    ) {
-      const dependencies = parameters.map(parameter => parameter.type);
-      const length = parameters.reduce((max, item) => Math.max(item.index, max), -1) + 1;
-      super((args, done) => { // perform argument transform and trust argument count
-        if (args.length < length) { // add handler for optional services
-          throw new Error('Expected more arguments');
-        }
-        MaybePromiseLike.all(() => {
-          return parameters.map(parameter => parameter.transform(args[parameter.index]));
-        }, done);
-      });
-      this._type = type;
-      this._propertyKey = propertyKey;
-      this._skipCount = skipCount;
-      this._reflectMetadata = reflectMetadata;
-      this._parameters = parameters;
-      this._dependencies = dependencies;
-    }
+  override get transform(): MapCallback<unknown, unknown> {
+    return super.transform!;
   }
 
-  export function targetAssemble(target: Type, skipCount?: number): TargetDescriptor;
-  export function targetAssemble(target: Type, propertyKey: string | symbol, skipCount?: number): TargetDescriptor;
-  export function targetAssemble(...args: unknown[]) {
+  private readonly _index: number;
+
+  /**
+   * Position of parameter in a particular constructor or method.
+   */
+  get index(): number {
+    return this._index;
+  }
+
+  constructor(type: MaybeOptional<ServiceType>, transform: MapCallback<unknown, unknown>, index: number, optional?: boolean) {
+    super(type, transform, optional);
+    this._index = index;
+  }
+}
+
+export class ProvideTarget extends FunctionClass<(args: unknown[], done: ValueCallback<unknown[]>) => void> {
+  private readonly _type: Type;
+
+  get type(): Type {
+    return this._type;
+  }
+
+  private readonly _propertyKey?: string | symbol;
+
+  /**
+   * Whether this is `undefined`, target is a class constructor.
+   */
+  get propertyKey(): string | symbol | undefined {
+    return this._propertyKey;
+  }
+
+  private readonly _skipCount?: number;
+
+  /**
+   * Whether object method or class constructor has reserved arguments.
+   */
+  get skipCount(): number | undefined {
+    return this._skipCount;
+  }
+
+  private readonly _reflectMetadata: readonly Type[] | undefined;
+
+  /**
+   * Result of `Reflect.getMetadata('design:paramtypes', ...);`
+   */
+  get reflectMetadata(): readonly Type[] | undefined {
+    return this._reflectMetadata;
+  }
+
+  private readonly _parameters: readonly ProvideTargetParameter[];
+
+  get parameters(): readonly ProvideTargetParameter[] {
+    return this._parameters;
+  }
+
+  private readonly _dependencies: readonly MaybeOptional<ServiceType>[];
+
+  /**
+   * Compatible dependencies list for {@link ServiceDescriptor}.
+   */
+  get dependencies(): readonly MaybeOptional<ServiceType>[] {
+    return this._dependencies;
+  }
+
+  constructor(type: Type, skipCount?: number | undefined);
+  constructor(type: Type, propertyKey?: string | symbol | undefined, skipCount?: number | undefined);
+  constructor(...args: unknown[]) {
     const type = args[0] as Type;
     let propertyKey: string | symbol | undefined, skipCount: number | undefined;
 
@@ -328,13 +301,13 @@ export namespace Provide {
     const length = propertyKey ? type.prototype[propertyKey].length : type.length;
     const reflectMetadata = undefined === skipCount || skipCount < length ?
       reflectTargetTypes(type, propertyKey) : undefined;
-    let parameters: ParameterDescriptor[] = [];
+    let parameters: ProvideTargetParameter[] = [];
 
     if (reflectMetadata) {
       const recordedDecoration = DecoratorRecorder.parameterSearch(Provide, type, propertyKey);
       parameters = reflectMetadata.map<[index: number, Type]>((type2, index) => [index, type2])
         .slice(skipCount || 0)
-        .map<ParameterDescriptor>(([index, type2]) => {
+        .map<ProvideTargetParameter>(([index, type2]) => {
           const filtered = recordedDecoration.filter(record => record.path[2] === index);
           let type3: MaybeOptional<ServiceType>, transform: MapCallback<unknown> | undefined,
             optional: boolean | undefined;
@@ -352,10 +325,25 @@ export namespace Provide {
             transform = x => x; // todo: use known function proxyValue(val) => val;
           }
 
-          return new ParameterDescriptor(type3, transform, index, optional);
+          return new ProvideTargetParameter(type3, transform, index, optional);
         });
     }
 
-    return new TargetDescriptor(type, propertyKey, skipCount, reflectMetadata, parameters);
+    const dependencies = parameters.map(parameter => parameter.type);
+    const length2 = parameters.reduce((max, item) => Math.max(item.index, max), -1) + 1;
+    super((args, done) => { // perform argument transform and trust argument count
+      if (args.length < length2) { // add handler for optional services
+        throw new Error('Expected more arguments');
+      }
+      MaybePromiseLike.all(() => {
+        return parameters.map(parameter => parameter.transform(args[parameter.index]));
+      }, done);
+    });
+    this._type = type;
+    this._propertyKey = propertyKey;
+    this._skipCount = skipCount;
+    this._reflectMetadata = reflectMetadata;
+    this._parameters = parameters;
+    this._dependencies = dependencies;
   }
 }

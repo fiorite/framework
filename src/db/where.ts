@@ -1,12 +1,16 @@
 import { MaybePromiseLike } from '../core';
 import { MaybeAsyncLikeIterable } from '../iterable';
-import { DbPrimitiveValue } from './object';
+import { DbValue } from './object';
 
 export enum DbWhereOperator {
   EqualTo = '==',
   NotEqualTo = '!=',
   In = 'in',
   NotIn = 'not-in',
+  GreaterThan = '>',
+  GreaterThanOrEqualTo = '>=',
+  LessThan = '<',
+  LessThanOrEqualTo = '<=',
 }
 
 // export enum DbWhereCondition {
@@ -14,7 +18,7 @@ export enum DbWhereOperator {
 //   Or = 'or',
 // }
 
-export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
+export class DbWhere<T = DbValue, TIterable = readonly T[]> {
   private readonly _key: string | symbol;
 
   get key(): string | symbol {
@@ -41,6 +45,7 @@ export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
 
   constructor(key: string | symbol, operator: DbWhereOperator.In | DbWhereOperator.NotIn | 'in' | 'not-in', value: TIterable/*, condition?: DbWhereCondition*/);
   constructor(key: string | symbol, operator: DbWhereOperator.EqualTo | DbWhereOperator.NotEqualTo | '==' | '!=', value: T | undefined/*, condition?: DbWhereCondition*/);
+  constructor(key: string | symbol, operator: DbWhereOperator.GreaterThan | DbWhereOperator.GreaterThanOrEqualTo | DbWhereOperator.LessThan | DbWhereOperator.LessThanOrEqualTo | '>' | '>=' | '<' | '<=', value: T/*, condition?: DbWhereCondition*/);
   constructor(key: string | symbol, operator: DbWhereOperator | string, value: unknown/*, condition: DbWhereCondition = DbWhereCondition.And*/) {
     this._key = key;
     this._operator = operator as DbWhereOperator;
@@ -48,15 +53,15 @@ export class DbWhere<T = DbPrimitiveValue, TIterable = readonly T[]> {
     // this.#condition = condition;
   }
 
-  withKey(value: string): DbWhere<T, TIterable> {
-    return new DbWhere<T, TIterable>(value, this._operator as any, this._value/*, this.#condition*/);
+  withKey(key: string | symbol): DbWhere<T, TIterable> {
+    return new DbWhere<T, TIterable>(key, this._operator as any, this._value/*, this.#condition*/);
   }
 }
 
 /**
  * PromiseLike + AsyncLikeIterable for values. Loosen types become tie in middle iterator, so adapter operates with sync code.
  */
-export type DbLooseWhere = DbWhere<MaybePromiseLike<DbPrimitiveValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbPrimitiveValue>>>;
+export type DbLooseWhere = DbWhere<MaybePromiseLike<DbValue>, MaybePromiseLike<MaybeAsyncLikeIterable<DbValue>>>;
 
 // export type DbWhereKey<T, TValue = DbPrimitiveValue, TIterable = readonly T[]> = { [P in keyof T]: DbWhereKeyOperator<T, P, TValue, TIterable> };
 //

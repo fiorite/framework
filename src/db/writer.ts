@@ -1,32 +1,26 @@
-import { VoidCallback } from '../core';
-import { DbObject } from './object';
+import { DbStoringModel, DbStoringObject } from './storing';
 import { DbWhere } from './where';
+import { VoidCallback } from '../core';
 
 export interface DbCreateContext {
-  readonly model: string;
-  readonly object: DbObject;
+  readonly object: DbStoringObject;
 }
 
 export interface DbUpdateContext {
-  readonly model: string;
+  readonly object: DbStoringObject;
+  readonly change: DbStoringObject;
   readonly where: readonly DbWhere[];
-  readonly snapshot: DbObject;
-  readonly modified: DbObject;
 }
 
 export interface DbDeleteContext {
-  readonly model: string;
+  readonly object: DbStoringObject;
   readonly where: readonly DbWhere[];
-  readonly snapshot: DbObject;
 }
 
-/**
- * level #2 of database implementation: db writer. create/update/delete records done here.
- */
 export interface DbWriter {
-  create(context: DbCreateContext, callback: VoidCallback): void;
+  create(model: DbStoringModel, context: DbCreateContext, done: VoidCallback): void;
 
-  update(context: DbUpdateContext, callback: VoidCallback): void;
+  update(model: DbStoringModel, context: DbUpdateContext, done: VoidCallback): void;
 
-  delete(context: DbDeleteContext, callback: VoidCallback): void;
+  delete(model: DbStoringModel, context: DbDeleteContext, done: VoidCallback): void;
 }

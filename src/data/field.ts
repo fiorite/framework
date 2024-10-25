@@ -4,16 +4,24 @@ export enum ModelFieldType {
   String = 'string',
   Number = 'number',
   Boolean = 'boolean',
+  Date = 'date',
 }
 
 export type ModelFieldTypeToJs = {
   [ModelFieldType.String]: String,
   [ModelFieldType.Number]: Number,
   [ModelFieldType.Boolean]: Boolean,
+  [ModelFieldType.Date]: Date,
 };
 
-/** @deprecated will be used outside */
+/** @deprecated currently base for db mode, will be changed */
 export abstract class ModelField implements Equatable {
+  private readonly _name: string | symbol;
+
+  get name(): string | symbol {
+    return this._name;
+  }
+
   private readonly _type: ModelFieldType;
 
   get type(): ModelFieldType {
@@ -26,7 +34,8 @@ export abstract class ModelField implements Equatable {
     return this._optional;
   }
 
-  protected constructor(type: ModelFieldType, optional?: boolean) {
+  protected constructor(name: string | symbol, type: ModelFieldType, optional?: boolean) {
+    this._name = name;
     this._type = type;
     this._optional = Boolean(optional);
   }

@@ -1,5 +1,6 @@
 import { ModelField } from './field';
 
+/** @deprecated db model fields are array right now */
 export type ModelFields<TObject, TField extends ModelField = ModelField> = Record<keyof TObject, TField>;
 
 export abstract class Model<T> {

@@ -1,7 +1,8 @@
 import { ServiceProvider } from './provider';
-import { MaybePromiseLike } from '../core';
+import { MaybePromiseLike, VoidCallback } from '../core';
 
-export type ServiceConfigureFunction = (provider: ServiceProvider) => MaybePromiseLike<unknown>;
+// todo: add #done()
+export type ServiceConfigureFunction = (provider: ServiceProvider/*, done?: VoidCallback*/) => MaybePromiseLike<unknown>;
 
 const _globalConfiguration = new Set<ServiceConfigureFunction>();
 

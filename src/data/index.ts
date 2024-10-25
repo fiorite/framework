@@ -1,3 +1,4 @@
+export { dateNow } from './date-now';
 export type { ModelFieldTypeToJs } from './field';
 export { ModelFieldType, ModelField } from './field';
 export type { ModelFields } from './model';

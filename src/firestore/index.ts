@@ -1,4 +1,4 @@
-export { addFirestore } from './feature';
+export { addFirestore } from './di-feature';
 export { FirestoreDbAdapter } from './adapter';
 export { FirestoreDbIterator } from './iterator';
-export { firestoreDocumentId } from './document';
+export { firestoreId } from './document';

@@ -1,10 +1,10 @@
-import { DbObject, DbReadContext, DbReader } from '../db';
+import { DbObject, DbReader } from '../db';
 import { AsyncLikeIterableIterator } from '../iterable';
 import { ComputedCallback, PromiseLikeCallback } from '../core';
 
 // todo: investigate this and implement
 
-export class IdbDbAdapter implements DbReader {
+export class IdbDbAdapter /*implements DbReader*/ {
   private _name: string;
   private _version?: number;
   private _request: IDBOpenDBRequest;
@@ -26,18 +26,18 @@ export class IdbDbAdapter implements DbReader {
     });
   }
 
-  read({ model }: DbReadContext): AsyncLikeIterableIterator<DbObject> {
-    return new IdbDbIterator(
-      new ComputedCallback(complete => {
-        this._db.then(db => {
-          const transaction = db.transaction([model]);
-          const objectStore = transaction.objectStore(model);
-          // todo: create objectStore if missing.
-          complete(objectStore.openCursor());
-        });
-      }),
-    );
-  }
+  // read({ model }: DbReadContext): AsyncLikeIterableIterator<DbObject> {
+  //   return new IdbDbIterator(
+  //     new ComputedCallback(complete => {
+  //       this._db.then(db => {
+  //         const transaction = db.transaction([model]);
+  //         const objectStore = transaction.objectStore(model);
+  //         // todo: create objectStore if missing.
+  //         complete(objectStore.openCursor());
+  //       });
+  //     }),
+  //   );
+  // }
 }
 
 export class IdbDbIterator implements AsyncLikeIterableIterator<DbObject> {

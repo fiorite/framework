@@ -7,7 +7,7 @@ import { LevelFilter } from './level-filter';
 export const logLevel = Symbol.for('LogLevel');
 
 export function addConsoleLogger(provider: ServiceProvider, level?: LogLevel) {
-  level = level || LogLevel.Info;
+  level = undefined !== level ? level : LogLevel.Info;
   provider.addValue(logLevel, level);
 
   let logger: Logger = new ConsoleLogger();

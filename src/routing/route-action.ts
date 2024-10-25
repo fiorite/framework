@@ -1,7 +1,7 @@
 import { HttpContext } from '../http';
 import { DecoratorRecorder, FunctionClass, MaybePromiseLike, Type, ValueCallback } from '../core';
 import { RouteResult } from './route-result';
-import { Provide } from '../di';
+import { Provide, ProvideTarget } from '../di';
 import { RouteDescriptor } from './route-descriptor';
 import { Route, RoutePrefix } from './decorators';
 
@@ -45,7 +45,7 @@ export class ReflectedAction extends FunctionClass<RouteActionCallback> {
   }
 
   constructor(type: Type, propertyKey: string | symbol) {
-    const target = Provide.targetAssemble(type, propertyKey);
+    const target = new ProvideTarget(type, propertyKey);
     super((context, next) => {
       context.provider.prototypeObject(type, (object: object) => {
         context.provider.all(target.dependencies, args => {

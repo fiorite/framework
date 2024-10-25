@@ -1,4 +1,4 @@
-import { DbPrimitiveValue, DbWhere } from '../db';
+import { DbValue, DbWhere } from '../db';
 
 export function buildSqlite3Where(iterable: Iterable<DbWhere>): {
   sql: string,
@@ -26,6 +26,12 @@ export function buildSqlite3Where(iterable: Iterable<DbWhere>): {
       case '!=':
         operator = '<>';
         break;
+      case '>':
+      case '>=':
+      case '<':
+      case '<=':
+        operator = where.operator;
+        break;
       case 'in':
         operator = 'IN';
         iterable = true;
@@ -39,7 +45,7 @@ export function buildSqlite3Where(iterable: Iterable<DbWhere>): {
     }
     if (iterable) {
       const countValue = counter++;
-      const pkeys = (where.value as unknown as DbPrimitiveValue[]).map((value, index) => {
+      const pkeys = (where.value as unknown as DbValue[]).map((value, index) => {
         const param = `$w${countValue}_${column}_${index}`;
         params[param] = value;
         return param;
