@@ -278,8 +278,8 @@ export const bootstrapFiorite = (projectDir: string, options: {
 
         server.middlewares.use((req, res) => {
           if (currentApp) {
-            currentApp.within(complete => {
-              res.on('close', complete); // todo: extend lifecycle and perhaps connect to scope lifetime.
+            currentApp.runScript(done => {
+              res.on('close', done); // todo: extend lifecycle and perhaps connect to scope lifetime.
 
               try {
                 currentApp.httpServer

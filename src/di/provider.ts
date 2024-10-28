@@ -466,7 +466,7 @@ export class ServiceProvider extends FunctionClass<ServiceProvideFunction> imple
 
   /** {@link addValue} */
   add(object: object | FunctionClass): this;
-  /** {@link addValue} */
+  /** todo: refactor, so this one is done by default {@link addValue} */
   add<T>(value: [type: ServiceType<T>, object: T]): this;
   /** {@link addType} */
   add(type: Type, behavior?: ServiceBehavior): this;

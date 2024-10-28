@@ -1,11 +1,10 @@
 import {
-  globalConfiguration,
+  occupyProvide,
   ServiceConfigureFunction,
   ServiceProvideAsyncFunction,
   ServiceProvideFunction,
   ServiceProvider,
-  ServiceType,
-  occupyProvide
+  ServiceType
 } from '../di';
 // noinspection ES6PreferShortImport
 import { BehaveLike } from '../di/decorators';
@@ -22,6 +21,8 @@ import {
 } from '../core';
 import { addDbManager } from '../db';
 import { addEvents } from '../events';
+import { lateScripts, ScriptFunction } from './run-script';
+import { lateServiceConfigurations } from '../di/configure';
 
 enum Environment {
   Production = 'production',
@@ -84,10 +85,16 @@ export class Application {
     this._provider = provider;
     this._queue = queue;
     this._environment = provider.get(environmentKey);
+    provider.add(this);
+    queue.on('empty', () => {
+      lateScripts.forEach(lateScript => this.runScript(lateScript));
+    });
   }
 
-  within(callback: (complete: VoidCallback) => void): void {
-    occupyProvide(this._provider, callback);
+  runScript(callback: ScriptFunction): void {
+    occupyProvide(this._provider, unbind => {
+      callback.length > 0 ? callback(unbind) : MaybePromiseLike.then(() => (callback as Function)(), unbind);
+    });
   }
 
   ready(callback: VoidCallback): void {
@@ -122,7 +129,7 @@ export function makeApplication(...features: ServiceConfigureFunction[]): Applic
 
   const queue = new CallbackQueue();
 
-  const runnerLoader = ComputedCallback.preCache<void>(done => {
+  queue.add(done => {
     // @ts-ignore
     const port = Number(currentJsPlatform === 'nodejs' ? (() => process.env['PORT'])() : 3000 || 3000);
     addHttpServer(provider, port, done);
@@ -132,12 +139,17 @@ export function makeApplication(...features: ServiceConfigureFunction[]): Applic
   addCors(provider);
   addJsonParser(provider);
 
-  features.unshift(...globalConfiguration); // add global services
+  features.unshift(...lateServiceConfigurations); // add global services
 
-  occupyProvide(provider, closeGlobalContext => {
-    features.forEach(featureFn => queue.add(done => MaybePromiseLike.then(() => featureFn(provider), done)));
+  occupyProvide(provider, unbind => {
+    features.forEach(configureServices => {
+      queue.add(done => {
+        configureServices.length > 1 ? configureServices(provider, done) :
+          MaybePromiseLike.then(() => configureServices(provider), done);
+      });
+    });
 
-    queue.add(finishTask => {
+    queue.add(done => {
       provider.addDecoratedBy(BehaveLike);
       provider.addMissingDependencies();
 
@@ -145,17 +157,16 @@ export function makeApplication(...features: ServiceConfigureFunction[]): Applic
         provider(RouteMatcher).routeSet.addDecoratedBy(Route);
       }
 
-      provider.preCacheSingletons(finishTask);
+      provider.preCacheSingletons(done);
     });
 
-    queue.add(finishTask => {
+    queue.add(done => {
       provider._performStabilityCheck();
-      closeGlobalContext();
-      finishTask();
+      unbind();
+      done();
     });
   });
 
-  queue.add(done => runnerLoader.then(done));
   return new Application(provider, queue);
 }
 

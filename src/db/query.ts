@@ -1,6 +1,7 @@
 import { DbLooseWhere, DbWhere } from './where';
 
 export interface DbQuery<TWhere = DbWhere> {
+  readonly select?: (string | symbol)[];
   readonly take?: number;
   readonly skip?: number;
   readonly where?: readonly TWhere[];

@@ -1,14 +1,17 @@
 import { ServiceProvider } from './provider';
 import { MaybePromiseLike, VoidCallback } from '../core';
 
-// todo: add #done()
-export type ServiceConfigureFunction = (provider: ServiceProvider/*, done?: VoidCallback*/) => MaybePromiseLike<unknown>;
+export interface ServiceConfigureFunction {
+  (provider: ServiceProvider): MaybePromiseLike<unknown>;
 
-const _globalConfiguration = new Set<ServiceConfigureFunction>();
+  (provider: ServiceProvider, done: VoidCallback): unknown;
+}
 
-export const globalConfiguration: ReadonlySet<ServiceConfigureFunction> = _globalConfiguration;
+const _lateServiceConfigurations = new Set<ServiceConfigureFunction>();
 
-export function configureProvider(callback: ServiceConfigureFunction): void {
-  _globalConfiguration.add(callback);
+export const lateServiceConfigurations: ReadonlySet<ServiceConfigureFunction> = _lateServiceConfigurations;
+
+export function configureServices(callback: ServiceConfigureFunction): void {
+  _lateServiceConfigurations.add(callback);
 }
 

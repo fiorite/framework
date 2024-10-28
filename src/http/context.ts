@@ -26,6 +26,8 @@ export class HttpContext extends Context {
     return this.get(ServiceProvider);
   }
 
+  // private _direction: 'request' | 'response';
+
   constructor(request: HttpRequest, response: HttpResponse, provider?: ServiceProvider | undefined) {
     super([[HttpRequest, request], [HttpResponse, response]]);
     this._request = request;
